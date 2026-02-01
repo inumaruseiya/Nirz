@@ -6,3 +6,6 @@ CREATE TABLE comments (
     content TEXT NOT NULL CHECK (char_length(content) <= 200 AND char_length(content) > 0),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE INDEX idx_comments_post_id ON comments(post_id);
+CREATE INDEX idx_comments_created_at ON comments(created_at DESC);

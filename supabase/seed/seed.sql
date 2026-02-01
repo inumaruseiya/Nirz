@@ -1,0 +1,11 @@
+-- シードデータ（開発用）
+-- 必要に応じてテストデータを追加してください
+
+-- 定期実行設定（pg_cron）
+-- pg_cron拡張を有効化後にコメントを外して実行
+--
+-- SELECT cron.schedule(
+--     'delete-expired-posts',
+--     '0 * * * *',
+--     $$SELECT delete_expired_posts()$$
+-- );

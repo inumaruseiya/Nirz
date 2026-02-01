@@ -6,3 +6,5 @@ CREATE TABLE user_locations (
     radius_km INT NOT NULL CHECK (radius_km IN (1, 5)),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+CREATE INDEX idx_user_locations_geography ON user_locations USING GIST(location);
