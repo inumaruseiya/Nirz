@@ -12,6 +12,10 @@
 - Flutter アプリは **クリーンアーキテクチャ**の層分けに従う: `lib/domain/`、`lib/application/`、`lib/infrastructure/`、`lib/presentation/`（[`docs/system-design-local-sns-flutter-supabase.md`](docs/system-design-local-sns-flutter-supabase.md) と実装計画 Phase 0-2）。
 - 依頼されたタスクに必要なファイルだけを変更する。無関係なリファクタやドキュメントの追加はしない（ユーザーが明示した場合を除く）。
 
+## ナビゲーション
+
+- ルート定義は **GoRouter**（[`lib/presentation/router/app_router.dart`](lib/presentation/router/app_router.dart)）。新しい画面は `GoRoute` を追加し、パスは [`lib/presentation/router/app_route_paths.dart`](lib/presentation/router/app_route_paths.dart) と揃える。
+
 ## Supabase
 
 - **クライアント（Flutter）**: 接続情報は **`--dart-define=SUPABASE_URL=...`** と **`--dart-define=SUPABASE_ANON_KEY=...`** で渡す。定数は [`lib/config/supabase_config.dart`](lib/config/supabase_config.dart) を経由する。実シークレットをリポジトリにコミットしない。ルートの [`.env.example`](.env.example) を参照。
