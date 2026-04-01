@@ -1,3 +1,6 @@
+# Local secrets (use --dart-define or IDE env; see .env.example)
+.env
+
 # Miscellaneous
 *.class
 *.log
