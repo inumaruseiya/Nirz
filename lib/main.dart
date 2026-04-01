@@ -1,10 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'config/supabase_config.dart';
 import 'presentation/theme/app_theme.dart';
 import 'presentation/theme/app_tokens.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (SupabaseConfig.isConfigured) {
+    await Supabase.initialize(
+      url: SupabaseConfig.url,
+      anonKey: SupabaseConfig.anonKey,
+    );
+  } else {
+    debugPrint(
+      'Supabase: SUPABASE_URL / SUPABASE_ANON_KEY が未設定のため初期化をスキップしました。'
+      ' .env.example を参照し --dart-define で渡してください。',
+    );
+  }
+
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
