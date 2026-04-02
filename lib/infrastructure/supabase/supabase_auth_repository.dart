@@ -37,6 +37,29 @@ final class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<Result<void, Failure>> signUpWithEmail({
+    required String email,
+    required String password,
+    String? displayName,
+  }) async {
+    try {
+      final name = displayName?.trim();
+      await _client.auth.signUp(
+        email: email,
+        password: password,
+        data: name != null && name.isNotEmpty ? {'name': name} : const {},
+      );
+      return const Ok<void, Failure>(null);
+    } on AuthException {
+      return const Err(AuthFailure());
+    } on SocketException {
+      return const Err(NetworkFailure());
+    } catch (_) {
+      return const Err(ServerFailure());
+    }
+  }
+
+  @override
   Future<Result<void, Failure>> signInWithEmail({
     required String email,
     required String password,
