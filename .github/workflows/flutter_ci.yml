@@ -1,4 +1,4 @@
-name: Flutter CI
+name: CI
 
 on:
   push:
@@ -7,11 +7,12 @@ on:
     branches: [main]
 
 concurrency:
-  group: flutter-ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  analyze-and-test:
+  flutter:
+    name: Flutter (analyze & test)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,3 +32,27 @@ jobs:
 
       - name: Test
         run: flutter test
+
+  supabase:
+    name: Supabase (migrations & checks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local stack
+        run: supabase start
+
+      - name: Apply migrations
+        run: supabase db reset --no-seed
+
+      - name: Database lint
+        run: supabase db lint
+
+      - name: Security & performance advisors
+        run: supabase db advisors --fail-on error
