@@ -1,0 +1,2 @@
+-- Optional seed data for local development.
+-- CI runs `supabase db reset --no-seed` and does not require this file.
