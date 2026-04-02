@@ -4,10 +4,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/comment_repository.dart';
 import '../domain/repositories/feed_repository.dart';
+import '../domain/repositories/location_repository.dart';
 import '../domain/repositories/post_repository.dart';
 import '../domain/repositories/profile_repository.dart';
 import '../domain/repositories/reaction_repository.dart';
 import '../domain/repositories/storage_repository.dart';
+import 'location/geolocator_location_repository.dart';
 import 'supabase/supabase_auth_repository.dart';
 import 'supabase/supabase_comment_repository.dart';
 import 'supabase/supabase_feed_repository.dart';
@@ -58,5 +60,7 @@ final storageRepositoryProvider = Provider<StorageRepository>(
   (ref) => SupabaseStorageRepository(ref.watch(supabaseClientProvider)),
 );
 
-// [LocationRepository]（[GeolocatorLocationRepository]）は Phase 3-4 実装後に
-// `locationRepositoryProvider` を追加する。
+/// [LocationRepository] → [GeolocatorLocationRepository]（Phase 3-4-1）
+final locationRepositoryProvider = Provider<LocationRepository>(
+  (ref) => const GeolocatorLocationRepository(),
+);
