@@ -27,6 +27,11 @@ enum AuthOAuthProvider {
 abstract interface class AuthRepository {
   Stream<SessionState> watchSession();
 
+  /// サーバと通信してセッションを更新する（オフライン検知・スプラッシュ再試行用）。
+  ///
+  /// 未サインインやトークン無効は [AuthFailure] になり得る。呼び出し側は必要なら続けて [watchSession] を参照する。
+  Future<Result<void, Failure>> refreshAuthSession();
+
   Future<Result<void, Failure>> signInWithEmail({
     required String email,
     required String password,
