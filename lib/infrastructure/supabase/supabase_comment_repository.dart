@@ -26,21 +26,17 @@ final class SupabaseCommentRepository implements CommentRepository {
       return const Err(AuthFailure());
     }
     try {
-      final raw = await _client
+      final rows = await _client
           .from('comments')
           .select(_selectColumns)
           .eq('post_id', postId.value)
           .order('created_at', ascending: true);
-      if (raw is! List) {
-        return const Err(ServerFailure());
-      }
       final out = <Comment>[];
-      for (final element in raw) {
-        if (element is! Map) {
-          return const Err(ServerFailure());
-        }
+      for (final row in rows) {
         try {
-          final dto = CommentDto.fromJson(Map<String, dynamic>.from(element));
+          final dto = CommentDto.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          );
           out.add(CommentMapper.toDomain(dto));
         } on FormatException catch (e) {
           return Err(ValidationFailure(e.message));
