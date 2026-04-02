@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 /// コメント ID（`comments.id` に対応する UUID）。
 final class CommentId extends Equatable {
-  CommentId._(this.value);
+  const CommentId._(this.value);
 
   /// [raw] は非空の標準 UUID 文字列（ハイフン区切り 36 文字形式）。
   factory CommentId.parse(String raw) {

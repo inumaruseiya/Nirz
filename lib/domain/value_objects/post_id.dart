@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 /// 投稿 ID（`posts.id` に対応する UUID）。
 final class PostId extends Equatable {
-  PostId._(this.value);
+  const PostId._(this.value);
 
   /// [raw] は非空の標準 UUID 文字列（ハイフン区切り 36 文字形式）。
   factory PostId.parse(String raw) {

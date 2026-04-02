@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 /// 認証ユーザー ID（`auth.users.id` / `profiles.id` に対応する UUID）。
 final class UserId extends Equatable {
-  UserId._(this.value);
+  const UserId._(this.value);
 
   /// [raw] は非空の標準 UUID 文字列（ハイフン区切り 36 文字形式）。
   factory UserId.parse(String raw) {
