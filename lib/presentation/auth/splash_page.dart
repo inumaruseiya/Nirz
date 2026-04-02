@@ -1,29 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../application/providers.dart';
 import '../../config/supabase_config.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
 
 /// スプラッシュ: ブランドマークと読み込みインジケータ（実装計画 Phase 5-1-1、詳細設計 4.1）。
 ///
-/// セッション確認後の遷移は Phase 5-1-2 以降で [WatchSessionUseCase] 等に寄せる想定。
-class SplashPage extends StatefulWidget {
+/// セッション有無は [WatchSessionUseCase]（= [AuthRepository.watchSession]）の初回イベントで判定（Phase 5-1-2）。
+class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
   @override
-  State<SplashPage> createState() => _SplashPageState();
+  ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> {
+class _SplashPageState extends ConsumerState<SplashPage> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _goNext());
   }
 
-  void _goNext() {
+  Future<void> _goNext() async {
     if (!mounted) {
       return;
     }
@@ -31,8 +33,17 @@ class _SplashPageState extends State<SplashPage> {
       context.go(AppRoutePaths.login);
       return;
     }
-    final hasSession = Supabase.instance.client.auth.currentSession != null;
-    context.go(hasSession ? AppRoutePaths.feed : AppRoutePaths.login);
+    final watchSession = ref.read(watchSessionUseCaseProvider);
+    final SessionState state = await watchSession().first;
+    if (!mounted) {
+      return;
+    }
+    switch (state) {
+      case SessionSignedIn():
+        context.go(AppRoutePaths.feed);
+      case SessionSignedOut():
+        context.go(AppRoutePaths.login);
+    }
   }
 
   @override

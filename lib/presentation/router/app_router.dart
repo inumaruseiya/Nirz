@@ -62,9 +62,7 @@ String? _redirect(BuildContext context, GoRouterState state) {
   final onSplash = loc == AppRoutePaths.splash;
   final onLogin = loc == AppRoutePaths.login;
 
-  if (loggedIn && onSplash) {
-    return AppRoutePaths.feed;
-  }
+  // スプラッシュでのセッション判定・遷移は [SplashPage] が [WatchSessionUseCase] で行う（Phase 5-1-2）。
   if (loggedIn && onLogin) {
     return AppRoutePaths.feed;
   }
