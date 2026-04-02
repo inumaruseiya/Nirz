@@ -168,6 +168,8 @@
 | 1-6-2 | OAuth プロバイダ設定（任意） | Google / Apple 等の設定 | FR-AUTH-01 |
 | 1-6-3 | メール確認フロー設定 | 確認メールテンプレート・リダイレクトURL | FR-AUTH-01 |
 
+> **手順の正本（ダッシュボード操作）**: [`docs/supabase-auth-dashboard.md`](./supabase-auth-dashboard.md)
+
 ---
 
 ## Phase 2: Domain レイヤ実装

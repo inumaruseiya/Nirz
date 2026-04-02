@@ -20,6 +20,7 @@
 
 - **クライアント（Flutter）**: 接続情報は **`--dart-define=SUPABASE_URL=...`** と **`--dart-define=SUPABASE_ANON_KEY=...`** で渡す。定数は [`lib/config/supabase_config.dart`](lib/config/supabase_config.dart) を経由する。実シークレットをリポジトリにコミットしない。ルートの [`.env.example`](.env.example) を参照。
 - **バックエンド（スキーマ・RLS・RPC・Storage 等）**: **Supabase CLI の利用を推奨**する。マイグレーションやローカル検証が必要な場合は CLI で進めてよい（`supabase init`、`supabase start`、`migration` 管理など）。
+- **Auth（メール / OAuth / リダイレクト URL）**: Dashboard 手順は [`docs/supabase-auth-dashboard.md`](docs/supabase-auth-dashboard.md)（実装計画 Phase 1-6）。
 
 ## Git / PR
 
