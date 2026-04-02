@@ -1,0 +1,143 @@
+import 'dart:io';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../domain/core/failure.dart';
+import '../../domain/core/result.dart';
+import '../../domain/entities/comment.dart';
+import '../../domain/repositories/comment_repository.dart';
+import '../../domain/value_objects/comment_id.dart';
+import '../../domain/value_objects/post_id.dart';
+import '../dto/comment_dto.dart';
+import '../mappers/comment_mapper.dart';
+
+/// [CommentRepository] の Supabase 実装（`comments` テーブル）。
+final class SupabaseCommentRepository implements CommentRepository {
+  SupabaseCommentRepository(this._client);
+
+  final SupabaseClient _client;
+
+  static const _selectColumns =
+      'id, post_id, user_id, parent_comment_id, content, created_at';
+
+  @override
+  Future<Result<List<Comment>, Failure>> listByPost(PostId postId) async {
+    if (_client.auth.currentUser == null) {
+      return const Err(AuthFailure());
+    }
+    try {
+      final raw = await _client
+          .from('comments')
+          .select(_selectColumns)
+          .eq('post_id', postId.value)
+          .order('created_at', ascending: true);
+      if (raw is! List) {
+        return const Err(ServerFailure());
+      }
+      final out = <Comment>[];
+      for (final element in raw) {
+        if (element is! Map) {
+          return const Err(ServerFailure());
+        }
+        try {
+          final dto = CommentDto.fromJson(Map<String, dynamic>.from(element));
+          out.add(CommentMapper.toDomain(dto));
+        } on FormatException catch (e) {
+          return Err(ValidationFailure(e.message));
+        }
+      }
+      return Ok(out);
+    } on AuthException {
+      return const Err(AuthFailure());
+    } on PostgrestException catch (e) {
+      return Err(_mapPostgrest(e));
+    } on SocketException {
+      return const Err(NetworkFailure());
+    } catch (_) {
+      return const Err(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Result<Comment, Failure>> addComment({
+    required PostId postId,
+    required String content,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null || uid.isEmpty) {
+      return const Err(AuthFailure());
+    }
+    try {
+      final row = await _client
+          .from('comments')
+          .insert({
+            'post_id': postId.value,
+            'user_id': uid,
+            'content': content,
+            'parent_comment_id': null,
+          })
+          .select(_selectColumns)
+          .single();
+      final dto = CommentDto.fromJson(Map<String, dynamic>.from(row));
+      return Ok(CommentMapper.toDomain(dto));
+    } on AuthException {
+      return const Err(AuthFailure());
+    } on PostgrestException catch (e) {
+      return Err(_mapPostgrest(e));
+    } on FormatException catch (e) {
+      return Err(ValidationFailure(e.message));
+    } on SocketException {
+      return const Err(NetworkFailure());
+    } catch (_) {
+      return const Err(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Result<Comment, Failure>> addReply({
+    required PostId postId,
+    required CommentId parentId,
+    required String content,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null || uid.isEmpty) {
+      return const Err(AuthFailure());
+    }
+    try {
+      final row = await _client
+          .from('comments')
+          .insert({
+            'post_id': postId.value,
+            'user_id': uid,
+            'content': content,
+            'parent_comment_id': parentId.value,
+          })
+          .select(_selectColumns)
+          .single();
+      final dto = CommentDto.fromJson(Map<String, dynamic>.from(row));
+      return Ok(CommentMapper.toDomain(dto));
+    } on AuthException {
+      return const Err(AuthFailure());
+    } on PostgrestException catch (e) {
+      return Err(_mapPostgrest(e));
+    } on FormatException catch (e) {
+      return Err(ValidationFailure(e.message));
+    } on SocketException {
+      return const Err(NetworkFailure());
+    } catch (_) {
+      return const Err(ServerFailure());
+    }
+  }
+
+  static Failure _mapPostgrest(PostgrestException e) {
+    final code = e.code;
+    if (code == '22023' || code == 'P0001') {
+      final msg = e.message.trim();
+      return ValidationFailure(msg.isEmpty ? 'Invalid request' : msg);
+    }
+    if (code == '28000' || code == '42501') {
+      return const AuthFailure();
+    }
+    return const ServerFailure();
+  }
+}
