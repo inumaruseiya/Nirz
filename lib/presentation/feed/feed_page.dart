@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/feed_post.dart';
 import 'feed_notifier.dart';
 import '../router/app_route_paths.dart';
+import '../shared/local_post_card.dart';
 import '../theme/app_tokens.dart';
 
 /// Phase 6 でローカルフィードを実装。
@@ -194,9 +195,9 @@ class _FeedPageState extends ConsumerState<FeedPage> {
             );
           }
           final p = posts[index];
-          return ListTile(
-            title: Text(p.content),
-            subtitle: Text(p.authorName ?? '匿名'),
+          return LocalPostCard(
+            post: p,
+            onTap: () => context.push(AppRoutePaths.postDetail(p.id.value)),
           );
         },
       ),
