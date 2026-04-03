@@ -2,18 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../application/providers.dart';
 import '../../config/supabase_config.dart';
-import '../../domain/core/failure.dart';
-import '../../domain/core/result.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
 import 'auth_field_validators.dart';
+import 'auth_notifier.dart';
 import 'auth_oauth_buttons.dart';
 
 /// メール・パスワード・送信によるログイン（実装計画 Phase 5-2-1、詳細設計 4.2）。
 ///
-/// OAuth は [AuthOAuthButtons]（Phase 5-2-3）。[AuthNotifier] は後続タスク。
+/// 送信中・結果は [loginAuthNotifierProvider]（Phase 5-2-5）。
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -27,8 +25,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
-  bool _submitting = false;
-  String? _formError;
 
   @override
   void dispose() {
@@ -42,18 +38,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   String? _passwordFieldError(String? value) =>
       AuthFieldValidators.password(value);
 
-  String _messageForFailure(Failure f) {
-    return switch (f) {
-      NetworkFailure() => 'ネットワークに接続できません。接続を確認してください。',
-      AuthFailure() => 'メールアドレスまたはパスワードが正しくありません。',
-      ServerFailure() => 'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
-      ValidationFailure(:final message) => message,
-      LocationFailure() => '位置情報の処理に失敗しました。',
-    };
-  }
-
   Future<void> _submit() async {
-    setState(() => _formError = null);
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -61,32 +46,31 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return;
     }
 
-    setState(() => _submitting = true);
     FocusScope.of(context).unfocus();
 
-    final useCase = ref.read(signInWithEmailUseCaseProvider);
-    final result = await useCase(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    if (!mounted) {
-      return;
-    }
-    setState(() => _submitting = false);
-
-    switch (result) {
-      case Ok():
-        context.go(AppRoutePaths.feed);
-      case Err(:final error):
-        setState(() => _formError = _messageForFailure(error));
-    }
+    await ref.read(loginAuthNotifierProvider.notifier).signInWithEmail(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    ref.listen<AuthState>(loginAuthNotifierProvider, (previous, next) {
+      if (next is AuthSuccess && !next.awaitingEmailConfirmation) {
+        context.go(AppRoutePaths.feed);
+      }
+    });
+
+    final authState = ref.watch(loginAuthNotifierProvider);
+    final loading = authState is AuthLoading;
+    final formError = switch (authState) {
+      AuthError(:final message) => message,
+      _ => null,
+    };
 
     if (!SupabaseConfig.isConfigured) {
       return Scaffold(
@@ -136,7 +120,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             hintText: 'example@email.com',
                           ),
                           validator: _emailFieldError,
-                          enabled: !_submitting,
+                          enabled: !loading,
                         ),
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
@@ -155,7 +139,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
-                              onPressed: _submitting
+                              onPressed: loading
                                   ? null
                                   : () => setState(
                                         () => _obscurePassword = !_obscurePassword,
@@ -168,15 +152,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             ),
                           ),
                           validator: _passwordFieldError,
-                          enabled: !_submitting,
+                          enabled: !loading,
                         ),
                       ),
-                      if (_formError != null) ...[
+                      if (formError != null) ...[
                         SizedBox(height: AppTokens.spaceUnit * 2),
                         Semantics(
                           liveRegion: true,
                           child: Text(
-                            _formError!,
+                            formError,
                             style: textTheme.bodyMedium?.copyWith(
                               color: scheme.error,
                             ),
@@ -185,8 +169,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ],
                       SizedBox(height: AppTokens.spaceUnit * 3),
                       FilledButton(
-                        onPressed: _submitting ? null : _submit,
-                        child: _submitting
+                        onPressed: loading ? null : _submit,
+                        child: loading
                             ? const SizedBox(
                                 height: 22,
                                 width: 22,
@@ -196,14 +180,24 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 3),
                       AuthOAuthButtons(
-                        enabled: !_submitting,
-                        onError: (message) => setState(() => _formError = message),
+                        enabled: !loading,
+                        onError: (message) {
+                          final n = ref.read(loginAuthNotifierProvider.notifier);
+                          if (message == null) {
+                            n.clearError();
+                          } else {
+                            n.setError(message);
+                          }
+                        },
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
                       TextButton(
-                        onPressed: _submitting
+                        onPressed: loading
                             ? null
-                            : () => context.push(AppRoutePaths.signUp),
+                            : () {
+                                ref.read(loginAuthNotifierProvider.notifier).reset();
+                                context.push(AppRoutePaths.signUp);
+                              },
                         child: const Text('アカウントを作成'),
                       ),
                     ],

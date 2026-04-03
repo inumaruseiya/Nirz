@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../application/providers.dart';
 import '../../config/supabase_config.dart';
-import '../../domain/core/failure.dart';
-import '../../domain/core/result.dart';
-import '../../infrastructure/providers.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
 import 'auth_field_validators.dart';
+import 'auth_notifier.dart';
 import 'auth_oauth_buttons.dart';
 
 /// メール・パスワード・ニックネームによる新規登録（実装計画 Phase 5-2-2、FR-AUTH-02）。
@@ -31,9 +28,6 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  bool _submitting = false;
-  String? _formError;
-  bool _pendingEmailConfirmation = false;
 
   @override
   void dispose() {
@@ -70,21 +64,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     return null;
   }
 
-  String _messageForFailure(Failure f) {
-    return switch (f) {
-      NetworkFailure() => 'ネットワークに接続できません。接続を確認してください。',
-      AuthFailure() => '登録できませんでした。既に登録済みのメールアドレスの可能性があります。',
-      ServerFailure() => 'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
-      ValidationFailure(:final message) => message,
-      LocationFailure() => '位置情報の処理に失敗しました。',
-    };
-  }
-
   Future<void> _submit() async {
-    setState(() {
-      _formError = null;
-      _pendingEmailConfirmation = false;
-    });
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -92,41 +72,36 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       return;
     }
 
-    setState(() => _submitting = true);
     FocusScope.of(context).unfocus();
 
-    final useCase = ref.read(signUpWithEmailUseCaseProvider);
-    final result = await useCase(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      displayName: _nameController.text.trim(),
-    );
-
-    if (!mounted) {
-      return;
-    }
-    setState(() => _submitting = false);
-
-    switch (result) {
-      case Ok():
-        final userId = await ref.read(authRepositoryProvider).getCurrentUserId();
-        if (!mounted) {
-          return;
-        }
-        if (userId != null) {
-          context.go(AppRoutePaths.feed);
-        } else {
-          setState(() => _pendingEmailConfirmation = true);
-        }
-      case Err(:final error):
-        setState(() => _formError = _messageForFailure(error));
-    }
+    await ref.read(signUpAuthNotifierProvider.notifier).signUpWithEmail(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          displayName: _nameController.text.trim(),
+        );
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+
+    ref.listen<AuthState>(signUpAuthNotifierProvider, (previous, next) {
+      if (next is AuthSuccess && !next.awaitingEmailConfirmation) {
+        context.go(AppRoutePaths.feed);
+      }
+    });
+
+    final authState = ref.watch(signUpAuthNotifierProvider);
+    final loading = authState is AuthLoading;
+    final formError = switch (authState) {
+      AuthError(:final message) => message,
+      _ => null,
+    };
+    final pendingEmail = switch (authState) {
+      AuthSuccess(awaitingEmailConfirmation: true) => true,
+      _ => false,
+    };
 
     if (!SupabaseConfig.isConfigured) {
       return Scaffold(
@@ -163,7 +138,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (_pendingEmailConfirmation) ...[
+                      if (pendingEmail) ...[
                         Semantics(
                           liveRegion: true,
                           child: Material(
@@ -182,7 +157,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         ),
                         SizedBox(height: AppTokens.spaceUnit * 3),
                         OutlinedButton(
-                          onPressed: () => context.go(AppRoutePaths.login),
+                          onPressed: () {
+                            ref.read(signUpAuthNotifierProvider.notifier).reset();
+                            context.go(AppRoutePaths.login);
+                          },
                           child: const Text('ログイン画面へ'),
                         ),
                         SizedBox(height: AppTokens.spaceUnit * 2),
@@ -198,7 +176,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             border: OutlineInputBorder(),
                           ),
                           validator: _nameFieldError,
-                          enabled: !_submitting && !_pendingEmailConfirmation,
+                          enabled: !loading && !pendingEmail,
                         ),
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
@@ -215,7 +193,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             hintText: 'example@email.com',
                           ),
                           validator: _emailFieldError,
-                          enabled: !_submitting && !_pendingEmailConfirmation,
+                          enabled: !loading && !pendingEmail,
                         ),
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
@@ -233,7 +211,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
-                              onPressed: _submitting || _pendingEmailConfirmation
+                              onPressed: loading || pendingEmail
                                   ? null
                                   : () => setState(
                                         () => _obscurePassword = !_obscurePassword,
@@ -246,7 +224,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             ),
                           ),
                           validator: _passwordFieldError,
-                          enabled: !_submitting && !_pendingEmailConfirmation,
+                          enabled: !loading && !pendingEmail,
                           onChanged: (_) {
                             if (_confirmPasswordController.text.isNotEmpty) {
                               _formKey.currentState?.validate();
@@ -268,7 +246,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               tooltip: _obscureConfirm ? 'パスワードを表示' : 'パスワードを隠す',
-                              onPressed: _submitting || _pendingEmailConfirmation
+                              onPressed: loading || pendingEmail
                                   ? null
                                   : () => setState(
                                         () => _obscureConfirm = !_obscureConfirm,
@@ -281,26 +259,26 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             ),
                           ),
                           validator: _confirmPasswordFieldError,
-                          enabled: !_submitting && !_pendingEmailConfirmation,
+                          enabled: !loading && !pendingEmail,
                         ),
                       ),
-                      if (_formError != null) ...[
+                      if (formError != null) ...[
                         SizedBox(height: AppTokens.spaceUnit * 2),
                         Semantics(
                           liveRegion: true,
                           child: Text(
-                            _formError!,
+                            formError,
                             style: textTheme.bodyMedium?.copyWith(
                               color: scheme.error,
                             ),
                           ),
                         ),
                       ],
-                      if (!_pendingEmailConfirmation) ...[
+                      if (!pendingEmail) ...[
                         SizedBox(height: AppTokens.spaceUnit * 3),
                         FilledButton(
-                          onPressed: _submitting ? null : _submit,
-                          child: _submitting
+                          onPressed: loading ? null : _submit,
+                          child: loading
                               ? const SizedBox(
                                   height: 22,
                                   width: 22,
@@ -310,15 +288,27 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         ),
                         SizedBox(height: AppTokens.spaceUnit * 3),
                         AuthOAuthButtons(
-                          enabled: !_submitting && !_pendingEmailConfirmation,
-                          onError: (message) => setState(() => _formError = message),
+                          enabled: !loading && !pendingEmail,
+                          onError: (message) {
+                            final n = ref.read(signUpAuthNotifierProvider.notifier);
+                            if (message == null) {
+                              n.clearError();
+                            } else {
+                              n.setError(message);
+                            }
+                          },
                         ),
                       ],
                       SizedBox(height: AppTokens.spaceUnit * 2),
                       TextButton(
-                        onPressed: _submitting
+                        onPressed: loading
                             ? null
-                            : () => context.go(AppRoutePaths.login),
+                            : () {
+                                ref
+                                    .read(signUpAuthNotifierProvider.notifier)
+                                    .reset();
+                                context.go(AppRoutePaths.login);
+                              },
                         child: const Text('すでにアカウントをお持ちの方はログイン'),
                       ),
                     ],
