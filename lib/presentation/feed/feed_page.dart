@@ -32,21 +32,33 @@ class _FeedPageState extends ConsumerState<FeedPage> {
         icon: const Icon(Icons.edit_outlined),
         label: const Text('投稿'),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            title: const Text('近くの投稿'),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                onPressed: () => context.push(AppRoutePaths.settings),
-                tooltip: '設定',
-              ),
-            ],
-          ),
-          ..._feedBodySlivers(context, feedState),
-        ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          final ok = await ref.read(feedNotifierProvider.notifier).refresh();
+          if (!context.mounted) return;
+          if (!ok) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('更新できませんでした')),
+            );
+          }
+        },
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              title: const Text('近くの投稿'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings_outlined),
+                  onPressed: () => context.push(AppRoutePaths.settings),
+                  tooltip: '設定',
+                ),
+              ],
+            ),
+            ..._feedBodySlivers(context, feedState),
+          ],
+        ),
       ),
     );
   }
@@ -59,7 +71,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
             child: Center(child: CircularProgressIndicator()),
           ),
         ],
-      FeedReady(:final posts) => [
+      FeedReady(:final posts) || FeedRefreshing(:final posts) => [
           SliverList.builder(
             itemCount: posts.length,
             itemBuilder: (context, index) {

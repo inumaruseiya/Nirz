@@ -42,6 +42,21 @@ final class FeedReady extends FeedState {
   static const int pageSize = 20;
 }
 
+/// [FeedReady] と同じ一覧を保ちつつ先頭ページを再取得中（Pull-to-refresh）。
+final class FeedRefreshing extends FeedState {
+  const FeedRefreshing({
+    required this.posts,
+    required this.sort,
+    this.hasMore = false,
+    this.nextCursor,
+  });
+
+  final List<FeedPost> posts;
+  final FeedSort sort;
+  final bool hasMore;
+  final FeedCursor? nextCursor;
+}
+
 /// 取得成功だが 0 件。
 final class FeedEmpty extends FeedState {
   const FeedEmpty();
@@ -71,8 +86,44 @@ final class FeedNotifier extends Notifier<FeedState> {
     state = _stateFromFirstPage(result);
   }
 
-  /// [loadInitial] と同じ（Pull-to-refresh 用）。
-  Future<void> refresh() => loadInitial();
+  /// Pull-to-refresh。一覧表示中はリストを消さず再取得する。
+  ///
+  /// 戻り値: 再取得成功時 true。失敗時 false（一覧表示中の失敗は直前の [FeedReady] に戻す）。
+  Future<bool> refresh() async {
+    if (state is FeedRefreshing) {
+      return true;
+    }
+
+    final current = state;
+    if (current is FeedReady) {
+      state = FeedRefreshing(
+        posts: current.posts,
+        sort: current.sort,
+        hasMore: current.hasMore,
+        nextCursor: current.nextCursor,
+      );
+    } else {
+      await loadInitial();
+      return state is! FeedError;
+    }
+
+    final useCase = ref.read(loadLocalFeedUseCaseProvider);
+    final result = await useCase(cursor: null, sort: FeedSort.newest);
+
+    switch (result) {
+      case Ok():
+        state = _stateFromFirstPage(result);
+        return true;
+      case Err():
+        state = FeedReady(
+          posts: current.posts,
+          sort: current.sort,
+          hasMore: current.hasMore,
+          nextCursor: current.nextCursor,
+        );
+        return false;
+    }
+  }
 
   FeedState _stateFromFirstPage(Result<List<FeedPost>, Failure> result) {
     switch (result) {
