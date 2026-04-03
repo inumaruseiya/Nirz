@@ -70,33 +70,45 @@ class LocalPostCard extends StatelessWidget {
               ),
               if (post.imageUrl != null) ...[
                 const SizedBox(height: AppTokens.spaceUnit * 1.5),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
-                  child: AspectRatio(
-                    aspectRatio: 16 / 9,
-                    child: CachedNetworkImage(
-                      imageUrl: post.imageUrl!.toString(),
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => ColoredBox(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: const Center(
-                          child: SizedBox(
-                            width: 28,
-                            height: 28,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final dpr = MediaQuery.devicePixelRatioOf(context);
+                    final logicalW = constraints.maxWidth;
+                    final memW = (logicalW * dpr).round().clamp(1, 4096);
+                    final memH =
+                        ((logicalW * 9 / 16) * dpr).round().clamp(1, 4096);
+                    return ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppTokens.radiusSurface),
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: CachedNetworkImage(
+                          imageUrl: post.imageUrl!.toString(),
+                          fit: BoxFit.cover,
+                          memCacheWidth: memW,
+                          memCacheHeight: memH,
+                          placeholder: (_, __) => ColoredBox(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            child: const Center(
+                              child: SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                          ),
+                          errorWidget: (_, __, ___) => ColoredBox(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            child: Icon(
+                              Icons.broken_image_outlined,
+                              color: theme.colorScheme.onSurfaceVariant,
+                              size: 40,
+                            ),
                           ),
                         ),
                       ),
-                      errorWidget: (_, __, ___) => ColoredBox(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        child: Icon(
-                          Icons.broken_image_outlined,
-                          color: theme.colorScheme.onSurfaceVariant,
-                          size: 40,
-                        ),
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
               const SizedBox(height: AppTokens.spaceUnit * 1.5),
@@ -109,7 +121,7 @@ class LocalPostCard extends StatelessWidget {
 
     final reactionLabel = post.reactionCount == 0
         ? 'リアクションなし'
-        : 'リアクション ${post.reactionCount} 件';
+        : 'リアクション合計 ${post.reactionCount} 件（いいね・見た・炎の合計）';
 
     return Semantics(
       button: onTap != null,
@@ -126,22 +138,34 @@ class _ReactionSummaryRow extends StatelessWidget {
 
   final int count;
 
+  static const double _iconSize = 18;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final style = theme.textTheme.labelLarge?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
+    final color = theme.colorScheme.onSurfaceVariant;
+    final style = theme.textTheme.labelLarge?.copyWith(color: color);
 
     return Row(
       children: [
         Icon(
-          Icons.favorite_outline,
-          size: 18,
-          color: theme.colorScheme.onSurfaceVariant,
-          semanticLabel: 'リアクション',
+          Icons.thumb_up_outlined,
+          size: _iconSize,
+          color: color,
         ),
         const SizedBox(width: AppTokens.spaceUnit / 2),
+        Icon(
+          Icons.visibility_outlined,
+          size: _iconSize,
+          color: color,
+        ),
+        const SizedBox(width: AppTokens.spaceUnit / 2),
+        Icon(
+          Icons.local_fire_department_outlined,
+          size: _iconSize,
+          color: color,
+        ),
+        const SizedBox(width: AppTokens.spaceUnit),
         Text('$count', style: style),
       ],
     );
