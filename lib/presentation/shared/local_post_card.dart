@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/entities/feed_post.dart';
 import 'distance_label.dart';
+import 'relative_time.dart';
 import '../theme/app_tokens.dart';
 
 /// フィード 1 件のカード（実装計画 Phase 6-2-1、詳細設計 6・4.3）。
@@ -23,7 +24,7 @@ class LocalPostCard extends StatelessWidget {
         ? post.authorName!.trim()
         : '近くのユーザー';
     final distanceText = DistanceLabel.format(post.distanceKm);
-    final relative = _relativeTimeJa(post.createdAt, DateTime.now());
+    final relative = formatRelativeTimeJa(post.createdAt);
 
     final card = Card(
       margin: const EdgeInsets.symmetric(
@@ -118,20 +119,6 @@ class LocalPostCard extends StatelessWidget {
       child: card,
     );
   }
-}
-
-/// 相対時刻（日本語・ざっくり）。Phase 6-2-3 で共通化予定。
-String _relativeTimeJa(DateTime createdAt, DateTime now) {
-  final at = createdAt.isUtc ? createdAt.toLocal() : createdAt;
-  final diff = now.difference(at);
-  if (diff.isNegative) return 'たった今';
-  if (diff.inMinutes < 1) return 'たった今';
-  if (diff.inHours < 1) return '${diff.inMinutes}分前';
-  if (diff.inDays < 1) return '${diff.inHours}時間前';
-  if (diff.inDays < 7) return '${diff.inDays}日前';
-  if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}週間前';
-  if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}ヶ月前';
-  return '${(diff.inDays / 365).floor()}年前';
 }
 
 class _ReactionSummaryRow extends StatelessWidget {
