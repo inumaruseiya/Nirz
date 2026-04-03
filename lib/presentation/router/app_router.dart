@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../auth/login_page.dart';
+import '../auth/sign_up_page.dart';
 import '../auth/splash_page.dart';
 import '../compose/compose_page.dart';
 import '../detail/post_detail_page.dart';
@@ -28,6 +29,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: AppRoutePaths.signUp,
+        builder: (context, state) => const SignUpPage(),
       ),
       GoRoute(
         path: AppRoutePaths.feed,
@@ -61,12 +66,16 @@ String? _redirect(BuildContext context, GoRouterState state) {
   final loc = state.matchedLocation;
   final onSplash = loc == AppRoutePaths.splash;
   final onLogin = loc == AppRoutePaths.login;
+  final onSignUp = loc == AppRoutePaths.signUp;
 
   // スプラッシュでのセッション判定・遷移は [SplashPage] が [WatchSessionUseCase] で行う（Phase 5-1-2）。
   if (loggedIn && onLogin) {
     return AppRoutePaths.feed;
   }
-  if (!loggedIn && !onSplash && !onLogin) {
+  if (loggedIn && onSignUp) {
+    return AppRoutePaths.feed;
+  }
+  if (!loggedIn && !onSplash && !onLogin && !onSignUp) {
     return AppRoutePaths.login;
   }
   return null;

@@ -199,6 +199,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               )
                             : const Text('ログイン'),
                       ),
+                      SizedBox(height: AppTokens.spaceUnit * 2),
+                      TextButton(
+                        onPressed: _submitting
+                            ? null
+                            : () => context.push(AppRoutePaths.signUp),
+                        child: const Text('アカウントを作成'),
+                      ),
                     ],
                   ),
                 ),
