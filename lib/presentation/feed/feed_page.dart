@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/feed_post.dart';
 import 'feed_notifier.dart';
 import '../router/app_route_paths.dart';
+import '../theme/app_tokens.dart';
 
 /// Phase 6 でローカルフィードを実装。
 class FeedPage extends ConsumerStatefulWidget {
@@ -56,6 +57,12 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'feed_compose_fab',
+        tooltip: '投稿を作成',
+        extendedPadding: const EdgeInsets.symmetric(
+          horizontal: AppTokens.spaceUnit * 2,
+          vertical: AppTokens.spaceUnit,
+        ),
         onPressed: () => context.push(AppRoutePaths.compose),
         icon: const Icon(Icons.edit_outlined),
         label: const Text('投稿'),
