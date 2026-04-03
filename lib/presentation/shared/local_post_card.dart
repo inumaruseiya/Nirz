@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/feed_post.dart';
+import 'distance_label.dart';
 import '../theme/app_tokens.dart';
 
 /// フィード 1 件のカード（実装計画 Phase 6-2-1、詳細設計 6・4.3）。
@@ -21,7 +22,7 @@ class LocalPostCard extends StatelessWidget {
     final name = post.authorName?.trim().isNotEmpty == true
         ? post.authorName!.trim()
         : '近くのユーザー';
-    final distanceText = _distanceText(post.distanceKm);
+    final distanceText = DistanceLabel.format(post.distanceKm);
     final relative = _relativeTimeJa(post.createdAt, DateTime.now());
 
     final card = Card(
@@ -59,12 +60,7 @@ class LocalPostCard extends StatelessWidget {
               ),
               if (distanceText != null) ...[
                 const SizedBox(height: AppTokens.spaceUnit / 2),
-                Text(
-                  distanceText,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                DistanceLabel(kilometers: post.distanceKm),
               ],
               const SizedBox(height: AppTokens.spaceUnit),
               Text(
@@ -122,13 +118,6 @@ class LocalPostCard extends StatelessWidget {
       child: card,
     );
   }
-}
-
-String? _distanceText(double? km) {
-  if (km == null) return null;
-  if (km < 0) return null;
-  final rounded = km >= 10 ? km.round().toString() : km.toStringAsFixed(1);
-  return '約 $rounded km';
 }
 
 /// 相対時刻（日本語・ざっくり）。Phase 6-2-3 で共通化予定。
