@@ -9,6 +9,7 @@ import '../../domain/core/result.dart';
 import '../../infrastructure/providers.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
+import 'auth_field_validators.dart';
 import 'auth_oauth_buttons.dart';
 
 /// メール・パスワード・ニックネームによる新規登録（実装計画 Phase 5-2-2、FR-AUTH-02）。
@@ -54,20 +55,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     return null;
   }
 
-  String? _emailFieldError(String? value) {
-    final v = value?.trim() ?? '';
-    if (v.isEmpty) {
-      return 'メールアドレスを入力してください';
-    }
-    return null;
-  }
+  String? _emailFieldError(String? value) => AuthFieldValidators.email(value);
 
-  String? _passwordFieldError(String? value) {
-    if ((value ?? '').isEmpty) {
-      return 'パスワードを入力してください';
-    }
-    return null;
-  }
+  String? _passwordFieldError(String? value) =>
+      AuthFieldValidators.password(value);
 
   String? _confirmPasswordFieldError(String? value) {
     if ((value ?? '').isEmpty) {
@@ -221,6 +212,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                           decoration: const InputDecoration(
                             labelText: 'メールアドレス',
                             border: OutlineInputBorder(),
+                            hintText: 'example@email.com',
                           ),
                           validator: _emailFieldError,
                           enabled: !_submitting && !_pendingEmailConfirmation,
@@ -236,6 +228,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                           autofillHints: const [AutofillHints.newPassword],
                           decoration: InputDecoration(
                             labelText: 'パスワード',
+                            helperText:
+                                '${AuthFieldValidators.passwordMinLength}文字以上',
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',

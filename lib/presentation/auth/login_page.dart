@@ -8,11 +8,12 @@ import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
+import 'auth_field_validators.dart';
 import 'auth_oauth_buttons.dart';
 
 /// メール・パスワード・送信によるログイン（実装計画 Phase 5-2-1、詳細設計 4.2）。
 ///
-/// OAuth は [AuthOAuthButtons]（Phase 5-2-3）。詳細バリデーション・[AuthNotifier] は後続タスク。
+/// OAuth は [AuthOAuthButtons]（Phase 5-2-3）。[AuthNotifier] は後続タスク。
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -36,20 +37,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  String? _emailFieldError(String? value) {
-    final v = value?.trim() ?? '';
-    if (v.isEmpty) {
-      return 'メールアドレスを入力してください';
-    }
-    return null;
-  }
+  String? _emailFieldError(String? value) => AuthFieldValidators.email(value);
 
-  String? _passwordFieldError(String? value) {
-    if ((value ?? '').isEmpty) {
-      return 'パスワードを入力してください';
-    }
-    return null;
-  }
+  String? _passwordFieldError(String? value) =>
+      AuthFieldValidators.password(value);
 
   String _messageForFailure(Failure f) {
     return switch (f) {
@@ -142,6 +133,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           decoration: const InputDecoration(
                             labelText: 'メールアドレス',
                             border: OutlineInputBorder(),
+                            hintText: 'example@email.com',
                           ),
                           validator: _emailFieldError,
                           enabled: !_submitting,
@@ -158,6 +150,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           onFieldSubmitted: (_) => _submit(),
                           decoration: InputDecoration(
                             labelText: 'パスワード',
+                            helperText:
+                                '${AuthFieldValidators.passwordMinLength}文字以上',
                             border: const OutlineInputBorder(),
                             suffixIcon: IconButton(
                               tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
