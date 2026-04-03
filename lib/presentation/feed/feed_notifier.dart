@@ -29,6 +29,7 @@ final class FeedReady extends FeedState {
     required this.sort,
     this.hasMore = false,
     this.nextCursor,
+    this.loadingMore = false,
   });
 
   final List<FeedPost> posts;
@@ -37,6 +38,9 @@ final class FeedReady extends FeedState {
   /// 直近ページが [pageSize] 件なら続きがある可能性あり。
   final bool hasMore;
   final FeedCursor? nextCursor;
+
+  /// 次ページ取得中（末尾インジケータ用）。
+  final bool loadingMore;
 
   /// 1 ページあたりの件数（`RpcFeedParams.defaultFeedRpcLimit` と一致させる）。
   static const int pageSize = 20;
@@ -120,9 +124,85 @@ final class FeedNotifier extends Notifier<FeedState> {
           sort: current.sort,
           hasMore: current.hasMore,
           nextCursor: current.nextCursor,
+          loadingMore: false,
         );
         return false;
     }
+  }
+
+  /// 末尾スクロールで呼び出す。`LoadMoreFeedUseCase` でカーソルページング。
+  ///
+  /// 続きなし・取得中・一覧以外のときは何もしない。戻り値は取得の成否（SnackBar 等に利用可）。
+  Future<bool> loadMore() async {
+    final s = state;
+    if (s is! FeedReady ||
+        s.loadingMore ||
+        !s.hasMore ||
+        s.nextCursor == null) {
+      return true;
+    }
+
+    final cursor = s.nextCursor!;
+    final sort = s.sort;
+
+    state = FeedReady(
+      posts: s.posts,
+      sort: sort,
+      hasMore: s.hasMore,
+      nextCursor: s.nextCursor,
+      loadingMore: true,
+    );
+
+    final useCase = ref.read(loadMoreFeedUseCaseProvider);
+    final result = await useCase(cursor: cursor, sort: sort);
+
+    switch (result) {
+      case Ok(:final value):
+        if (value.isEmpty) {
+          state = FeedReady(
+            posts: s.posts,
+            sort: sort,
+            hasMore: false,
+            nextCursor: null,
+            loadingMore: false,
+          );
+          return true;
+        }
+        final merged = _mergePosts(s.posts, value);
+        final last = value.last;
+        final pageHasMore = value.length >= FeedReady.pageSize;
+        final next = pageHasMore
+            ? FeedCursor(createdAt: last.createdAt, id: last.id.value)
+            : null;
+        state = FeedReady(
+          posts: merged,
+          sort: sort,
+          hasMore: pageHasMore,
+          nextCursor: next,
+          loadingMore: false,
+        );
+        return true;
+      case Err():
+        state = FeedReady(
+          posts: s.posts,
+          sort: sort,
+          hasMore: s.hasMore,
+          nextCursor: s.nextCursor,
+          loadingMore: false,
+        );
+        return false;
+    }
+  }
+
+  static List<FeedPost> _mergePosts(List<FeedPost> existing, List<FeedPost> page) {
+    final seen = existing.map((e) => e.id.value).toSet();
+    final out = List<FeedPost>.from(existing);
+    for (final p in page) {
+      if (seen.add(p.id.value)) {
+        out.add(p);
+      }
+    }
+    return out;
   }
 
   FeedState _stateFromFirstPage(Result<List<FeedPost>, Failure> result) {
@@ -141,6 +221,7 @@ final class FeedNotifier extends Notifier<FeedState> {
           sort: FeedSort.newest,
           hasMore: hasMore,
           nextCursor: next,
+          loadingMore: false,
         );
       case Err(:final error):
         return switch (error) {

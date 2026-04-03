@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../domain/entities/feed_post.dart';
 import 'feed_notifier.dart';
 import '../router/app_route_paths.dart';
 
@@ -14,11 +15,38 @@ class FeedPage extends ConsumerStatefulWidget {
 }
 
 class _FeedPageState extends ConsumerState<FeedPage> {
+  static const double _loadMoreExtent = 240;
+
+  late final ScrollController _scrollController;
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController()..addListener(_onScrollNearEnd);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(feedNotifierProvider.notifier).loadInitial();
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScrollNearEnd);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScrollNearEnd() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final max = position.maxScrollExtent;
+    if (max <= 0) return;
+    if (position.pixels < max - _loadMoreExtent) return;
+
+    ref.read(feedNotifierProvider.notifier).loadMore().then((ok) {
+      if (!mounted || ok) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('続きを読み込めませんでした')),
+      );
     });
   }
 
@@ -43,6 +71,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           }
         },
         child: CustomScrollView(
+          controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverAppBar(
@@ -71,17 +100,14 @@ class _FeedPageState extends ConsumerState<FeedPage> {
             child: Center(child: CircularProgressIndicator()),
           ),
         ],
-      FeedReady(:final posts) || FeedRefreshing(:final posts) => [
-          SliverList.builder(
-            itemCount: posts.length,
-            itemBuilder: (context, index) {
-              final p = posts[index];
-              return ListTile(
-                title: Text(p.content),
-                subtitle: Text(p.authorName ?? '匿名'),
-              );
-            },
+      FeedReady(:final posts, :final loadingMore, :final hasMore) => [
+          ..._postListSlivers(
+            posts,
+            showTrailingLoader: loadingMore && hasMore,
           ),
+        ],
+      FeedRefreshing(:final posts) => [
+          ..._postListSlivers(posts, showTrailingLoader: false),
         ],
       FeedEmpty() => [
           SliverFillRemaining(
@@ -137,5 +163,36 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           ),
         ],
     };
+  }
+
+  List<Widget> _postListSlivers(
+    List<FeedPost> posts, {
+    required bool showTrailingLoader,
+  }) {
+    final n = posts.length;
+    return [
+      SliverList.builder(
+        itemCount: n + (showTrailingLoader ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index >= n) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            );
+          }
+          final p = posts[index];
+          return ListTile(
+            title: Text(p.content),
+            subtitle: Text(p.authorName ?? '匿名'),
+          );
+        },
+      ),
+    ];
   }
 }
