@@ -8,10 +8,11 @@ import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
+import 'auth_oauth_buttons.dart';
 
 /// メール・パスワード・送信によるログイン（実装計画 Phase 5-2-1、詳細設計 4.2）。
 ///
-/// OAuth・登録・詳細バリデーション・[AuthNotifier] は後続タスク。
+/// OAuth は [AuthOAuthButtons]（Phase 5-2-3）。詳細バリデーション・[AuthNotifier] は後続タスク。
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -198,6 +199,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 child: CircularProgressIndicator(strokeWidth: 2),
                               )
                             : const Text('ログイン'),
+                      ),
+                      SizedBox(height: AppTokens.spaceUnit * 3),
+                      AuthOAuthButtons(
+                        enabled: !_submitting,
+                        onError: (message) => setState(() => _formError = message),
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
                       TextButton(

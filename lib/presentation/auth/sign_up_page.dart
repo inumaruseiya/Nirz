@@ -9,6 +9,7 @@ import '../../domain/core/result.dart';
 import '../../infrastructure/providers.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
+import 'auth_oauth_buttons.dart';
 
 /// メール・パスワード・ニックネームによる新規登録（実装計画 Phase 5-2-2、FR-AUTH-02）。
 ///
@@ -312,6 +313,11 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Text('登録する'),
+                        ),
+                        SizedBox(height: AppTokens.spaceUnit * 3),
+                        AuthOAuthButtons(
+                          enabled: !_submitting && !_pendingEmailConfirmation,
+                          onError: (message) => setState(() => _formError = message),
                         ),
                       ],
                       SizedBox(height: AppTokens.spaceUnit * 2),
