@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/feed_post.dart';
 import 'feed_notifier.dart';
 import '../router/app_route_paths.dart';
+import '../shared/async_state_switcher.dart';
 import '../shared/local_post_card.dart';
 import '../theme/app_tokens.dart';
 
@@ -102,12 +103,6 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
   List<Widget> _feedBodySlivers(BuildContext context, FeedState feedState) {
     return switch (feedState) {
-      FeedInitial() || FeedLoading() => [
-          const SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ],
       FeedReady(:final posts, :final loadingMore, :final hasMore) => [
           ..._postListSlivers(
             posts,
@@ -117,21 +112,8 @@ class _FeedPageState extends ConsumerState<FeedPage> {
       FeedRefreshing(:final posts) => [
           ..._postListSlivers(posts, showTrailingLoader: false),
         ],
-      FeedEmpty() => [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Text(
-                'まだ近くに投稿がありません',
-                style: Theme.of(context).textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ],
       FeedLocationDenied() => [
-          SliverFillRemaining(
-            hasScrollBody: false,
+          _sliverFillAsyncChild(
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
@@ -144,33 +126,71 @@ class _FeedPageState extends ConsumerState<FeedPage> {
             ),
           ),
         ],
-      FeedError(:final message) => [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      message,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: () =>
-                          ref.read(feedNotifierProvider.notifier).loadInitial(),
-                      child: const Text('再試行'),
-                    ),
-                  ],
+      FeedInitial() ||
+      FeedLoading() ||
+      FeedEmpty() ||
+      FeedError() =>
+        [
+          _sliverFillAsyncChild(
+            child: AsyncStateSwitcher(
+              phase: _asyncPhase(feedState),
+              loading: (_) => const Center(child: CircularProgressIndicator()),
+              ready: (_) => const SizedBox.shrink(),
+              empty: (ctx) => Center(
+                child: Text(
+                  'まだ近くに投稿がありません',
+                  style: Theme.of(ctx).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
                 ),
               ),
+              error: (ctx) {
+                final msg = switch (feedState) {
+                  FeedError(:final message) => message,
+                  _ => '',
+                };
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          msg,
+                          style: Theme.of(ctx).textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: () => ref
+                              .read(feedNotifierProvider.notifier)
+                              .loadInitial(),
+                          child: const Text('再試行'),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
     };
+  }
+
+  AsyncViewPhase _asyncPhase(FeedState s) {
+    return switch (s) {
+      FeedInitial() || FeedLoading() => AsyncViewPhase.loading,
+      FeedEmpty() => AsyncViewPhase.empty,
+      FeedError() => AsyncViewPhase.error,
+      _ => AsyncViewPhase.ready,
+    };
+  }
+
+  Widget _sliverFillAsyncChild({required Widget child}) {
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: child,
+    );
   }
 
   List<Widget> _postListSlivers(
