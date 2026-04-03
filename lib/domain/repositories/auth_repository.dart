@@ -27,10 +27,18 @@ enum AuthOAuthProvider {
 abstract interface class AuthRepository {
   Stream<SessionState> watchSession();
 
+  /// サーバと通信してセッションを更新する（オフライン検知・スプラッシュ再試行用）。
+  ///
+  /// 未サインインやトークン無効は [AuthFailure] になり得る。呼び出し側は必要なら続けて [watchSession] を参照する。
+  Future<Result<void, Failure>> refreshAuthSession();
+
   Future<Result<void, Failure>> signInWithEmail({
     required String email,
     required String password,
   });
+
+  /// パスワード再設定メールの送信（Supabase Auth）。
+  Future<Result<void, Failure>> requestPasswordReset({required String email});
 
   /// 新規登録。表示名は `profiles.name` 用に `raw_user_meta_data.name` へ渡す（`handle_new_user` トリガと整合）。
   Future<Result<void, Failure>> signUpWithEmail({

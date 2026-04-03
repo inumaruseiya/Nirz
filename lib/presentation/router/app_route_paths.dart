@@ -2,6 +2,7 @@
 abstract final class AppRoutePaths {
   static const splash = '/splash';
   static const login = '/login';
+  static const signUp = '/sign-up';
   static const feed = '/feed';
   static const compose = '/compose';
   static const settings = '/settings';

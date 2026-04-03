@@ -21,6 +21,28 @@ final class SupabaseAuthRepository implements AuthRepository {
     return _client.auth.onAuthStateChange.map(_mapAuthState);
   }
 
+  @override
+  Future<Result<void, Failure>> refreshAuthSession() async {
+    const timeout = Duration(seconds: 20);
+    try {
+      final refreshToken = _client.auth.currentSession?.refreshToken;
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await _client.auth.refreshSession().timeout(timeout);
+      } else {
+        await _client.auth.getUser().timeout(timeout);
+      }
+      return const Ok<void, Failure>(null);
+    } on TimeoutException {
+      return const Err(NetworkFailure());
+    } on AuthException {
+      return const Err(AuthFailure());
+    } on SocketException {
+      return const Err(NetworkFailure());
+    } catch (_) {
+      return const Err(ServerFailure());
+    }
+  }
+
   SessionState _mapAuthState(AuthState state) {
     final session = state.session;
     final userId = session?.user.id;
@@ -49,6 +71,22 @@ final class SupabaseAuthRepository implements AuthRepository {
         password: password,
         data: name != null && name.isNotEmpty ? {'name': name} : const {},
       );
+      return const Ok<void, Failure>(null);
+    } on AuthException {
+      return const Err(AuthFailure());
+    } on SocketException {
+      return const Err(NetworkFailure());
+    } catch (_) {
+      return const Err(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Result<void, Failure>> requestPasswordReset({
+    required String email,
+  }) async {
+    try {
+      await _client.auth.resetPasswordForEmail(email.trim());
       return const Ok<void, Failure>(null);
     } on AuthException {
       return const Err(AuthFailure());
