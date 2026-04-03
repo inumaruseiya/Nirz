@@ -141,6 +141,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       if (pendingEmail) ...[
                         Semantics(
                           liveRegion: true,
+                          label:
+                              '確認メールを送信しました。メール内のリンクを開いたあと、ログインしてください。',
+                          excludeSemantics: true,
                           child: Material(
                             color: scheme.primaryContainer,
                             borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
@@ -165,107 +168,103 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         ),
                         SizedBox(height: AppTokens.spaceUnit * 2),
                       ],
-                      Semantics(
-                        container: true,
-                        child: TextFormField(
-                          controller: _nameController,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.name],
-                          decoration: const InputDecoration(
-                            labelText: 'ニックネーム',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: _nameFieldError,
-                          enabled: !loading && !pendingEmail,
+                      TextFormField(
+                        controller: _nameController,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.name],
+                        decoration: const InputDecoration(
+                          labelText: 'ニックネーム',
+                          border: OutlineInputBorder(),
                         ),
+                        validator: _nameFieldError,
+                        enabled: !loading && !pendingEmail,
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
-                      Semantics(
-                        container: true,
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'メールアドレス',
-                            border: OutlineInputBorder(),
-                            hintText: 'example@email.com',
-                          ),
-                          validator: _emailFieldError,
-                          enabled: !loading && !pendingEmail,
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: const InputDecoration(
+                          labelText: 'メールアドレス',
+                          border: OutlineInputBorder(),
+                          hintText: 'example@email.com',
                         ),
+                        validator: _emailFieldError,
+                        enabled: !loading && !pendingEmail,
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
-                      Semantics(
-                        container: true,
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.newPassword],
-                          decoration: InputDecoration(
-                            labelText: 'パスワード',
-                            helperText:
-                                '${AuthFieldValidators.passwordMinLength}文字以上',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
-                              onPressed: loading || pendingEmail
-                                  ? null
-                                  : () => setState(
-                                        () => _obscurePassword = !_obscurePassword,
-                                      ),
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.newPassword],
+                        decoration: InputDecoration(
+                          labelText: 'パスワード',
+                          helperText:
+                              '${AuthFieldValidators.passwordMinLength}文字以上',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
+                            onPressed: loading || pendingEmail
+                                ? null
+                                : () => setState(
+                                      () => _obscurePassword = !_obscurePassword,
+                                    ),
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              semanticLabel: _obscurePassword
+                                  ? 'パスワードは隠されています'
+                                  : 'パスワードは表示されています',
                             ),
                           ),
-                          validator: _passwordFieldError,
-                          enabled: !loading && !pendingEmail,
-                          onChanged: (_) {
-                            if (_confirmPasswordController.text.isNotEmpty) {
-                              _formKey.currentState?.validate();
-                            }
-                          },
                         ),
+                        validator: _passwordFieldError,
+                        enabled: !loading && !pendingEmail,
+                        onChanged: (_) {
+                          if (_confirmPasswordController.text.isNotEmpty) {
+                            _formKey.currentState?.validate();
+                          }
+                        },
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
-                      Semantics(
-                        container: true,
-                        child: TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirm,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const [AutofillHints.newPassword],
-                          onFieldSubmitted: (_) => _submit(),
-                          decoration: InputDecoration(
-                            labelText: 'パスワード（確認）',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              tooltip: _obscureConfirm ? 'パスワードを表示' : 'パスワードを隠す',
-                              onPressed: loading || pendingEmail
-                                  ? null
-                                  : () => setState(
-                                        () => _obscureConfirm = !_obscureConfirm,
-                                      ),
-                              icon: Icon(
-                                _obscureConfirm
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirm,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.newPassword],
+                        onFieldSubmitted: (_) => _submit(),
+                        decoration: InputDecoration(
+                          labelText: 'パスワード（確認）',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            tooltip: _obscureConfirm ? 'パスワードを表示' : 'パスワードを隠す',
+                            onPressed: loading || pendingEmail
+                                ? null
+                                : () => setState(
+                                      () => _obscureConfirm = !_obscureConfirm,
+                                    ),
+                            icon: Icon(
+                              _obscureConfirm
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              semanticLabel: _obscureConfirm
+                                  ? '確認用パスワードは隠されています'
+                                  : '確認用パスワードは表示されています',
                             ),
                           ),
-                          validator: _confirmPasswordFieldError,
-                          enabled: !loading && !pendingEmail,
                         ),
+                        validator: _confirmPasswordFieldError,
+                        enabled: !loading && !pendingEmail,
                       ),
                       if (formError != null) ...[
                         SizedBox(height: AppTokens.spaceUnit * 2),
                         Semantics(
                           liveRegion: true,
+                          label: 'エラー。$formError',
+                          excludeSemantics: true,
                           child: Text(
                             formError,
                             style: textTheme.bodyMedium?.copyWith(
@@ -279,10 +278,14 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         FilledButton(
                           onPressed: loading ? null : _submit,
                           child: loading
-                              ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                              ? Semantics(
+                                  label: '登録処理中',
+                                  excludeSemantics: true,
+                                  child: const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
                                 )
                               : const Text('登録する'),
                         ),
@@ -300,16 +303,19 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         ),
                       ],
                       SizedBox(height: AppTokens.spaceUnit * 2),
-                      TextButton(
-                        onPressed: loading
-                            ? null
-                            : () {
-                                ref
-                                    .read(signUpAuthNotifierProvider.notifier)
-                                    .reset();
-                                context.go(AppRoutePaths.login);
-                              },
-                        child: const Text('すでにアカウントをお持ちの方はログイン'),
+                      Tooltip(
+                        message: 'ログイン画面に移動します',
+                        child: TextButton(
+                          onPressed: loading
+                              ? null
+                              : () {
+                                  ref
+                                      .read(signUpAuthNotifierProvider.notifier)
+                                      .reset();
+                                  context.go(AppRoutePaths.login);
+                                },
+                          child: const Text('すでにアカウントをお持ちの方はログイン'),
+                        ),
                       ),
                     ],
                   ),

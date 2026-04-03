@@ -76,12 +76,17 @@ class _AuthOAuthButtonsState extends ConsumerState<AuthOAuthButtons> {
         Row(
           children: [
             Expanded(child: Divider(height: 1, color: scheme.outlineVariant)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppTokens.spaceUnit * 2),
-              child: Text(
-                'または',
-                style: textTheme.labelLarge?.copyWith(
-                  color: scheme.onSurfaceVariant,
+            Semantics(
+              label: '区切り。または',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.spaceUnit * 2,
+                ),
+                child: Text(
+                  'または',
+                  style: textTheme.labelLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),
@@ -89,40 +94,46 @@ class _AuthOAuthButtonsState extends ConsumerState<AuthOAuthButtons> {
           ],
         ),
         SizedBox(height: AppTokens.spaceUnit * 2),
-        Semantics(
-          label: 'Googleでサインイン',
-          button: true,
-          child: OutlinedButton.icon(
-            onPressed: widget.enabled && _busyProvider == null
-                ? () => _startOAuth(AuthOAuthProvider.google)
-                : null,
-            icon: _busyProvider == AuthOAuthProvider.google
-                ? const SizedBox(
+        OutlinedButton.icon(
+          onPressed: widget.enabled && _busyProvider == null
+              ? () => _startOAuth(AuthOAuthProvider.google)
+              : null,
+          icon: _busyProvider == AuthOAuthProvider.google
+              ? Semantics(
+                  label: 'Googleでサインイン処理中',
+                  excludeSemantics: true,
+                  child: const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.account_circle_outlined),
-            label: const Text('Googleで続行'),
-          ),
+                  ),
+                )
+              : const Icon(
+                  Icons.account_circle_outlined,
+                  semanticLabel: '',
+                ),
+          label: const Text('Googleで続行'),
         ),
         SizedBox(height: AppTokens.spaceUnit * 2),
-        Semantics(
-          label: 'Appleでサインイン',
-          button: true,
-          child: OutlinedButton.icon(
-            onPressed: widget.enabled && _busyProvider == null
-                ? () => _startOAuth(AuthOAuthProvider.apple)
-                : null,
-            icon: _busyProvider == AuthOAuthProvider.apple
-                ? const SizedBox(
+        OutlinedButton.icon(
+          onPressed: widget.enabled && _busyProvider == null
+              ? () => _startOAuth(AuthOAuthProvider.apple)
+              : null,
+          icon: _busyProvider == AuthOAuthProvider.apple
+              ? Semantics(
+                  label: 'Appleでサインイン処理中',
+                  excludeSemantics: true,
+                  child: const SizedBox(
                     width: 20,
                     height: 20,
                     child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.apple),
-            label: const Text('Appleで続行'),
-          ),
+                  ),
+                )
+              : const Icon(
+                  Icons.apple,
+                  semanticLabel: '',
+                ),
+          label: const Text('Appleで続行'),
         ),
       ],
     );

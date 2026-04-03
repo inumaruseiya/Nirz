@@ -140,58 +140,57 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Semantics(
-                        container: true,
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          textInputAction: TextInputAction.next,
-                          autofillHints: const [AutofillHints.email],
-                          decoration: const InputDecoration(
-                            labelText: 'メールアドレス',
-                            border: OutlineInputBorder(),
-                            hintText: 'example@email.com',
-                          ),
-                          validator: _emailFieldError,
-                          enabled: !loading,
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.email],
+                        decoration: const InputDecoration(
+                          labelText: 'メールアドレス',
+                          border: OutlineInputBorder(),
+                          hintText: 'example@email.com',
                         ),
+                        validator: _emailFieldError,
+                        enabled: !loading,
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
-                      Semantics(
-                        container: true,
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          textInputAction: TextInputAction.done,
-                          autofillHints: const [AutofillHints.password],
-                          onFieldSubmitted: (_) => _submit(),
-                          decoration: InputDecoration(
-                            labelText: 'パスワード',
-                            helperText:
-                                '${AuthFieldValidators.passwordMinLength}文字以上',
-                            border: const OutlineInputBorder(),
-                            suffixIcon: IconButton(
-                              tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
-                              onPressed: loading
-                                  ? null
-                                  : () => setState(
-                                        () => _obscurePassword = !_obscurePassword,
-                                      ),
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscurePassword,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.password],
+                        onFieldSubmitted: (_) => _submit(),
+                        decoration: InputDecoration(
+                          labelText: 'パスワード',
+                          helperText:
+                              '${AuthFieldValidators.passwordMinLength}文字以上',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: IconButton(
+                            tooltip: _obscurePassword ? 'パスワードを表示' : 'パスワードを隠す',
+                            onPressed: loading
+                                ? null
+                                : () => setState(
+                                      () => _obscurePassword = !_obscurePassword,
+                                    ),
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              semanticLabel: _obscurePassword
+                                  ? 'パスワードは隠されています'
+                                  : 'パスワードは表示されています',
                             ),
                           ),
-                          validator: _passwordFieldError,
-                          enabled: !loading,
                         ),
+                        validator: _passwordFieldError,
+                        enabled: !loading,
                       ),
                       if (formError != null) ...[
                         SizedBox(height: AppTokens.spaceUnit * 2),
                         Semantics(
                           liveRegion: true,
+                          label: 'エラー。$formError',
+                          excludeSemantics: true,
                           child: Text(
                             formError,
                             style: textTheme.bodyMedium?.copyWith(
@@ -204,10 +203,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       FilledButton(
                         onPressed: loading ? null : _submit,
                         child: loading
-                            ? const SizedBox(
-                                height: 22,
-                                width: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                            ? Semantics(
+                                label: 'ログイン処理中',
+                                excludeSemantics: true,
+                                child: const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
                               )
                             : const Text('ログイン'),
                       ),
@@ -224,19 +227,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         },
                       ),
                       SizedBox(height: AppTokens.spaceUnit * 2),
-                      TextButton(
-                        onPressed: loading
-                            ? null
-                            : () {
-                                ref.read(loginAuthNotifierProvider.notifier).reset();
-                                context.push(AppRoutePaths.signUp);
-                              },
-                        child: const Text('アカウントを作成'),
+                      Tooltip(
+                        message: '新規登録の画面を開きます',
+                        child: TextButton(
+                          onPressed: loading
+                              ? null
+                              : () {
+                                  ref
+                                      .read(loginAuthNotifierProvider.notifier)
+                                      .reset();
+                                  context.push(AppRoutePaths.signUp);
+                                },
+                          child: const Text('アカウントを作成'),
+                        ),
                       ),
                       Center(
-                        child: TextButton(
-                          onPressed: loading ? null : _showPasswordResetDialog,
-                          child: const Text('パスワードをお忘れの方'),
+                        child: Tooltip(
+                          message:
+                              'メールアドレス宛にパスワード再設定用のリンクを送ります',
+                          child: TextButton(
+                            onPressed: loading ? null : _showPasswordResetDialog,
+                            child: const Text('パスワードをお忘れの方'),
+                          ),
                         ),
                       ),
                     ],
@@ -342,6 +354,8 @@ class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
                 SizedBox(height: AppTokens.spaceUnit * 2),
                 Semantics(
                   liveRegion: true,
+                  label: 'エラー。$_error',
+                  excludeSemantics: true,
                   child: Text(
                     _error!,
                     style: textTheme.bodySmall?.copyWith(color: scheme.error),
@@ -360,10 +374,14 @@ class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
         FilledButton(
           onPressed: _sending ? null : _send,
           child: _sending
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+              ? Semantics(
+                  label: '送信中',
+                  excludeSemantics: true,
+                  child: const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
                 )
               : const Text('送信'),
         ),
