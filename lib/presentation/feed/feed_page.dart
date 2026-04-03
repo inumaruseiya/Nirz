@@ -10,26 +10,34 @@ class FeedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('近くの投稿'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(AppRoutePaths.settings),
-            tooltip: '設定',
-          ),
-        ],
-      ),
-      body: Center(
-        child: Text(
-          'フィード（Phase 6）',
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push(AppRoutePaths.compose),
         icon: const Icon(Icons.edit_outlined),
         label: const Text('投稿'),
+      ),
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            pinned: true,
+            title: const Text('近くの投稿'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => context.push(AppRoutePaths.settings),
+                tooltip: '設定',
+              ),
+            ],
+          ),
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Text(
+                'フィード（Phase 6）',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
