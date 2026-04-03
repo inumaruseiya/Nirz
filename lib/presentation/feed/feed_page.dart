@@ -137,10 +137,24 @@ class _FeedPageState extends ConsumerState<FeedPage> {
               loading: (_) => const Center(child: CircularProgressIndicator()),
               ready: (_) => const SizedBox.shrink(),
               empty: (ctx) => Center(
-                child: Text(
-                  'まだ近くに投稿がありません',
-                  style: Theme.of(ctx).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'まだ近くに投稿がありません',
+                        style: Theme.of(ctx).textTheme.bodyLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppTokens.spaceUnit * 2),
+                      FilledButton.icon(
+                        onPressed: () => ctx.push(AppRoutePaths.compose),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('最初の投稿をする'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               error: (ctx) {
