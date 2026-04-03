@@ -37,6 +37,9 @@ abstract interface class AuthRepository {
     required String password,
   });
 
+  /// パスワード再設定メールの送信（Supabase Auth）。
+  Future<Result<void, Failure>> requestPasswordReset({required String email});
+
   /// 新規登録。表示名は `profiles.name` 用に `raw_user_meta_data.name` へ渡す（`handle_new_user` トリガと整合）。
   Future<Result<void, Failure>> signUpWithEmail({
     required String email,

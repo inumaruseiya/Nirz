@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/services/location_obfuscation_service.dart';
 import '../infrastructure/providers.dart';
+import 'auth/request_password_reset_use_case.dart';
 import 'auth/sign_in_with_email_use_case.dart';
 import 'auth/sign_in_with_oauth_use_case.dart';
 import 'auth/sign_out_use_case.dart';
@@ -45,6 +46,11 @@ final signOutUseCaseProvider = Provider<SignOutUseCase>(
 
 final watchSessionUseCaseProvider = Provider<WatchSessionUseCase>(
   (ref) => WatchSessionUseCase(ref.watch(authRepositoryProvider)),
+);
+
+final requestPasswordResetUseCaseProvider =
+    Provider<RequestPasswordResetUseCase>(
+  (ref) => RequestPasswordResetUseCase(ref.watch(authRepositoryProvider)),
 );
 
 // --- Location (Phase 4-2) ---

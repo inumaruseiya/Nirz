@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../application/providers.dart';
 import '../../config/supabase_config.dart';
+import '../../domain/core/failure.dart';
+import '../../domain/core/result.dart';
 import '../router/app_route_paths.dart';
 import '../theme/app_tokens.dart';
 import 'auth_field_validators.dart';
@@ -37,6 +40,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   String? _passwordFieldError(String? value) =>
       AuthFieldValidators.password(value);
+
+  String _messageForResetFailure(Failure f) {
+    return switch (f) {
+      NetworkFailure() => 'ネットワークに接続できません。接続を確認してください。',
+      AuthFailure() => '送信できませんでした。メールアドレスを確認してください。',
+      ServerFailure() => 'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
+      ValidationFailure(:final message) => message,
+      LocationFailure() => '位置情報の処理に失敗しました。',
+    };
+  }
+
+  Future<void> _showPasswordResetDialog() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _PasswordResetDialog(
+        initialEmail: _emailController.text.trim(),
+        messageForFailure: _messageForResetFailure,
+        onSent: () {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text(
+                '再設定用のメールを送信しました。受信トレイをご確認ください。',
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
@@ -200,6 +233,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               },
                         child: const Text('アカウントを作成'),
                       ),
+                      Center(
+                        child: TextButton(
+                          onPressed: loading ? null : _showPasswordResetDialog,
+                          child: const Text('パスワードをお忘れの方'),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -208,6 +247,127 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// パスワード再設定メール送信（Phase 5-2-6）。
+class _PasswordResetDialog extends ConsumerStatefulWidget {
+  const _PasswordResetDialog({
+    required this.initialEmail,
+    required this.messageForFailure,
+    required this.onSent,
+  });
+
+  final String initialEmail;
+  final String Function(Failure) messageForFailure;
+  final VoidCallback onSent;
+
+  @override
+  ConsumerState<_PasswordResetDialog> createState() =>
+      _PasswordResetDialogState();
+}
+
+class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
+  late final TextEditingController _emailController;
+  final _formKey = GlobalKey<FormState>();
+  bool _sending = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _emailController = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    setState(() => _error = null);
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+    setState(() => _sending = true);
+    final useCase = ref.read(requestPasswordResetUseCaseProvider);
+    final result = await useCase(email: _emailController.text.trim());
+    if (!mounted) {
+      return;
+    }
+    setState(() => _sending = false);
+    switch (result) {
+      case Ok():
+        Navigator.of(context).pop();
+        widget.onSent();
+      case Err(:final error):
+        setState(() => _error = widget.messageForFailure(error));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return AlertDialog(
+      title: const Text('パスワード再設定'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '登録したメールアドレスに、パスワード再設定用のリンクを送ります。',
+                style: textTheme.bodyMedium,
+              ),
+              SizedBox(height: AppTokens.spaceUnit * 2),
+              TextFormField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                decoration: const InputDecoration(
+                  labelText: 'メールアドレス',
+                  border: OutlineInputBorder(),
+                  hintText: 'example@email.com',
+                ),
+                validator: AuthFieldValidators.email,
+                enabled: !_sending,
+              ),
+              if (_error != null) ...[
+                SizedBox(height: AppTokens.spaceUnit * 2),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    _error!,
+                    style: textTheme.bodySmall?.copyWith(color: scheme.error),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _sending ? null : () => Navigator.of(context).pop(),
+          child: const Text('キャンセル'),
+        ),
+        FilledButton(
+          onPressed: _sending ? null : _send,
+          child: _sending
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('送信'),
+        ),
+      ],
     );
   }
 }
