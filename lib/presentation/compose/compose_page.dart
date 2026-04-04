@@ -20,6 +20,9 @@ class _ComposePageState extends ConsumerState<ComposePage> {
 
   final TextEditingController _contentController = TextEditingController();
 
+  /// 送信タップ後、本文が空または空白のみのときフィールド近傍に表示（実装計画 7-1-3）。
+  bool _emptyContentSubmitted = false;
+
   @override
   void dispose() {
     _contentController.dispose();
@@ -29,9 +32,14 @@ class _ComposePageState extends ConsumerState<ComposePage> {
   bool get _contentValid =>
       _contentController.text.trim().isNotEmpty;
 
+  String? get _contentErrorText {
+    if (!_emptyContentSubmitted || _contentValid) return null;
+    return '本文を入力してください。空白だけの投稿はできません。';
+  }
+
   bool _canSubmit(ComposeState composeState) {
     if (composeState is! ComposeEditing) return false;
-    return composeState.locationReady && _contentValid;
+    return composeState.locationReady;
   }
 
   bool _inputsLocked(ComposeState s) =>
@@ -74,14 +82,17 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                     ),
                     child: Semantics(
                       label: '投稿本文',
+                      hint: '必須。最大 $_maxContentLength 文字。',
                       textField: true,
                       child: TextField(
                         controller: _contentController,
                         readOnly: _inputsLocked(composeState),
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
+                          labelText: '本文',
                           hintText: '近くの出来事や気持ちを書いてください',
-                          border: OutlineInputBorder(),
+                          border: const OutlineInputBorder(),
                           alignLabelWithHint: true,
+                          errorText: _contentErrorText,
                         ),
                         keyboardType: TextInputType.multiline,
                         textCapitalization: TextCapitalization.sentences,
@@ -97,11 +108,22 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                           return Text(
                             '$currentLength / $maxLength',
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+                              color: _contentErrorText != null
+                                  ? theme.colorScheme.error
+                                  : theme.colorScheme.onSurfaceVariant,
                             ),
+                            semanticsLabel:
+                                '文字数 $currentLength 文字。上限 $maxLength 文字。'
+                                '${_contentErrorText != null ? _contentErrorText! : ''}',
                           );
                         },
-                        onChanged: (_) => setState(() {}),
+                        onChanged: (_) {
+                          if (_emptyContentSubmitted && _contentValid) {
+                            setState(() => _emptyContentSubmitted = false);
+                          } else {
+                            setState(() {});
+                          }
+                        },
                       ),
                     ),
                   ),
@@ -165,6 +187,10 @@ class _ComposePageState extends ConsumerState<ComposePage> {
   }
 
   void _onSubmitPressed() {
+    if (!_contentValid) {
+      setState(() => _emptyContentSubmitted = true);
+      return;
+    }
     // Phase 7-1-7: notifier.startSubmit() → CreatePostUseCase →
     // markSubmitSuccess / markSubmitFailure
   }
@@ -198,7 +224,7 @@ class _ComposeStatusStrip extends StatelessWidget {
               ),
               child: Text(
                 locationReady
-                    ? '位置の準備ができました。内容を確認して送信できます。'
+                    ? '位置の準備ができました。本文を入力してから送信してください。'
                     : '位置情報の確認が完了すると送信ボタンが有効になります。',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
