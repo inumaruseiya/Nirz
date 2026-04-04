@@ -8,6 +8,7 @@ import 'feed_notifier.dart';
 import '../router/app_route_paths.dart';
 import '../shared/async_state_switcher.dart';
 import '../shared/local_post_card.dart';
+import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
 import '../theme/app_tokens.dart';
 
@@ -161,27 +162,11 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                   FeedError(:final message) => message,
                   _ => '',
                 };
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          msg,
-                          style: Theme.of(ctx).textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                          onPressed: () => ref
-                              .read(feedNotifierProvider.notifier)
-                              .loadInitial(),
-                          child: const Text('再試行'),
-                        ),
-                      ],
-                    ),
-                  ),
+                return ErrorRetryPanel(
+                  message: msg,
+                  onRetry: () => ref
+                      .read(feedNotifierProvider.notifier)
+                      .loadInitial(),
                 );
               },
             ),
