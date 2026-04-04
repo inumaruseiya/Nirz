@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../domain/entities/feed_post.dart';
@@ -7,6 +8,7 @@ import 'feed_notifier.dart';
 import '../router/app_route_paths.dart';
 import '../shared/async_state_switcher.dart';
 import '../shared/local_post_card.dart';
+import '../shared/location_permission_callout.dart';
 import '../theme/app_tokens.dart';
 
 /// Phase 6 でローカルフィードを実装。
@@ -115,13 +117,10 @@ class _FeedPageState extends ConsumerState<FeedPage> {
       FeedLocationDenied() => [
           _sliverFillAsyncChild(
             child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  '位置情報を利用できないため、近くの投稿を表示できません。',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
+              child: LocationPermissionCallout(
+                onOpenSettings: () async {
+                  await Geolocator.openAppSettings();
+                },
               ),
             ),
           ),
