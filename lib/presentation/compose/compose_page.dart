@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../theme/app_tokens.dart';
 import 'compose_notifier.dart';
@@ -18,7 +20,14 @@ class ComposePage extends ConsumerStatefulWidget {
 class _ComposePageState extends ConsumerState<ComposePage> {
   static const int _maxContentLength = 2000;
 
+  /// Storage 上限に合わせたクライアント側の目安（実装計画 1-5-3）。
+  static const int _maxImageBytes = 5 * 1024 * 1024;
+
   final TextEditingController _contentController = TextEditingController();
+
+  /// 任意画像（Phase 7-1-4）。7-1-7 のアップロード用にバイト列で保持（Web でも利用可）。
+  Uint8List? _pickedImageBytes;
+  String _pickedImageMimeType = 'image/jpeg';
 
   /// 送信タップ後、本文が空または空白のみのときフィールド近傍に表示（実装計画 7-1-3）。
   bool _emptyContentSubmitted = false;
@@ -80,51 +89,66 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                     constraints: const BoxConstraints(
                       maxWidth: AppTokens.bodyMaxLineWidth,
                     ),
-                    child: Semantics(
-                      label: '投稿本文',
-                      hint: '必須。最大 $_maxContentLength 文字。',
-                      textField: true,
-                      child: TextField(
-                        controller: _contentController,
-                        readOnly: _inputsLocked(composeState),
-                        decoration: InputDecoration(
-                          labelText: '本文',
-                          hintText: '近くの出来事や気持ちを書いてください',
-                          border: const OutlineInputBorder(),
-                          alignLabelWithHint: true,
-                          errorText: _contentErrorText,
-                        ),
-                        keyboardType: TextInputType.multiline,
-                        textCapitalization: TextCapitalization.sentences,
-                        minLines: 6,
-                        maxLines: 12,
-                        maxLength: _maxContentLength,
-                        buildCounter: (
-                          context, {
-                          required currentLength,
-                          required isFocused,
-                          maxLength,
-                        }) {
-                          return Text(
-                            '$currentLength / $maxLength',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: _contentErrorText != null
-                                  ? theme.colorScheme.error
-                                  : theme.colorScheme.onSurfaceVariant,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Semantics(
+                          label: '投稿本文',
+                          hint: '必須。最大 $_maxContentLength 文字。',
+                          textField: true,
+                          child: TextField(
+                            controller: _contentController,
+                            readOnly: _inputsLocked(composeState),
+                            decoration: InputDecoration(
+                              labelText: '本文',
+                              hintText: '近くの出来事や気持ちを書いてください',
+                              border: const OutlineInputBorder(),
+                              alignLabelWithHint: true,
+                              errorText: _contentErrorText,
                             ),
-                            semanticsLabel:
-                                '文字数 $currentLength 文字。上限 $maxLength 文字。'
-                                '${_contentErrorText != null ? _contentErrorText! : ''}',
-                          );
-                        },
-                        onChanged: (_) {
-                          if (_emptyContentSubmitted && _contentValid) {
-                            setState(() => _emptyContentSubmitted = false);
-                          } else {
-                            setState(() {});
-                          }
-                        },
-                      ),
+                            keyboardType: TextInputType.multiline,
+                            textCapitalization: TextCapitalization.sentences,
+                            minLines: 6,
+                            maxLines: 12,
+                            maxLength: _maxContentLength,
+                            buildCounter: (
+                              context, {
+                              required currentLength,
+                              required isFocused,
+                              maxLength,
+                            }) {
+                              return Text(
+                                '$currentLength / $maxLength',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: _contentErrorText != null
+                                      ? theme.colorScheme.error
+                                      : theme.colorScheme.onSurfaceVariant,
+                                ),
+                                semanticsLabel:
+                                    '文字数 $currentLength 文字。上限 $maxLength 文字。'
+                                    '${_contentErrorText != null ? _contentErrorText! : ''}',
+                              );
+                            },
+                            onChanged: (_) {
+                              if (_emptyContentSubmitted && _contentValid) {
+                                setState(() => _emptyContentSubmitted = false);
+                              } else {
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        ),
+                        if (_pickedImageBytes != null) ...[
+                          const SizedBox(height: AppTokens.spaceUnit * 2),
+                          _PickedImagePreview(
+                            bytes: _pickedImageBytes!,
+                            mimeType: _pickedImageMimeType,
+                            onRemove: _inputsLocked(composeState)
+                                ? null
+                                : _clearPickedImage,
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
@@ -183,7 +207,83 @@ class _ComposePageState extends ConsumerState<ComposePage> {
   }
 
   void _onAddImagePressed() {
-    // Phase 7-1-4: image_picker 接続
+    if (!mounted) return;
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('フォトライブラリ'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              if (!kIsWeb)
+                ListTile(
+                  leading: const Icon(Icons.photo_camera_outlined),
+                  title: const Text('カメラ'),
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _pickImage(ImageSource.camera);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final xFile = await picker.pickImage(
+        source: source,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 85,
+      );
+      if (xFile == null || !mounted) return;
+
+      final bytes = await xFile.readAsBytes();
+      if (bytes.length > _maxImageBytes) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('画像は5MB以下にしてください。'),
+          ),
+        );
+        return;
+      }
+
+      final mime = xFile.mimeType;
+      setState(() {
+        _pickedImageBytes = bytes;
+        if (mime != null && mime.isNotEmpty) {
+          _pickedImageMimeType = mime;
+        }
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('画像を取得できませんでした。もう一度お試しください。'),
+          ),
+        );
+      }
+    }
+  }
+
+  void _clearPickedImage() {
+    setState(() {
+      _pickedImageBytes = null;
+      _pickedImageMimeType = 'image/jpeg';
+    });
   }
 
   void _onSubmitPressed() {
@@ -319,5 +419,76 @@ class _ComposeStatusStrip extends StatelessWidget {
           ),
         ),
     };
+  }
+}
+
+/// 選択画像のプレビューと削除（実装計画 7-1-4）。
+class _PickedImagePreview extends StatelessWidget {
+  const _PickedImagePreview({
+    required this.bytes,
+    required this.mimeType,
+    required this.onRemove,
+  });
+
+  final Uint8List bytes;
+  final String mimeType;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderRadius = BorderRadius.circular(AppTokens.radiusSurface);
+
+    return Semantics(
+      label: '選択した画像',
+      hint: '形式 $mimeType',
+      image: true,
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                gaplessPlayback: true,
+                errorBuilder: (_, __, ___) => ColoredBox(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  child: Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      size: 48,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (onRemove != null)
+              Padding(
+                padding: const EdgeInsets.all(AppTokens.spaceUnit),
+                child: Material(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.92),
+                  shape: const CircleBorder(),
+                  clipBehavior: Clip.antiAlias,
+                  child: IconButton(
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.close),
+                    tooltip: '画像を削除',
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(
+                        AppTokens.minTapTarget,
+                        AppTokens.minTapTarget,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
