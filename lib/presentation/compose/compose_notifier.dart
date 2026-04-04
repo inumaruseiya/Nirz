@@ -11,11 +11,28 @@ sealed class ComposeState {
   const ComposeState();
 }
 
+/// 位置失敗時に出す設定ショートカット（Phase 7-1-6）。
+enum ComposeLocationSettingsShortcut {
+  none,
+  app,
+  locationServices,
+}
+
 /// 入力中。位置が未確定のときは [locationReady] が false で送信不可。
 final class ComposeEditing extends ComposeState {
-  const ComposeEditing({this.locationReady = false});
+  const ComposeEditing({
+    this.locationReady = false,
+    this.locationRetryShortcut = ComposeLocationSettingsShortcut.none,
+    this.locationFailureMessage,
+  });
 
   final bool locationReady;
+
+  /// 位置失敗バーを閉じたあと、再試行・設定導線用（Phase 7-1-6）。
+  final ComposeLocationSettingsShortcut locationRetryShortcut;
+
+  /// 直近の位置エラー文言（バーを閉じた後も本文付近に表示）。
+  final String? locationFailureMessage;
 }
 
 /// 位置ぼかし・準備中。
@@ -35,10 +52,17 @@ final class ComposeSuccess extends ComposeState {
 
 /// 失敗。[dismissFailure] 後の [ComposeEditing] では [locationReady] を引き継ぐ。
 final class ComposeFailure extends ComposeState {
-  const ComposeFailure(this.message, {required this.locationReady});
+  const ComposeFailure(
+    this.message, {
+    required this.locationReady,
+    this.settingsShortcut = ComposeLocationSettingsShortcut.none,
+  });
 
   final String message;
   final bool locationReady;
+
+  /// 送信失敗などでは [none]。
+  final ComposeLocationSettingsShortcut settingsShortcut;
 }
 
 /// 投稿作成モーダル用（画面を離れたら破棄）。
@@ -73,7 +97,11 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
   void setLocationReady(bool ready) {
     final current = _editingIfEditing;
     if (current != null) {
-      state = ComposeEditing(locationReady: ready);
+      state = ComposeEditing(
+        locationReady: ready,
+        locationRetryShortcut: ComposeLocationSettingsShortcut.none,
+        locationFailureMessage: null,
+      );
     }
   }
 
@@ -95,7 +123,20 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
       if (permission != LocationPermissionState.granted) {
         _obfuscatedLocation = null;
-        failObfuscation(_messageForPermission(permission));
+        final shortcut = switch (permission) {
+          LocationPermissionState.denied =>
+            ComposeLocationSettingsShortcut.none,
+          LocationPermissionState.deniedForever =>
+            ComposeLocationSettingsShortcut.app,
+          LocationPermissionState.serviceDisabled =>
+            ComposeLocationSettingsShortcut.locationServices,
+          LocationPermissionState.granted =>
+            ComposeLocationSettingsShortcut.none,
+        };
+        failObfuscation(
+          _messageForPermission(permission),
+          settingsShortcut: shortcut,
+        );
         return;
       }
 
@@ -110,15 +151,32 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
           finishObfuscation(success: true);
         case Err(:final error):
           _obfuscatedLocation = null;
-          failObfuscation(_messageForPositionFailure(error));
+          final shortcut = switch (error) {
+            NetworkFailure() => ComposeLocationSettingsShortcut.none,
+            LocationFailure() => ComposeLocationSettingsShortcut.app,
+            _ => ComposeLocationSettingsShortcut.app,
+          };
+          failObfuscation(
+            _messageForPositionFailure(error),
+            settingsShortcut: shortcut,
+          );
       }
     } catch (_) {
       if (token != _locationPrepareGeneration) return;
       _obfuscatedLocation = null;
       failObfuscation(
         '位置情報の処理に失敗しました。もう一度お試しください。',
+        settingsShortcut: ComposeLocationSettingsShortcut.app,
       );
     }
+  }
+
+  /// 位置準備の再試行（Phase 7-1-6）。
+  Future<void> retryPrepareLocation() async {
+    if (state is ComposeFailure) {
+      dismissFailure();
+    }
+    await prepareLocationForCompose();
   }
 
   void startObfuscation() {
@@ -128,13 +186,25 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
   void finishObfuscation({required bool success}) {
     if (state is! ComposeObfuscating) return;
-    state = ComposeEditing(locationReady: success);
+    state = ComposeEditing(
+      locationReady: success,
+      locationRetryShortcut: ComposeLocationSettingsShortcut.none,
+      locationFailureMessage: null,
+    );
   }
 
   /// 位置まわりの失敗（再試行 UI は Phase 7-1-6）。
-  void failObfuscation(String message) {
+  void failObfuscation(
+    String message, {
+    ComposeLocationSettingsShortcut settingsShortcut =
+        ComposeLocationSettingsShortcut.app,
+  }) {
     if (state is! ComposeObfuscating) return;
-    state = ComposeFailure(message, locationReady: false);
+    state = ComposeFailure(
+      message,
+      locationReady: false,
+      settingsShortcut: settingsShortcut,
+    );
   }
 
   void startSubmit() {
@@ -150,12 +220,26 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
   void markSubmitFailure(String message) {
     if (state is! ComposeSubmitting) return;
-    state = ComposeFailure(message, locationReady: true);
+    state = ComposeFailure(
+      message,
+      locationReady: true,
+      settingsShortcut: ComposeLocationSettingsShortcut.none,
+    );
   }
 
   void dismissFailure() {
-    if (state case ComposeFailure(:final locationReady)) {
-      state = ComposeEditing(locationReady: locationReady);
+    if (state case ComposeFailure(
+          :final message,
+          :final locationReady,
+          :final settingsShortcut,
+        )) {
+      state = ComposeEditing(
+        locationReady: locationReady,
+        locationRetryShortcut: !locationReady
+            ? settingsShortcut
+            : ComposeLocationSettingsShortcut.none,
+        locationFailureMessage: !locationReady ? message : null,
+      );
     }
   }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -168,6 +169,10 @@ class _ComposePageState extends ConsumerState<ComposePage> {
               onDismissFailure: () => ref
                   .read(composeNotifierProvider.notifier)
                   .dismissFailure(),
+              onRetryLocation: () => ref
+                  .read(composeNotifierProvider.notifier)
+                  .retryPrepareLocation(),
+              onOpenSettingsShortcut: _openComposeLocationSettings,
             ),
             Material(
               elevation: 2,
@@ -303,16 +308,41 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     // Phase 7-1-7: notifier.startSubmit() → CreatePostUseCase →
     // markSubmitSuccess / markSubmitFailure
   }
+
+  Future<void> _openComposeLocationSettings(
+    ComposeLocationSettingsShortcut shortcut,
+  ) async {
+    if (kIsWeb || shortcut == ComposeLocationSettingsShortcut.none) return;
+    try {
+      switch (shortcut) {
+        case ComposeLocationSettingsShortcut.app:
+          await Geolocator.openAppSettings();
+        case ComposeLocationSettingsShortcut.locationServices:
+          await Geolocator.openLocationSettings();
+        case ComposeLocationSettingsShortcut.none:
+          return;
+      }
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('設定を開けませんでした。')),
+      );
+    }
+  }
 }
 
 class _ComposeStatusStrip extends StatelessWidget {
   const _ComposeStatusStrip({
     required this.state,
     required this.onDismissFailure,
+    required this.onRetryLocation,
+    required this.onOpenSettingsShortcut,
   });
 
   final ComposeState state;
   final VoidCallback onDismissFailure;
+  final Future<void> Function() onRetryLocation;
+  final void Function(ComposeLocationSettingsShortcut) onOpenSettingsShortcut;
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +350,12 @@ class _ComposeStatusStrip extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return switch (state) {
-      ComposeEditing(:final locationReady) => Padding(
+      ComposeEditing(
+        :final locationReady,
+        :final locationFailureMessage,
+        :final locationRetryShortcut,
+      ) =>
+        Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppTokens.spaceUnit * 2,
             vertical: AppTokens.spaceUnit,
@@ -331,14 +366,27 @@ class _ComposeStatusStrip extends StatelessWidget {
               constraints: const BoxConstraints(
                 maxWidth: AppTokens.bodyMaxLineWidth,
               ),
-              child: Text(
-                locationReady
-                    ? '位置の準備ができました。本文を入力してから送信してください。'
-                    : '位置情報の確認が完了すると送信ボタンが有効になります。',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
+              child: locationReady
+                  ? Text(
+                      '位置の準備ができました。本文を入力してから送信してください。',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                  : locationFailureMessage != null
+                      ? _LocationIssueCard(
+                          errorMessage: locationFailureMessage,
+                          settingsShortcut: locationRetryShortcut,
+                          onRetry: onRetryLocation,
+                          onOpenSettingsShortcut: onOpenSettingsShortcut,
+                          showDismiss: false,
+                        )
+                      : Text(
+                          '位置情報の確認が完了すると送信ボタンが有効になります。',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
             ),
           ),
         ),
@@ -394,40 +442,110 @@ class _ComposeStatusStrip extends StatelessWidget {
             ),
           ),
         ),
-      ComposeFailure(:final message) => Material(
+      ComposeFailure(:final message, :final settingsShortcut) => Material(
           color: colorScheme.errorContainer,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
               AppTokens.spaceUnit * 2,
               AppTokens.spaceUnit * 1.5,
-              AppTokens.spaceUnit,
+              AppTokens.spaceUnit * 2,
               AppTokens.spaceUnit * 1.5,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  color: colorScheme.onErrorContainer,
-                ),
-                const SizedBox(width: AppTokens.spaceUnit * 2),
-                Expanded(
-                  child: Text(
-                    message,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onErrorContainer,
-                    ),
-                  ),
-                ),
-                TextButton(
-                  onPressed: onDismissFailure,
-                  child: const Text('閉じる'),
-                ),
-              ],
+            child: _LocationIssueCard(
+              errorMessage: message,
+              settingsShortcut: settingsShortcut,
+              onRetry: onRetryLocation,
+              onOpenSettingsShortcut: onOpenSettingsShortcut,
+              onDismiss: onDismissFailure,
+              showDismiss: true,
             ),
           ),
         ),
     };
+  }
+}
+
+class _LocationIssueCard extends StatelessWidget {
+  static const String _locationWhyBody =
+      '近くの投稿として表示するため、おおよその位置だけをサーバーに送ります。'
+      '正確な住所は保存しません。';
+
+  const _LocationIssueCard({
+    required this.errorMessage,
+    required this.settingsShortcut,
+    required this.onRetry,
+    required this.onOpenSettingsShortcut,
+    this.onDismiss,
+    required this.showDismiss,
+  });
+
+  final String errorMessage;
+  final ComposeLocationSettingsShortcut settingsShortcut;
+  final Future<void> Function() onRetry;
+  final void Function(ComposeLocationSettingsShortcut) onOpenSettingsShortcut;
+  final VoidCallback? onDismiss;
+  final bool showDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final onError = colorScheme.onErrorContainer;
+    final isBar = showDismiss;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.error_outline, color: onError),
+            const SizedBox(width: AppTokens.spaceUnit * 2),
+            Expanded(
+              child: Text(
+                errorMessage,
+                style: theme.textTheme.bodyMedium?.copyWith(color: onError),
+              ),
+            ),
+            if (showDismiss && onDismiss != null)
+              TextButton(
+                onPressed: onDismiss,
+                child: Text(
+                  '閉じる',
+                  style: TextStyle(color: onError),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppTokens.spaceUnit),
+        Text(
+          _locationWhyBody,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: isBar ? onError.withValues(alpha: 0.9) : colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: AppTokens.spaceUnit * 1.5),
+        Wrap(
+          spacing: AppTokens.spaceUnit,
+          runSpacing: AppTokens.spaceUnit,
+          children: [
+            FilledButton(
+              onPressed: () => onRetry(),
+              child: const Text('再試行'),
+            ),
+            if (!kIsWeb && settingsShortcut != ComposeLocationSettingsShortcut.none)
+              OutlinedButton(
+                onPressed: () => onOpenSettingsShortcut(settingsShortcut),
+                child: Text(
+                  settingsShortcut == ComposeLocationSettingsShortcut.locationServices
+                      ? '位置サービス設定'
+                      : 'アプリの設定',
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
   }
 }
 
