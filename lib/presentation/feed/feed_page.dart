@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../router/app_route_paths.dart';
+import 'feed_manual_refresh_provider.dart';
 
 /// Phase 6 でローカルフィードを実装。
-class FeedPage extends StatelessWidget {
+class FeedPage extends ConsumerWidget {
   const FeedPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('近くの投稿'),
@@ -27,7 +29,13 @@ class FeedPage extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(AppRoutePaths.compose),
+        onPressed: () async {
+          final created = await context.push<bool>(AppRoutePaths.compose);
+          if (!context.mounted) return;
+          if (created == true) {
+            ref.read(feedManualRefreshTriggerProvider.notifier).state++;
+          }
+        },
         icon: const Icon(Icons.edit_outlined),
         label: const Text('投稿'),
       ),
