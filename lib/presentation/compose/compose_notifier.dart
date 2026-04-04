@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
@@ -70,6 +72,9 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
   /// 非同期位置準備と競合しないよう、破棄時に無効化する。
   int _locationPrepareGeneration = 0;
 
+  /// 送信完了コールバックが古い場合は無視する。
+  int _submitGeneration = 0;
+
   /// ぼかし済み座標（サーバ送信用）。Phase 7-1-7 の [CreatePostUseCase] で使用。
   ObfuscatedLocation? _obfuscatedLocation;
 
@@ -79,12 +84,14 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
   ComposeState build() {
     ref.onDispose(() {
       _locationPrepareGeneration++;
+      _submitGeneration++;
     });
     return const ComposeEditing();
   }
 
   void reset() {
     _obfuscatedLocation = null;
+    _submitGeneration++;
     state = const ComposeEditing();
   }
 
@@ -213,6 +220,40 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
     state = const ComposeSubmitting();
   }
 
+  /// [CreatePostUseCase] 実行（実装計画 7-1-7）。二重送信は [ComposeSubmitting] で防止。
+  Future<void> submitPost({
+    required String content,
+    Uint8List? imageBytes,
+    String? imageContentType,
+  }) async {
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) return;
+
+    final editing = _editingIfEditing;
+    final loc = _obfuscatedLocation;
+    if (editing == null || !editing.locationReady || loc == null) return;
+
+    final token = ++_submitGeneration;
+    startSubmit();
+
+    final useCase = ref.read(createPostUseCaseProvider);
+    final result = await useCase(
+      content: trimmed,
+      imageBytes: imageBytes,
+      imageContentType: imageContentType,
+      obfuscatedLocation: loc,
+    );
+
+    if (token != _submitGeneration) return;
+
+    switch (result) {
+      case Ok():
+        markSubmitSuccess();
+      case Err(:final error):
+        markSubmitFailure(_messageForSubmitFailure(error));
+    }
+  }
+
   void markSubmitSuccess() {
     if (state is! ComposeSubmitting) return;
     state = const ComposeSuccess();
@@ -271,6 +312,22 @@ final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
       ValidationFailure(:final message) => message,
       AuthFailure() => 'セッションの有効期限が切れました。再度ログインしてください。',
       ServerFailure() => 'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
+    };
+  }
+
+  static String _messageForSubmitFailure(Failure failure) {
+    return switch (failure) {
+      NetworkFailure() =>
+        '接続できませんでした。通信環境を確認してから再度お試しください。',
+      AuthFailure() =>
+        'セッションの有効期限が切れました。再度ログインしてください。',
+      ValidationFailure(:final message) =>
+        message.toLowerCase().contains('imagecontenttype')
+            ? '画像の送信準備に失敗しました。画像を削除するか、別の画像を選んでください。'
+            : message,
+      ServerFailure() =>
+        'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
+      LocationFailure() => '位置情報の処理に失敗しました。',
     };
   }
 }

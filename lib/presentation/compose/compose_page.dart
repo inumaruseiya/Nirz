@@ -70,13 +70,21 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     final composeState = ref.watch(composeNotifierProvider);
     final bottomInset = MediaQuery.paddingOf(context).bottom;
 
+    ref.listen<ComposeState>(composeNotifierProvider, (previous, next) {
+      if (next is ComposeSuccess) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) context.pop(true);
+        });
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: _inputsLocked(composeState)
               ? null
-              : () => context.pop(),
+              : () => context.pop(false),
           tooltip: '閉じる',
         ),
         title: const Text('投稿を作成'),
@@ -205,8 +213,21 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                           onPressed: _canSubmit(composeState)
                               ? _onSubmitPressed
                               : null,
-                          icon: const Icon(Icons.send_outlined),
-                          label: const Text('送信'),
+                          icon: composeState is ComposeSubmitting
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: theme.colorScheme.onPrimary,
+                                  ),
+                                )
+                              : const Icon(Icons.send_outlined),
+                          label: Text(
+                            composeState is ComposeSubmitting
+                                ? '送信中…'
+                                : '送信',
+                          ),
                         ),
                       ],
                     ),
@@ -300,13 +321,18 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     });
   }
 
-  void _onSubmitPressed() {
+  Future<void> _onSubmitPressed() async {
     if (!_contentValid) {
       setState(() => _emptyContentSubmitted = true);
       return;
     }
-    // Phase 7-1-7: notifier.startSubmit() → CreatePostUseCase →
-    // markSubmitSuccess / markSubmitFailure
+    final notifier = ref.read(composeNotifierProvider.notifier);
+    await notifier.submitPost(
+      content: _contentController.text,
+      imageBytes: _pickedImageBytes,
+      imageContentType:
+          _pickedImageBytes != null ? _pickedImageMimeType : null,
+    );
   }
 
   Future<void> _openComposeLocationSettings(
