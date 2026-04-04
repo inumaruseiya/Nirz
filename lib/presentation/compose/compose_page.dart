@@ -33,6 +33,15 @@ class _ComposePageState extends ConsumerState<ComposePage> {
   bool _emptyContentSubmitted = false;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(composeNotifierProvider.notifier).prepareLocationForCompose();
+    });
+  }
+
+  @override
   void dispose() {
     _contentController.dispose();
     super.dispose();
