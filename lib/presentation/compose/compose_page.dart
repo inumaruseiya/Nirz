@@ -287,6 +287,7 @@ class _ComposePageState extends ConsumerState<ComposePage> {
       if (xFile == null || !mounted) return;
 
       final bytes = await xFile.readAsBytes();
+      if (!mounted) return;
       if (bytes.length > _maxImageBytes) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -607,7 +608,7 @@ class _PickedImagePreview extends StatelessWidget {
                 bytes,
                 fit: BoxFit.cover,
                 gaplessPlayback: true,
-                errorBuilder: (_, __, ___) => ColoredBox(
+                errorBuilder: (context, error, stackTrace) => ColoredBox(
                   color: theme.colorScheme.surfaceContainerHighest,
                   child: Center(
                     child: Icon(
