@@ -12,6 +12,7 @@ final class FeedPost extends Equatable {
     required this.reactionCount,
     this.authorName,
     this.distanceKm,
+    this.commentCount,
   });
 
   final Post post;
@@ -20,6 +21,9 @@ final class FeedPost extends Equatable {
 
   /// 閲覧者クエリ地点からのおおよその距離（km）。取得できない場合は null。
   final double? distanceKm;
+
+  /// コメント件数（`get_post_detail` 等で付与。フィード一覧では null）。
+  final int? commentCount;
 
   PostId get id => post.id;
   UserId get authorId => post.authorId;
@@ -31,5 +35,6 @@ final class FeedPost extends Equatable {
   bool get isExpired => post.isExpired;
 
   @override
-  List<Object?> get props => [post, reactionCount, authorName, distanceKm];
+  List<Object?> get props =>
+      [post, reactionCount, authorName, distanceKm, commentCount];
 }

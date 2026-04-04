@@ -13,6 +13,7 @@ import 'comments/add_reply_use_case.dart';
 import 'comments/load_comments_use_case.dart';
 import 'feed/load_local_feed_use_case.dart';
 import 'feed/load_more_feed_use_case.dart';
+import 'feed/load_post_detail_use_case.dart';
 import 'location/get_current_position_use_case.dart';
 import 'location/obfuscate_location_use_case.dart';
 import 'location/request_location_permission_use_case.dart';
@@ -95,6 +96,13 @@ final loadLocalFeedUseCaseProvider = Provider<LoadLocalFeedUseCase>(
 
 final loadMoreFeedUseCaseProvider = Provider<LoadMoreFeedUseCase>(
   (ref) => LoadMoreFeedUseCase(
+    ref.watch(feedRepositoryProvider),
+    ref.watch(locationRepositoryProvider),
+  ),
+);
+
+final loadPostDetailUseCaseProvider = Provider<LoadPostDetailUseCase>(
+  (ref) => LoadPostDetailUseCase(
     ref.watch(feedRepositoryProvider),
     ref.watch(locationRepositoryProvider),
   ),

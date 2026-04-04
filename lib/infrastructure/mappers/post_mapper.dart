@@ -6,6 +6,7 @@ import '../../domain/value_objects/post_id.dart';
 import '../../domain/value_objects/user_id.dart';
 import '../dto/post_dto.dart';
 import '../dto/rpc_feed_item_dto.dart';
+import '../dto/rpc_post_detail_dto.dart';
 
 /// [PostDto] / [RpcFeedItemDto] → ドメイン [Post] / [FeedPost]
 final class PostMapper {
@@ -25,6 +26,31 @@ final class PostMapper {
       ),
       createdAt: dto.createdAt,
       expiresAt: dto.expiresAt,
+    );
+  }
+
+  static FeedPost postDetailToDomain(RpcPostDetailDto dto) {
+    final post = Post(
+      id: PostId.parse(dto.id),
+      authorId: UserId.parse(dto.userId),
+      content: dto.content,
+      imageUrl: _optionalHttpUri(dto.imageUrl),
+      location: ObfuscatedLocation(
+        GeoCoordinate(
+          latitude: dto.locationLat,
+          longitude: dto.locationLng,
+        ),
+      ),
+      createdAt: dto.createdAt,
+      expiresAt: dto.expiresAt,
+    );
+    final author = dto.authorName.trim();
+    return FeedPost(
+      post: post,
+      reactionCount: dto.reactionCount,
+      authorName: author.isEmpty ? null : author,
+      distanceKm: dto.distanceMeters / 1000.0,
+      commentCount: dto.commentCount,
     );
   }
 
