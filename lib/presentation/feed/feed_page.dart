@@ -9,6 +9,7 @@ import '../router/app_route_paths.dart';
 import '../shared/async_state_switcher.dart';
 import '../shared/local_post_card.dart';
 import '../shared/error_retry_panel.dart';
+import '../shared/feed_skeleton_card.dart';
 import '../shared/location_permission_callout.dart';
 import '../theme/app_tokens.dart';
 
@@ -22,6 +23,7 @@ class FeedPage extends ConsumerStatefulWidget {
 
 class _FeedPageState extends ConsumerState<FeedPage> {
   static const double _loadMoreExtent = 240;
+  static const int _skeletonCardCount = 3;
 
   late final ScrollController _scrollController;
 
@@ -126,15 +128,22 @@ class _FeedPageState extends ConsumerState<FeedPage> {
             ),
           ),
         ],
-      FeedInitial() ||
-      FeedLoading() ||
+      FeedInitial() || FeedLoading() => [
+          SliverSemantics(
+            label: '近くの投稿を読み込んでいます',
+            child: SliverList.builder(
+              itemCount: _skeletonCardCount,
+              itemBuilder: (_, __) => const FeedSkeletonCard(),
+            ),
+          ),
+        ],
       FeedEmpty() ||
       FeedError() =>
         [
           _sliverFillAsyncChild(
             child: AsyncStateSwitcher(
               phase: _asyncPhase(feedState),
-              loading: (_) => const Center(child: CircularProgressIndicator()),
+              loading: (_) => const SizedBox.shrink(),
               ready: (_) => const SizedBox.shrink(),
               empty: (ctx) => Center(
                 child: Padding(
@@ -177,7 +186,6 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
   AsyncViewPhase _asyncPhase(FeedState s) {
     return switch (s) {
-      FeedInitial() || FeedLoading() => AsyncViewPhase.loading,
       FeedEmpty() => AsyncViewPhase.empty,
       FeedError() => AsyncViewPhase.error,
       _ => AsyncViewPhase.ready,
