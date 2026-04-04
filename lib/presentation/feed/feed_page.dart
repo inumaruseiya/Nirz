@@ -58,6 +58,19 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     });
   }
 
+  Future<void> _openComposeAndRefreshIfCreated() async {
+    final created = await context.push<bool>(AppRoutePaths.compose);
+    if (!mounted) return;
+    if (created != true) return;
+    final ok = await ref.read(feedNotifierProvider.notifier).refresh();
+    if (!mounted) return;
+    if (!ok) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('更新できませんでした')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final feedState = ref.watch(feedNotifierProvider);
@@ -70,7 +83,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           horizontal: AppTokens.spaceUnit * 2,
           vertical: AppTokens.spaceUnit,
         ),
-        onPressed: () => context.push(AppRoutePaths.compose),
+        onPressed: _openComposeAndRefreshIfCreated,
         icon: const Icon(Icons.edit_outlined),
         label: const Text('投稿'),
       ),
@@ -158,7 +171,23 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                       ),
                       const SizedBox(height: AppTokens.spaceUnit * 2),
                       FilledButton.icon(
-                        onPressed: () => ctx.push(AppRoutePaths.compose),
+                        onPressed: () async {
+                          final created =
+                              await ctx.push<bool>(AppRoutePaths.compose);
+                          if (!ctx.mounted) return;
+                          if (created != true) return;
+                          final ok = await ref
+                              .read(feedNotifierProvider.notifier)
+                              .refresh();
+                          if (!ctx.mounted) return;
+                          if (!ok) {
+                            ScaffoldMessenger.of(ctx).showSnackBar(
+                              const SnackBar(
+                                content: Text('更新できませんでした'),
+                              ),
+                            );
+                          }
+                        },
                         icon: const Icon(Icons.edit_outlined),
                         label: const Text('最初の投稿をする'),
                       ),
