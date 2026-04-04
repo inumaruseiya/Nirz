@@ -87,7 +87,7 @@ class LocalPostCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           memCacheWidth: memW,
                           memCacheHeight: memH,
-                          placeholder: (_, __) => ColoredBox(
+                          placeholder: (context, url) => ColoredBox(
                             color: theme.colorScheme.surfaceContainerHighest,
                             child: const Center(
                               child: SizedBox(
@@ -97,7 +97,7 @@ class LocalPostCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          errorWidget: (_, __, ___) => ColoredBox(
+                          errorWidget: (context, url, error) => ColoredBox(
                             color: theme.colorScheme.surfaceContainerHighest,
                             child: Icon(
                               Icons.broken_image_outlined,

@@ -131,9 +131,9 @@ class _FeedPageState extends ConsumerState<FeedPage> {
       FeedInitial() || FeedLoading() => [
           SliverSemantics(
             label: '近くの投稿を読み込んでいます',
-            child: SliverList.builder(
+            sliver: SliverList.builder(
               itemCount: _skeletonCardCount,
-              itemBuilder: (_, __) => const FeedSkeletonCard(),
+              itemBuilder: (context, index) => const FeedSkeletonCard(),
             ),
           ),
         ],
