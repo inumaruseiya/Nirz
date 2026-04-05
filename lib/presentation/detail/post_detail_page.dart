@@ -3,108 +3,33 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
-import '../../application/providers.dart';
-import '../../domain/core/failure.dart';
-import '../../domain/core/result.dart';
 import '../../domain/entities/feed_post.dart';
-import '../../domain/value_objects/post_id.dart';
 import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
 import '../shared/relative_time.dart';
 import '../theme/app_tokens.dart';
+import 'post_detail_notifier.dart';
 
 /// 投稿詳細（実装計画 Phase 8-1-1、詳細設計 4.5）。
 ///
-/// ヘッダ（投稿者・相対時刻・距離）、本文、画像、リアクション件数を表示する。
-/// コメント・[ReactionPicker]・削除メニューは後続タスクで接続する。
-class PostDetailPage extends ConsumerStatefulWidget {
+/// 状態は [PostDetailNotifier]（Phase 8-1-2）。コメント・[ReactionPicker]・削除メニューは後続タスク。
+class PostDetailPage extends ConsumerWidget {
   const PostDetailPage({super.key, required this.postId});
 
   final String postId;
 
   @override
-  ConsumerState<PostDetailPage> createState() => _PostDetailPageState();
-}
-
-class _PostDetailPageState extends ConsumerState<PostDetailPage> {
-  PostId? _parsedId;
-  _DetailLoadPhase _phase = _DetailLoadPhase.loading;
-  FeedPost? _post;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    try {
-      _parsedId = PostId.parse(widget.postId);
-    } catch (_) {
-      _phase = _DetailLoadPhase.invalidId;
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _load();
-    });
-  }
-
-  Future<void> _load() async {
-    final id = _parsedId;
-    if (id == null) return;
-
-    setState(() {
-      _phase = _DetailLoadPhase.loading;
-      _post = null;
-      _errorMessage = null;
-    });
-
-    final useCase = ref.read(loadPostDetailUseCaseProvider);
-    final result = await useCase(id);
-
-    if (!mounted) return;
-
-    switch (result) {
-      case Ok(:final value):
-        if (value.isEmpty) {
-          setState(() {
-            _phase = _DetailLoadPhase.notFound;
-          });
-        } else {
-          setState(() {
-            _phase = _DetailLoadPhase.ready;
-            _post = value.first;
-          });
-        }
-      case Err(:final error):
-        setState(() {
-          _phase = switch (error) {
-            LocationFailure() => _DetailLoadPhase.locationDenied,
-            _ => _DetailLoadPhase.error,
-          };
-          _errorMessage = switch (error) {
-            NetworkFailure() =>
-              '接続できませんでした。通信環境を確認してください。',
-            AuthFailure() =>
-              'セッションの有効期限が切れました。再度ログインしてください。',
-            ServerFailure() =>
-              'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
-            ValidationFailure(:final message) => message,
-            LocationFailure() => '位置情報を利用できません。',
-            _ => '読み込めませんでした。',
-          };
-        });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final detailState = ref.watch(postDetailNotifierProvider(postId));
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('投稿'),
       ),
-      body: switch (_phase) {
-        _DetailLoadPhase.invalidId => Center(
+      body: switch (detailState) {
+        PostDetailInvalidId() => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Text(
@@ -114,23 +39,25 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               ),
             ),
           ),
-        _DetailLoadPhase.loading => const Center(
+        PostDetailLoading() => const Center(
             child: CircularProgressIndicator(),
           ),
-        _DetailLoadPhase.locationDenied => Center(
+        PostDetailLocationDenied() => Center(
             child: LocationPermissionCallout(
               onOpenSettings: () async {
                 await Geolocator.openAppSettings();
               },
             ),
           ),
-        _DetailLoadPhase.error => Center(
+        PostDetailError(:final message) => Center(
             child: ErrorRetryPanel(
-              message: _errorMessage ?? '',
-              onRetry: _load,
+              message: message,
+              onRetry: () => ref
+                  .read(postDetailNotifierProvider(postId).notifier)
+                  .reload(),
             ),
           ),
-        _DetailLoadPhase.notFound => Center(
+        PostDetailNotFound() => Center(
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -150,12 +77,19 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               ),
             ),
           ),
-        _DetailLoadPhase.ready => _buildContent(context, _post!),
+        PostDetailReady(:final post) => _PostDetailContent(post: post),
       },
     );
   }
+}
 
-  Widget _buildContent(BuildContext context, FeedPost post) {
+class _PostDetailContent extends StatelessWidget {
+  const _PostDetailContent({required this.post});
+
+  final FeedPost post;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final name = post.authorName?.trim().isNotEmpty == true
         ? post.authorName!.trim()
@@ -264,15 +198,6 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       ),
     );
   }
-}
-
-enum _DetailLoadPhase {
-  loading,
-  ready,
-  notFound,
-  locationDenied,
-  error,
-  invalidId,
 }
 
 class _DetailReactionSummaryRow extends StatelessWidget {
