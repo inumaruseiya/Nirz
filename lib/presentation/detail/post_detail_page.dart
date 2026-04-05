@@ -11,6 +11,87 @@ import '../shared/relative_time.dart';
 import '../theme/app_tokens.dart';
 import 'post_detail_notifier.dart';
 
+/// 投稿画像を全画面表示（実装計画 Phase 8-1-3）。ピンチで拡大縮小、背景タップまたは閉じるで戻る。
+void showPostDetailImageViewer(BuildContext context, String imageUrl) {
+  final barrierLabel =
+      MaterialLocalizations.of(context).modalBarrierDismissLabel;
+  final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+  showGeneralDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: barrierLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.92),
+    transitionDuration:
+        reduceMotion ? Duration.zero : const Duration(milliseconds: 200),
+    pageBuilder: (dialogContext, animation, secondaryAnimation) {
+      return SafeArea(
+        child: Semantics(
+          scopesRoute: true,
+          namesRoute: true,
+          label: '投稿画像の拡大表示。ピンチで拡大縮小。画面外をタップするか閉じるで戻ります。',
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned.fill(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => Navigator.of(dialogContext).pop(),
+                  child: const SizedBox.expand(),
+                ),
+              ),
+              Center(
+                child: GestureDetector(
+                  onTap: () {},
+                  child: InteractiveViewer(
+                    minScale: 0.5,
+                    maxScale: 4,
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      fit: BoxFit.contain,
+                      placeholder: (context, url) => const SizedBox(
+                        width: 56,
+                        height: 56,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) => Icon(
+                        Icons.broken_image_outlined,
+                        color: Theme.of(dialogContext).colorScheme.onSurface,
+                        size: 64,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: AlignmentDirectional.topEnd,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTokens.spaceUnit),
+                  child: IconButton.filledTonal(
+                    onPressed: () => Navigator.of(dialogContext).pop(),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white24,
+                      foregroundColor: Colors.white,
+                    ),
+                    tooltip: '閉じる',
+                    icon: const Icon(Icons.close),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+    transitionBuilder: (context, animation, secondaryAnimation, child) {
+      if (reduceMotion) return child;
+      return FadeTransition(opacity: animation, child: child);
+    },
+  );
+}
+
 /// 投稿詳細（実装計画 Phase 8-1-1、詳細設計 4.5）。
 ///
 /// 状態は [PostDetailNotifier]（Phase 8-1-2）。コメント・[ReactionPicker]・削除メニューは後続タスク。
@@ -148,32 +229,49 @@ class _PostDetailContent extends StatelessWidget {
                   final memW = (logicalW * dpr).round().clamp(1, 4096);
                   final memH =
                       ((logicalW * 9 / 16) * dpr).round().clamp(1, 4096);
-                  return ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(AppTokens.radiusSurface),
-                    child: AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: CachedNetworkImage(
-                        imageUrl: post.imageUrl!.toString(),
-                        fit: BoxFit.cover,
-                        memCacheWidth: memW,
-                        memCacheHeight: memH,
-                        placeholder: (context, url) => ColoredBox(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: const Center(
-                            child: SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                  final url = post.imageUrl!.toString();
+                  return Semantics(
+                    button: true,
+                    label: '投稿画像。タップで拡大表示',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => showPostDetailImageViewer(context, url),
+                        borderRadius:
+                            BorderRadius.circular(AppTokens.radiusSurface),
+                        child: ClipRRect(
+                          borderRadius:
+                              BorderRadius.circular(AppTokens.radiusSurface),
+                          child: AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: CachedNetworkImage(
+                              imageUrl: url,
+                              fit: BoxFit.cover,
+                              memCacheWidth: memW,
+                              memCacheHeight: memH,
+                              placeholder: (context, u) => ColoredBox(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                child: const Center(
+                                  child: SizedBox(
+                                    width: 28,
+                                    height: 28,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (context, u, error) => ColoredBox(
+                                color:
+                                    theme.colorScheme.surfaceContainerHighest,
+                                child: Icon(
+                                  Icons.broken_image_outlined,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  size: 40,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => ColoredBox(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          child: Icon(
-                            Icons.broken_image_outlined,
-                            color: theme.colorScheme.onSurfaceVariant,
-                            size: 40,
                           ),
                         ),
                       ),
