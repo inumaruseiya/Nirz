@@ -252,7 +252,20 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           final p = posts[index];
           return LocalPostCard(
             post: p,
-            onTap: () => context.push(AppRoutePaths.postDetail(p.id.value)),
+            onTap: () async {
+              final deleted = await context.push<bool>(
+                AppRoutePaths.postDetail(p.id.value),
+              );
+              if (!context.mounted) return;
+              if (deleted != true) return;
+              final ok = await ref.read(feedNotifierProvider.notifier).refresh();
+              if (!context.mounted) return;
+              if (!ok) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('更新できませんでした')),
+                );
+              }
+            },
           );
         },
       ),

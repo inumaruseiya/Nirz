@@ -2,8 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../application/providers.dart';
 import '../../domain/entities/feed_post.dart';
+import '../../domain/repositories/auth_repository.dart';
 import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
@@ -104,10 +107,85 @@ class PostDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final detailState = ref.watch(postDetailNotifierProvider(postId));
+    final sessionAsync = ref.watch(sessionStateProvider);
+
+    ref.listen<PostDetailState>(
+      postDetailNotifierProvider(postId),
+      (previous, next) {
+        if (next is PostDetailDeleted && context.mounted) {
+          context.pop(true);
+        }
+      },
+    );
+
+    final postForOwnerCheck = switch (detailState) {
+      PostDetailReady(:final post) => post,
+      PostDetailDeleting(:final post) => post,
+      _ => null,
+    };
+    final isOwner = switch (sessionAsync) {
+      AsyncData(:final value) => switch (value) {
+          SessionSignedIn(:final userId) =>
+            postForOwnerCheck != null &&
+                userId.value == postForOwnerCheck.authorId.value,
+          _ => false,
+        },
+      _ => false,
+    };
+
+    final showDeleteMenu = isOwner && detailState is PostDetailReady;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('投稿'),
+        actions: [
+          if (showDeleteMenu)
+            PopupMenuButton<String>(
+              tooltip: 'その他',
+              onSelected: (value) async {
+                if (value != 'delete') return;
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('投稿を削除'),
+                    content: const Text(
+                      'この投稿を削除しますか？この操作は取り消せません。',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('キャンセル'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: theme.colorScheme.error,
+                          foregroundColor: theme.colorScheme.onError,
+                        ),
+                        child: const Text('削除'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed != true || !context.mounted) return;
+                final err = await ref
+                    .read(postDetailNotifierProvider(postId).notifier)
+                    .deletePost();
+                if (!context.mounted) return;
+                if (err != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(err)),
+                  );
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text('削除'),
+                ),
+              ],
+            ),
+        ],
       ),
       body: switch (detailState) {
         PostDetailInvalidId() => Center(
@@ -158,8 +236,46 @@ class PostDetailPage extends ConsumerWidget {
               ),
             ),
           ),
-        PostDetailReady(:final post) => _PostDetailContent(post: post),
+        PostDetailReady(:final post) => _PostDetailBody(
+            child: _PostDetailContent(post: post),
+          ),
+        PostDetailDeleting(:final post) => _PostDetailBody(
+            child: _PostDetailContent(post: post),
+            blocking: true,
+          ),
+        PostDetailDeleted() => const Center(
+            child: CircularProgressIndicator(),
+          ),
       },
+    );
+  }
+}
+
+class _PostDetailBody extends StatelessWidget {
+  const _PostDetailBody({
+    required this.child,
+    this.blocking = false,
+  });
+
+  final Widget child;
+  final bool blocking;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        child,
+        if (blocking)
+          const ModalBarrier(
+            dismissible: false,
+            color: Color(0x33000000),
+          ),
+        if (blocking)
+          const Center(
+            child: CircularProgressIndicator(),
+          ),
+      ],
     );
   }
 }

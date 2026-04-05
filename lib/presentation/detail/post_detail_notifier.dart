@@ -47,6 +47,18 @@ final class PostDetailReady extends PostDetailState {
   final FeedPost post;
 }
 
+/// 削除 API 送信中（同じ内容を表示しつつ操作を抑止）。
+final class PostDetailDeleting extends PostDetailState {
+  const PostDetailDeleting(this.post);
+
+  final FeedPost post;
+}
+
+/// 削除成功。画面は `pop(true)` で閉じる（フィード更新用）。
+final class PostDetailDeleted extends PostDetailState {
+  const PostDetailDeleted();
+}
+
 /// [arg] はルートの生文字列（`GoRouter` の `postId`）。
 final class PostDetailNotifier
     extends AutoDisposeFamilyNotifier<PostDetailState, String> {
@@ -63,6 +75,27 @@ final class PostDetailNotifier
 
   /// 再試行・明示リフレッシュ用。
   Future<void> reload() => _load();
+
+  /// 自分の投稿の削除。成功時は [PostDetailDeleted]、失敗時は元の [PostDetailReady] に戻し、エラー文言を返す。
+  Future<String?> deletePost() async {
+    final current = state;
+    if (current is! PostDetailReady) return null;
+    final post = current.post;
+
+    state = PostDetailDeleting(post);
+
+    final useCase = ref.read(deletePostUseCaseProvider);
+    final result = await useCase(post.id);
+
+    switch (result) {
+      case Ok():
+        state = const PostDetailDeleted();
+        return null;
+      case Err(:final error):
+        state = PostDetailReady(post);
+        return _messageForFailure(error);
+    }
+  }
 
   Future<void> _load() async {
     PostId id;

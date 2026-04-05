@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/repositories/auth_repository.dart';
 import '../domain/services/location_obfuscation_service.dart';
 import '../infrastructure/providers.dart';
 import 'auth/request_password_reset_use_case.dart';
@@ -48,6 +49,11 @@ final signOutUseCaseProvider = Provider<SignOutUseCase>(
 final watchSessionUseCaseProvider = Provider<WatchSessionUseCase>(
   (ref) => WatchSessionUseCase(ref.watch(authRepositoryProvider)),
 );
+
+/// 現在の認証セッション（UI で「自分の投稿」判定などに利用）。
+final sessionStateProvider = StreamProvider<SessionState>((ref) {
+  return ref.watch(watchSessionUseCaseProvider)();
+});
 
 final requestPasswordResetUseCaseProvider =
     Provider<RequestPasswordResetUseCase>(
