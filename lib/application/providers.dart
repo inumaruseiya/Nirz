@@ -20,6 +20,7 @@ import 'location/obfuscate_location_use_case.dart';
 import 'location/request_location_permission_use_case.dart';
 import 'posts/create_post_use_case.dart';
 import 'posts/delete_post_use_case.dart';
+import 'reactions/get_my_reaction_use_case.dart';
 import 'reactions/remove_reaction_use_case.dart';
 import 'reactions/submit_reaction_use_case.dart';
 
@@ -122,6 +123,10 @@ final submitReactionUseCaseProvider = Provider<SubmitReactionUseCase>(
 
 final removeReactionUseCaseProvider = Provider<RemoveReactionUseCase>(
   (ref) => RemoveReactionUseCase(ref.watch(reactionRepositoryProvider)),
+);
+
+final getMyReactionUseCaseProvider = Provider<GetMyReactionUseCase>(
+  (ref) => GetMyReactionUseCase(ref.watch(reactionRepositoryProvider)),
 );
 
 // --- Comments (Phase 4-6) ---

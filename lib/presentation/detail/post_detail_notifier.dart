@@ -5,6 +5,7 @@ import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/value_objects/post_id.dart';
+import '../../domain/value_objects/reaction_type.dart';
 
 /// 投稿詳細画面の状態（実装計画 Phase 8-1-2）。
 ///
@@ -42,16 +43,30 @@ final class PostDetailNotFound extends PostDetailState {
 
 /// 表示可能。
 final class PostDetailReady extends PostDetailState {
-  const PostDetailReady(this.post);
+  const PostDetailReady(
+    this.post, {
+    this.myReactionType,
+    this.reactionSending = false,
+  });
 
   final FeedPost post;
+
+  /// ログインユーザーのこの投稿へのリアクション（未取得・エラー時は null）。
+  final ReactionType? myReactionType;
+
+  /// リアクション API 送信中（[ReactionPicker] 無効化用）。
+  final bool reactionSending;
 }
 
 /// 削除 API 送信中（同じ内容を表示しつつ操作を抑止）。
 final class PostDetailDeleting extends PostDetailState {
-  const PostDetailDeleting(this.post);
+  const PostDetailDeleting(
+    this.post, {
+    this.myReactionType,
+  });
 
   final FeedPost post;
+  final ReactionType? myReactionType;
 }
 
 /// 削除成功。画面は `pop(true)` で閉じる（フィード更新用）。
@@ -81,8 +96,9 @@ final class PostDetailNotifier
     final current = state;
     if (current is! PostDetailReady) return null;
     final post = current.post;
+    final myReactionType = current.myReactionType;
 
-    state = PostDetailDeleting(post);
+    state = PostDetailDeleting(post, myReactionType: myReactionType);
 
     final useCase = ref.read(deletePostUseCaseProvider);
     final result = await useCase(post.id);
@@ -92,9 +108,74 @@ final class PostDetailNotifier
         state = const PostDetailDeleted();
         return null;
       case Err(:final error):
-        state = PostDetailReady(post);
+        state = PostDetailReady(
+          post,
+          myReactionType: myReactionType,
+        );
         return _messageForFailure(error);
     }
+  }
+
+  /// [ReactionPicker] からの選択。楽観的に件数更新し、失敗時はロールバックしてエラー文言を返す（8-2-2 / 8-2-3）。
+  Future<String?> applyReactionSelection(ReactionType? nextType) async {
+    final cur = state;
+    if (cur is! PostDetailReady || cur.reactionSending) return null;
+
+    final before = cur;
+    final prevType = before.myReactionType;
+    if (prevType == nextType) return null;
+
+    final postId = before.post.id;
+    final delta = _reactionCountDelta(prevType, nextType);
+    final optimisticPost = _feedPostWithReactionDelta(before.post, delta);
+
+    state = PostDetailReady(
+      optimisticPost,
+      myReactionType: nextType,
+      reactionSending: true,
+    );
+
+    final Result<void, Failure> result;
+    if (nextType == null) {
+      result = await ref.read(removeReactionUseCaseProvider)(postId);
+    } else {
+      result = await ref.read(submitReactionUseCaseProvider)(postId, nextType);
+    }
+
+    final afterCall = state;
+    if (afterCall is! PostDetailReady) return null;
+
+    switch (result) {
+      case Ok():
+        state = PostDetailReady(
+          afterCall.post,
+          myReactionType: nextType,
+        );
+        return null;
+      case Err(:final error):
+        state = PostDetailReady(
+          before.post,
+          myReactionType: prevType,
+        );
+        return _messageForFailure(error);
+    }
+  }
+
+  static int _reactionCountDelta(ReactionType? prev, ReactionType? next) {
+    if (prev == null && next != null) return 1;
+    if (prev != null && next == null) return -1;
+    return 0;
+  }
+
+  static FeedPost _feedPostWithReactionDelta(FeedPost p, int delta) {
+    final next = p.reactionCount + delta;
+    return FeedPost(
+      post: p.post,
+      reactionCount: next < 0 ? 0 : next,
+      authorName: p.authorName,
+      distanceKm: p.distanceKm,
+      commentCount: p.commentCount,
+    );
   }
 
   Future<void> _load() async {
@@ -115,7 +196,17 @@ final class PostDetailNotifier
         if (value.isEmpty) {
           state = const PostDetailNotFound();
         } else {
-          state = PostDetailReady(value.first);
+          final feedPost = value.first;
+          final myRx = ref.read(getMyReactionUseCaseProvider);
+          final myResult = await myRx(feedPost.id);
+          final ReactionType? myType = switch (myResult) {
+            Ok(:final value) => value?.type,
+            Err() => null,
+          };
+          state = PostDetailReady(
+            feedPost,
+            myReactionType: myType,
+          );
         }
       case Err(:final error):
         state = switch (error) {

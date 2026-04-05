@@ -7,9 +7,11 @@ import 'package:go_router/go_router.dart';
 import '../../application/providers.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/value_objects/reaction_type.dart';
 import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
+import '../shared/reaction_picker.dart';
 import '../shared/relative_time.dart';
 import '../theme/app_tokens.dart';
 import 'post_detail_notifier.dart';
@@ -236,11 +238,37 @@ class PostDetailPage extends ConsumerWidget {
               ),
             ),
           ),
-        PostDetailReady(:final post) => _PostDetailBody(
-            child: _PostDetailContent(post: post),
+        PostDetailReady(
+          :final post,
+          :final myReactionType,
+          :final reactionSending,
+        ) =>
+          _PostDetailBody(
+            child: _PostDetailContent(
+              post: post,
+              myReactionType: myReactionType,
+              reactionPickerEnabled: !reactionSending,
+              onReactionSelected: (next) async {
+                final err = await ref
+                    .read(postDetailNotifierProvider(postId).notifier)
+                    .applyReactionSelection(next);
+                if (!context.mounted) return;
+                if (err != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(err)),
+                  );
+                }
+              },
+            ),
           ),
-        PostDetailDeleting(:final post) => _PostDetailBody(
-            child: _PostDetailContent(post: post),
+        PostDetailDeleting(:final post, :final myReactionType) =>
+          _PostDetailBody(
+            child: _PostDetailContent(
+              post: post,
+              myReactionType: myReactionType,
+              reactionPickerEnabled: false,
+              onReactionSelected: (_) async {},
+            ),
             blocking: true,
           ),
         PostDetailDeleted() => const Center(
@@ -281,9 +309,17 @@ class _PostDetailBody extends StatelessWidget {
 }
 
 class _PostDetailContent extends StatelessWidget {
-  const _PostDetailContent({required this.post});
+  const _PostDetailContent({
+    required this.post,
+    required this.myReactionType,
+    required this.reactionPickerEnabled,
+    required this.onReactionSelected,
+  });
 
   final FeedPost post;
+  final ReactionType? myReactionType;
+  final bool reactionPickerEnabled;
+  final ValueChanged<ReactionType?> onReactionSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -396,6 +432,12 @@ class _PostDetailContent extends StatelessWidget {
                 },
               ),
             ],
+            const SizedBox(height: AppTokens.spaceUnit * 2),
+            ReactionPicker(
+              selected: myReactionType,
+              enabled: reactionPickerEnabled,
+              onChanged: onReactionSelected,
+            ),
             const SizedBox(height: AppTokens.spaceUnit * 2),
             _DetailReactionSummaryRow(count: post.reactionCount),
             if (commentLine != null) ...[
