@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../application/providers.dart';
 import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
+import '../../domain/entities/comment.dart';
 import '../../domain/entities/feed_post.dart';
+import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/post_id.dart';
 import '../../domain/value_objects/reaction_type.dart';
 
@@ -47,6 +51,9 @@ final class PostDetailReady extends PostDetailState {
     this.post, {
     this.myReactionType,
     this.reactionSending = false,
+    this.comments = const [],
+    this.commentsLoading = false,
+    this.commentsError,
   });
 
   final FeedPost post;
@@ -56,6 +63,15 @@ final class PostDetailReady extends PostDetailState {
 
   /// リアクション API 送信中（[ReactionPicker] 無効化用）。
   final bool reactionSending;
+
+  /// [LoadCommentsUseCase] で取得したコメント（実装計画 Phase 9-1-3）。
+  final List<Comment> comments;
+
+  /// コメント一覧取得中。
+  final bool commentsLoading;
+
+  /// コメント取得失敗時のユーザー向け文言。再試行で null に戻す。
+  final String? commentsError;
 }
 
 /// 削除 API 送信中（同じ内容を表示しつつ操作を抑止）。
@@ -63,10 +79,17 @@ final class PostDetailDeleting extends PostDetailState {
   const PostDetailDeleting(
     this.post, {
     this.myReactionType,
+    this.comments = const [],
+    this.commentsLoading = false,
+    this.commentsError,
   });
 
   final FeedPost post;
   final ReactionType? myReactionType;
+
+  final List<Comment> comments;
+  final bool commentsLoading;
+  final String? commentsError;
 }
 
 /// 削除成功。画面は `pop(true)` で閉じる（フィード更新用）。
@@ -91,6 +114,101 @@ final class PostDetailNotifier
   /// 再試行・明示リフレッシュ用。
   Future<void> reload() => _load();
 
+  /// コメント一覧のみ再取得（Phase 9-1-3）。投稿表示後の再試行用。
+  Future<void> reloadComments() async {
+    PostId id;
+    try {
+      id = PostId.parse(arg);
+    } catch (_) {
+      return;
+    }
+    await _loadComments(postId: id);
+  }
+
+  /// トップレベルコメント投稿（Phase 9-1-4、[AddCommentUseCase]）。
+  ///
+  /// 成功時は一覧末尾にマージし、[FeedPost.commentCount] があれば +1。失敗時はユーザー向け文言を返す。
+  Future<String?> submitTopLevelComment(String content) async {
+    final cur = state;
+    if (cur is! PostDetailReady) return null;
+
+    final postId = cur.post.id;
+    final result = await ref.read(addCommentUseCaseProvider)(
+      postId: postId,
+      content: content,
+    );
+
+    final after = state;
+    if (after is! PostDetailReady) return null;
+
+    switch (result) {
+      case Ok(:final value):
+        final merged = _mergeCommentsSorted(after.comments, value);
+        final nextPost = _feedPostWithCommentCountDelta(after.post, 1);
+        state = PostDetailReady(
+          nextPost,
+          myReactionType: after.myReactionType,
+          reactionSending: after.reactionSending,
+          comments: merged,
+          commentsLoading: after.commentsLoading,
+          commentsError: null,
+        );
+        return null;
+      case Err(:final error):
+        return _messageForFailure(error);
+    }
+  }
+
+  /// 1 階層返信（Phase 9-1-5、[AddReplyUseCase]）。親はトップレベルコメントのみ（9-1-6: UseCase と二重検証）。
+  Future<String?> submitReply({
+    required CommentId parentId,
+    required String content,
+  }) async {
+    final cur = state;
+    if (cur is! PostDetailReady) return null;
+
+    Comment? parent;
+    for (final c in cur.comments) {
+      if (c.id == parentId) {
+        parent = c;
+        break;
+      }
+    }
+    if (parent == null) {
+      return '対象のコメントが見つかりません。';
+    }
+    if (!parent.isTopLevelComment) {
+      return '返信の返信はできません。トップレベルのコメントにのみ返信できます。';
+    }
+
+    final postId = cur.post.id;
+    final result = await ref.read(addReplyUseCaseProvider)(
+      postId: postId,
+      parentId: parentId,
+      content: content,
+    );
+
+    final after = state;
+    if (after is! PostDetailReady) return null;
+
+    switch (result) {
+      case Ok(:final value):
+        final merged = _mergeCommentsSorted(after.comments, value);
+        final nextPost = _feedPostWithCommentCountDelta(after.post, 1);
+        state = PostDetailReady(
+          nextPost,
+          myReactionType: after.myReactionType,
+          reactionSending: after.reactionSending,
+          comments: merged,
+          commentsLoading: after.commentsLoading,
+          commentsError: null,
+        );
+        return null;
+      case Err(:final error):
+        return _messageForFailure(error);
+    }
+  }
+
   /// 自分の投稿の削除。成功時は [PostDetailDeleted]、失敗時は元の [PostDetailReady] に戻し、エラー文言を返す。
   Future<String?> deletePost() async {
     final current = state;
@@ -98,7 +216,13 @@ final class PostDetailNotifier
     final post = current.post;
     final myReactionType = current.myReactionType;
 
-    state = PostDetailDeleting(post, myReactionType: myReactionType);
+    state = PostDetailDeleting(
+      post,
+      myReactionType: myReactionType,
+      comments: current.comments,
+      commentsLoading: current.commentsLoading,
+      commentsError: current.commentsError,
+    );
 
     final useCase = ref.read(deletePostUseCaseProvider);
     final result = await useCase(post.id);
@@ -111,6 +235,9 @@ final class PostDetailNotifier
         state = PostDetailReady(
           post,
           myReactionType: myReactionType,
+          comments: current.comments,
+          commentsLoading: current.commentsLoading,
+          commentsError: current.commentsError,
         );
         return _messageForFailure(error);
     }
@@ -133,6 +260,9 @@ final class PostDetailNotifier
       optimisticPost,
       myReactionType: nextType,
       reactionSending: true,
+      comments: before.comments,
+      commentsLoading: before.commentsLoading,
+      commentsError: before.commentsError,
     );
 
     final Result<void, Failure> result;
@@ -150,12 +280,18 @@ final class PostDetailNotifier
         state = PostDetailReady(
           afterCall.post,
           myReactionType: nextType,
+          comments: afterCall.comments,
+          commentsLoading: afterCall.commentsLoading,
+          commentsError: afterCall.commentsError,
         );
         return null;
       case Err(:final error):
         state = PostDetailReady(
           before.post,
           myReactionType: prevType,
+          comments: before.comments,
+          commentsLoading: before.commentsLoading,
+          commentsError: before.commentsError,
         );
         return _messageForFailure(error);
     }
@@ -176,6 +312,27 @@ final class PostDetailNotifier
       distanceKm: p.distanceKm,
       commentCount: p.commentCount,
     );
+  }
+
+  static FeedPost _feedPostWithCommentCountDelta(FeedPost p, int delta) {
+    final c = p.commentCount;
+    final next = c == null ? null : c + delta;
+    return FeedPost(
+      post: p.post,
+      reactionCount: p.reactionCount,
+      authorName: p.authorName,
+      distanceKm: p.distanceKm,
+      commentCount: next != null && next < 0 ? 0 : next,
+    );
+  }
+
+  static List<Comment> _mergeCommentsSorted(
+    List<Comment> existing,
+    Comment added,
+  ) {
+    final out = [...existing, added];
+    out.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return out;
   }
 
   Future<void> _load() async {
@@ -206,13 +363,92 @@ final class PostDetailNotifier
           state = PostDetailReady(
             feedPost,
             myReactionType: myType,
+            comments: const [],
+            commentsLoading: true,
           );
+          unawaited(_loadComments(postId: id));
         }
       case Err(:final error):
         state = switch (error) {
           LocationFailure() => const PostDetailLocationDenied(),
           _ => PostDetailError(_messageForFailure(error)),
         };
+    }
+  }
+
+  Future<void> _loadComments({required PostId postId}) async {
+    _patchCommentFields(
+      comments: _currentCommentsIfSamePost(postId),
+      loading: true,
+      error: null,
+    );
+
+    final result = await ref.read(loadCommentsUseCaseProvider)(postId);
+
+    if (!_isSamePostReadyOrDeleting(postId)) return;
+
+    switch (result) {
+      case Ok(:final value):
+        _patchCommentFields(
+          comments: value,
+          loading: false,
+          error: null,
+        );
+      case Err(:final error):
+        _patchCommentFields(
+          comments: _currentCommentsIfSamePost(postId),
+          loading: false,
+          error: _messageForFailure(error),
+        );
+    }
+  }
+
+  bool _isSamePostReadyOrDeleting(PostId postId) {
+    final s = state;
+    return switch (s) {
+      PostDetailReady(:final post) => post.id == postId,
+      PostDetailDeleting(:final post) => post.id == postId,
+      _ => false,
+    };
+  }
+
+  List<Comment> _currentCommentsIfSamePost(PostId postId) {
+    final s = state;
+    return switch (s) {
+      PostDetailReady(:final post, :final comments) when post.id == postId =>
+        comments,
+      PostDetailDeleting(:final post, :final comments) when post.id == postId =>
+        comments,
+      _ => const [],
+    };
+  }
+
+  void _patchCommentFields({
+    required List<Comment> comments,
+    required bool loading,
+    String? error,
+  }) {
+    final s = state;
+    switch (s) {
+      case PostDetailReady():
+        state = PostDetailReady(
+          s.post,
+          myReactionType: s.myReactionType,
+          reactionSending: s.reactionSending,
+          comments: comments,
+          commentsLoading: loading,
+          commentsError: error,
+        );
+      case PostDetailDeleting():
+        state = PostDetailDeleting(
+          s.post,
+          myReactionType: s.myReactionType,
+          comments: comments,
+          commentsLoading: loading,
+          commentsError: error,
+        );
+      default:
+        break;
     }
   }
 

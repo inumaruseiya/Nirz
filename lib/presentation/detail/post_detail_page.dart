@@ -5,9 +5,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../application/providers.dart';
+import '../../domain/entities/comment.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/reaction_type.dart';
+import '../shared/comment_composer.dart';
+import '../shared/comment_thread.dart';
 import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
@@ -99,14 +103,23 @@ void showPostDetailImageViewer(BuildContext context, String imageUrl) {
 
 /// 投稿詳細（実装計画 Phase 8-1-1、詳細設計 4.5）。
 ///
-/// 状態は [PostDetailNotifier]（Phase 8-1-2）。コメント・[ReactionPicker]・削除メニューは後続タスク。
-class PostDetailPage extends ConsumerWidget {
+/// 状態は [PostDetailNotifier]（Phase 8-1-2）。
+class PostDetailPage extends ConsumerStatefulWidget {
   const PostDetailPage({super.key, required this.postId});
 
   final String postId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PostDetailPage> createState() => _PostDetailPageState();
+}
+
+class _PostDetailPageState extends ConsumerState<PostDetailPage> {
+  /// 返信先（トップレベル [Comment.id] のみ）。9-1-5。
+  CommentId? _replyParentId;
+
+  @override
+  Widget build(BuildContext context) {
+    final postId = widget.postId;
     final theme = Theme.of(context);
     final detailState = ref.watch(postDetailNotifierProvider(postId));
     final sessionAsync = ref.watch(sessionStateProvider);
@@ -116,6 +129,9 @@ class PostDetailPage extends ConsumerWidget {
       (previous, next) {
         if (next is PostDetailDeleted && context.mounted) {
           context.pop(true);
+        }
+        if (next is! PostDetailReady && _replyParentId != null) {
+          setState(() => _replyParentId = null);
         }
       },
     );
@@ -136,6 +152,11 @@ class PostDetailPage extends ConsumerWidget {
     };
 
     final showDeleteMenu = isOwner && detailState is PostDetailReady;
+
+    final canComposeComment = switch (sessionAsync) {
+      AsyncData(:final value) => value is SessionSignedIn,
+      _ => false,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -242,32 +263,121 @@ class PostDetailPage extends ConsumerWidget {
           :final post,
           :final myReactionType,
           :final reactionSending,
+          :final comments,
+          :final commentsLoading,
+          :final commentsError,
         ) =>
           _PostDetailBody(
-            child: _PostDetailContent(
-              post: post,
-              myReactionType: myReactionType,
-              reactionPickerEnabled: !reactionSending,
-              onReactionSelected: (next) async {
-                final err = await ref
-                    .read(postDetailNotifierProvider(postId).notifier)
-                    .applyReactionSelection(next);
-                if (!context.mounted) return;
-                if (err != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(err)),
-                  );
+            child: Builder(
+              builder: (context) {
+                final rawReplyId = _replyParentId;
+                final replyParentValid = rawReplyId != null &&
+                    comments.any(
+                      (c) => c.id == rawReplyId && c.parentId == null,
+                    );
+                if (rawReplyId != null && !replyParentValid) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!context.mounted) return;
+                    if (_replyParentId == rawReplyId) {
+                      setState(() => _replyParentId = null);
+                    }
+                  });
                 }
+                final effectiveReplyParentId =
+                    replyParentValid ? rawReplyId : null;
+                String? replyToLabel;
+                if (effectiveReplyParentId != null) {
+                  for (final c in comments) {
+                    if (c.id == effectiveReplyParentId) {
+                      final t = c.content.trim();
+                      replyToLabel = t.isEmpty
+                          ? 'コメント'
+                          : (t.length > 40 ? '${t.substring(0, 40)}…' : t);
+                      break;
+                    }
+                  }
+                }
+
+                final composerOn = canComposeComment &&
+                    !commentsLoading &&
+                    !reactionSending;
+
+                return _PostDetailContent(
+                  post: post,
+                  myReactionType: myReactionType,
+                  reactionPickerEnabled: !reactionSending,
+                  comments: comments,
+                  commentsLoading: commentsLoading,
+                  commentsError: commentsError,
+                  commentComposerEnabled: composerOn,
+                  replyToLabel: replyToLabel,
+                  onCancelReply: effectiveReplyParentId != null
+                      ? () => setState(() => _replyParentId = null)
+                      : null,
+                  onReplyTo:
+                      composerOn ? (id) => setState(() => _replyParentId = id) : null,
+                  onRetryComments: () => ref
+                      .read(postDetailNotifierProvider(postId).notifier)
+                      .reloadComments(),
+                  onSubmitComment: (content) async {
+                    final notifier =
+                        ref.read(postDetailNotifierProvider(postId).notifier);
+                    final String? err;
+                    if (effectiveReplyParentId != null) {
+                      err = await notifier.submitReply(
+                        parentId: effectiveReplyParentId,
+                        content: content,
+                      );
+                    } else {
+                      err = await notifier.submitTopLevelComment(content);
+                    }
+                    if (!context.mounted) return;
+                    if (err == null && effectiveReplyParentId != null) {
+                      setState(() => _replyParentId = null);
+                    }
+                    if (err != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(err)),
+                      );
+                    }
+                  },
+                  onReactionSelected: (next) async {
+                    final err = await ref
+                        .read(postDetailNotifierProvider(postId).notifier)
+                        .applyReactionSelection(next);
+                    if (!context.mounted) return;
+                    if (err != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(err)),
+                      );
+                    }
+                  },
+                );
               },
             ),
           ),
-        PostDetailDeleting(:final post, :final myReactionType) =>
+        PostDetailDeleting(
+          :final post,
+          :final myReactionType,
+          :final comments,
+          :final commentsLoading,
+          :final commentsError,
+        ) =>
           _PostDetailBody(
             blocking: true,
             child: _PostDetailContent(
               post: post,
               myReactionType: myReactionType,
               reactionPickerEnabled: false,
+              comments: comments,
+              commentsLoading: commentsLoading,
+              commentsError: commentsError,
+              commentComposerEnabled: false,
+              replyToLabel: null,
+              onCancelReply: null,
+              onReplyTo: null,
+              onRetryComments: null,
+              onSubmitComment: (_) async {},
               onReactionSelected: (_) async {},
             ),
           ),
@@ -313,12 +423,30 @@ class _PostDetailContent extends StatelessWidget {
     required this.post,
     required this.myReactionType,
     required this.reactionPickerEnabled,
+    required this.comments,
+    required this.commentsLoading,
+    required this.commentsError,
+    required this.commentComposerEnabled,
+    this.replyToLabel,
+    this.onCancelReply,
+    this.onReplyTo,
+    required this.onRetryComments,
+    required this.onSubmitComment,
     required this.onReactionSelected,
   });
 
   final FeedPost post;
   final ReactionType? myReactionType;
   final bool reactionPickerEnabled;
+  final List<Comment> comments;
+  final bool commentsLoading;
+  final String? commentsError;
+  final bool commentComposerEnabled;
+  final String? replyToLabel;
+  final VoidCallback? onCancelReply;
+  final ValueChanged<CommentId>? onReplyTo;
+  final Future<void> Function()? onRetryComments;
+  final Future<void> Function(String content) onSubmitComment;
   final ValueChanged<ReactionType?> onReactionSelected;
 
   @override
@@ -329,10 +457,6 @@ class _PostDetailContent extends StatelessWidget {
         : '近くのユーザー';
     final relative = formatRelativeTimeJa(post.createdAt);
     final distanceText = DistanceLabel.format(post.distanceKm);
-    final commentLine = post.commentCount != null
-        ? 'コメント ${post.commentCount} 件（Phase 9 で表示予定）'
-        : null;
-
     final reactionLabel = post.reactionCount == 0
         ? 'リアクションなし'
         : 'リアクション合計 ${post.reactionCount} 件（いいね・見た・炎の合計）';
@@ -440,13 +564,77 @@ class _PostDetailContent extends StatelessWidget {
             ),
             const SizedBox(height: AppTokens.spaceUnit * 2),
             _DetailReactionSummaryRow(count: post.reactionCount),
-            if (commentLine != null) ...[
-              const SizedBox(height: AppTokens.spaceUnit * 2),
+            const SizedBox(height: AppTokens.spaceUnit * 2),
+            Text(
+              'コメント',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppTokens.spaceUnit),
+            if (commentsLoading && comments.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
+                child: Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else ...[
+              if (commentsError != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      commentsError!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                    if (onRetryComments != null) ...[
+                      const SizedBox(height: AppTokens.spaceUnit),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
+                          onPressed: () => onRetryComments!(),
+                          child: const Text('コメントを再読み込み'),
+                        ),
+                      ),
+                    ],
+                    if (comments.isNotEmpty)
+                      const SizedBox(height: AppTokens.spaceUnit * 2),
+                  ],
+                ),
+              if (comments.isEmpty && commentsError == null)
+                Text(
+                  'まだコメントはありません',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else if (comments.isNotEmpty)
+                CommentThread(
+                  comments: comments,
+                  onReplyTo: onReplyTo,
+                ),
+            ],
+            if (commentsLoading && comments.isNotEmpty) ...[
+              const SizedBox(height: AppTokens.spaceUnit / 2),
               Text(
-                commentLine,
+                '更新中…',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
+              ),
+            ],
+            if (commentComposerEnabled) ...[
+              const SizedBox(height: AppTokens.spaceUnit * 2),
+              CommentComposer(
+                enabled: commentComposerEnabled,
+                replyToLabel: replyToLabel,
+                onCancelReply: onCancelReply,
+                onSubmit: onSubmitComment,
               ),
             ],
           ],

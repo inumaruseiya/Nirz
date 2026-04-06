@@ -25,6 +25,9 @@ final class Comment extends Equatable {
   final String content;
   final DateTime createdAt;
 
+  /// トップレベル（返信の親になりうる）。`parentId == null`。
+  bool get isTopLevelComment => parentId == null;
+
   @override
   List<Object?> get props =>
       [id, postId, authorId, parentId, content, createdAt];
