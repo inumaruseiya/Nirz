@@ -263,13 +263,13 @@ class PostDetailPage extends ConsumerWidget {
           ),
         PostDetailDeleting(:final post, :final myReactionType) =>
           _PostDetailBody(
+            blocking: true,
             child: _PostDetailContent(
               post: post,
               myReactionType: myReactionType,
               reactionPickerEnabled: false,
               onReactionSelected: (_) async {},
             ),
-            blocking: true,
           ),
         PostDetailDeleted() => const Center(
             child: CircularProgressIndicator(),
@@ -281,12 +281,12 @@ class PostDetailPage extends ConsumerWidget {
 
 class _PostDetailBody extends StatelessWidget {
   const _PostDetailBody({
-    required this.child,
     this.blocking = false,
+    required this.child,
   });
 
-  final Widget child;
   final bool blocking;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {

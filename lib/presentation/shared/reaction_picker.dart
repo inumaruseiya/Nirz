@@ -25,8 +25,6 @@ class ReactionPicker extends StatelessWidget {
 
   final bool enabled;
 
-  static const List<ReactionType> _order = ReactionType.values;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
