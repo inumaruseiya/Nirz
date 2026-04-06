@@ -1,15 +1,59 @@
-/// `posts` テーブル行の JSON 入出力用 DTO。
+import 'package:json_annotation/json_annotation.dart';
+
+part 'post_dto.g.dart';
+
+/// PostgREST / Supabase の `geography(Point)` が GeoJSON として返るときの入れ子表現。
 ///
-/// PostgREST / Supabase の `geography(Point)` は通常 GeoJSON オブジェクトとして返る。
 /// `coordinates` は **\[経度, 緯度\]**（RFC 7946）順。
+final class GeoJsonLocation {
+  const GeoJsonLocation({
+    required this.latitude,
+    required this.longitude,
+  });
+
+  final double latitude;
+  final double longitude;
+
+  factory GeoJsonLocation.fromJson(Map<String, dynamic> json) {
+    final rawType = json['type'];
+    if (rawType != 'Point') {
+      throw FormatException('location.type must be Point', rawType);
+    }
+    final coords = json['coordinates'];
+    if (coords is! List || coords.length < 2) {
+      throw FormatException('location.coordinates must be [lng, lat]', coords);
+    }
+    return GeoJsonLocation(
+      longitude: (coords[0] as num).toDouble(),
+      latitude: (coords[1] as num).toDouble(),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'type': 'Point',
+        'coordinates': [longitude, latitude],
+      };
+}
+
+GeoJsonLocation _postLocationFromJson(Object? json) {
+  if (json is! Map<String, dynamic>) {
+    throw FormatException('location must be a GeoJSON object', json);
+  }
+  return GeoJsonLocation.fromJson(json);
+}
+
+Map<String, dynamic> _postLocationToJson(GeoJsonLocation location) =>
+    location.toJson();
+
+/// `posts` テーブル行の JSON 入出力用 DTO。
+@JsonSerializable(explicitToJson: true)
 final class PostDto {
   const PostDto({
     required this.id,
     required this.userId,
     required this.content,
     this.imageUrl,
-    required this.locationLat,
-    required this.locationLng,
+    required this.location,
     required this.createdAt,
     required this.expiresAt,
   });
@@ -17,60 +61,32 @@ final class PostDto {
   final String id;
 
   /// `posts.user_id`
+  @JsonKey(name: 'user_id')
   final String userId;
 
   final String content;
 
   /// `posts.image_url`
+  @JsonKey(name: 'image_url')
   final String? imageUrl;
 
-  /// ぼかし後の緯度（`ST_Y(location::geometry)` と同値想定）
-  final double locationLat;
+  /// ぼかし後の位置（GeoJSON Point）
+  @JsonKey(fromJson: _postLocationFromJson, toJson: _postLocationToJson)
+  final GeoJsonLocation location;
 
-  /// ぼかし後の経度（`ST_X(location::geometry)` と同値想定）
-  final double locationLng;
-
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+
+  @JsonKey(name: 'expires_at')
   final DateTime expiresAt;
 
-  factory PostDto.fromJson(Map<String, dynamic> json) {
-    final (lat, lng) = _parsePoint(json['location']);
-    return PostDto(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      content: json['content'] as String,
-      imageUrl: json['image_url'] as String?,
-      locationLat: lat,
-      locationLng: lng,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      expiresAt: DateTime.parse(json['expires_at'] as String),
-    );
-  }
+  /// ぼかし後の緯度（`ST_Y(location::geometry)` と同値想定）
+  double get locationLat => location.latitude;
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'content': content,
-        'image_url': imageUrl,
-        'location': {
-          'type': 'Point',
-          'coordinates': [locationLng, locationLat],
-        },
-        'created_at': createdAt.toUtc().toIso8601String(),
-        'expires_at': expiresAt.toUtc().toIso8601String(),
-      };
+  /// ぼかし後の経度（`ST_X(location::geometry)` と同値想定）
+  double get locationLng => location.longitude;
 
-  /// GeoJSON `Point` または `coordinates` のみのマップを解釈する。
-  static (double lat, double lng) _parsePoint(Object? raw) {
-    if (raw is! Map<String, dynamic>) {
-      throw FormatException('location must be a GeoJSON object', raw);
-    }
-    final coords = raw['coordinates'];
-    if (coords is! List || coords.length < 2) {
-      throw FormatException('location.coordinates must be [lng, lat]', raw);
-    }
-    final lng = (coords[0] as num).toDouble();
-    final lat = (coords[1] as num).toDouble();
-    return (lat, lng);
-  }
+  factory PostDto.fromJson(Map<String, dynamic> json) => _$PostDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PostDtoToJson(this);
 }

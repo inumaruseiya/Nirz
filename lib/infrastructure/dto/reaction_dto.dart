@@ -1,6 +1,11 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'reaction_dto.g.dart';
+
 /// `reactions` テーブル行の JSON 入出力用 DTO。
 ///
 /// `type` は DB の `text` 列そのまま（`like` / `look` / `fire`）。ドメインの `ReactionType` への変換は Mapper 側。
+@JsonSerializable()
 final class ReactionDto {
   const ReactionDto({
     required this.id,
@@ -11,29 +16,21 @@ final class ReactionDto {
   });
 
   final String id;
+
+  @JsonKey(name: 'user_id')
   final String userId;
+
+  @JsonKey(name: 'post_id')
   final String postId;
 
   /// `reactions.type`
   final String type;
 
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
-  factory ReactionDto.fromJson(Map<String, dynamic> json) {
-    return ReactionDto(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      postId: json['post_id'] as String,
-      type: json['type'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-    );
-  }
+  factory ReactionDto.fromJson(Map<String, dynamic> json) =>
+      _$ReactionDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'user_id': userId,
-        'post_id': postId,
-        'type': type,
-        'created_at': createdAt.toUtc().toIso8601String(),
-      };
+  Map<String, dynamic> toJson() => _$ReactionDtoToJson(this);
 }
