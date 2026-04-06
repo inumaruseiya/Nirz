@@ -5,9 +5,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../application/providers.dart';
+import '../../domain/entities/comment.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/value_objects/reaction_type.dart';
+import '../shared/comment_thread.dart';
 import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
@@ -242,12 +244,21 @@ class PostDetailPage extends ConsumerWidget {
           :final post,
           :final myReactionType,
           :final reactionSending,
+          :final comments,
+          :final commentsLoading,
+          :final commentsError,
         ) =>
           _PostDetailBody(
             child: _PostDetailContent(
               post: post,
               myReactionType: myReactionType,
               reactionPickerEnabled: !reactionSending,
+              comments: comments,
+              commentsLoading: commentsLoading,
+              commentsError: commentsError,
+              onRetryComments: () => ref
+                  .read(postDetailNotifierProvider(postId).notifier)
+                  .reloadComments(),
               onReactionSelected: (next) async {
                 final err = await ref
                     .read(postDetailNotifierProvider(postId).notifier)
@@ -261,13 +272,23 @@ class PostDetailPage extends ConsumerWidget {
               },
             ),
           ),
-        PostDetailDeleting(:final post, :final myReactionType) =>
+        PostDetailDeleting(
+          :final post,
+          :final myReactionType,
+          :final comments,
+          :final commentsLoading,
+          :final commentsError,
+        ) =>
           _PostDetailBody(
             blocking: true,
             child: _PostDetailContent(
               post: post,
               myReactionType: myReactionType,
               reactionPickerEnabled: false,
+              comments: comments,
+              commentsLoading: commentsLoading,
+              commentsError: commentsError,
+              onRetryComments: null,
               onReactionSelected: (_) async {},
             ),
           ),
@@ -313,12 +334,20 @@ class _PostDetailContent extends StatelessWidget {
     required this.post,
     required this.myReactionType,
     required this.reactionPickerEnabled,
+    required this.comments,
+    required this.commentsLoading,
+    required this.commentsError,
+    required this.onRetryComments,
     required this.onReactionSelected,
   });
 
   final FeedPost post;
   final ReactionType? myReactionType;
   final bool reactionPickerEnabled;
+  final List<Comment> comments;
+  final bool commentsLoading;
+  final String? commentsError;
+  final Future<void> Function()? onRetryComments;
   final ValueChanged<ReactionType?> onReactionSelected;
 
   @override
@@ -329,10 +358,6 @@ class _PostDetailContent extends StatelessWidget {
         : '近くのユーザー';
     final relative = formatRelativeTimeJa(post.createdAt);
     final distanceText = DistanceLabel.format(post.distanceKm);
-    final commentLine = post.commentCount != null
-        ? 'コメント ${post.commentCount} 件（Phase 9 で表示予定）'
-        : null;
-
     final reactionLabel = post.reactionCount == 0
         ? 'リアクションなし'
         : 'リアクション合計 ${post.reactionCount} 件（いいね・見た・炎の合計）';
@@ -440,10 +465,62 @@ class _PostDetailContent extends StatelessWidget {
             ),
             const SizedBox(height: AppTokens.spaceUnit * 2),
             _DetailReactionSummaryRow(count: post.reactionCount),
-            if (commentLine != null) ...[
-              const SizedBox(height: AppTokens.spaceUnit * 2),
+            const SizedBox(height: AppTokens.spaceUnit * 2),
+            Text(
+              'コメント',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppTokens.spaceUnit),
+            if (commentsLoading && comments.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
+                child: Center(
+                  child: SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else ...[
+              if (commentsError != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      commentsError!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                    if (onRetryComments != null) ...[
+                      const SizedBox(height: AppTokens.spaceUnit),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton(
+                          onPressed: () => onRetryComments!(),
+                          child: const Text('コメントを再読み込み'),
+                        ),
+                      ),
+                    ],
+                    if (comments.isNotEmpty)
+                      const SizedBox(height: AppTokens.spaceUnit * 2),
+                  ],
+                ),
+              if (comments.isEmpty && commentsError == null)
+                Text(
+                  'まだコメントはありません',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else if (comments.isNotEmpty)
+                CommentThread(comments: comments),
+            ],
+            if (commentsLoading && comments.isNotEmpty) ...[
+              const SizedBox(height: AppTokens.spaceUnit / 2),
               Text(
-                commentLine,
+                '更新中…',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
