@@ -1,6 +1,13 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'profile_dto.g.dart';
+
+String _profileDisplayNameFromJson(Object? json) => (json as String?) ?? '';
+
 /// `profiles` テーブル行の JSON 入出力用 DTO。
 ///
 /// PostgREST / Supabase は snake_case。Dart 側は camelCase プロパティとする。
+@JsonSerializable()
 final class ProfileDto {
   const ProfileDto({
     required this.id,
@@ -13,27 +20,19 @@ final class ProfileDto {
   final String id;
 
   /// `profiles.name`（表示名。DB カラム名は `name`）。
+  @JsonKey(name: 'name', fromJson: _profileDisplayNameFromJson)
   final String displayName;
 
   /// `profiles.avatar_url`。
+  @JsonKey(name: 'avatar_url')
   final String? avatarUrl;
 
   /// `profiles.created_at`。
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
 
-  factory ProfileDto.fromJson(Map<String, dynamic> json) {
-    return ProfileDto(
-      id: json['id'] as String,
-      displayName: (json['name'] as String?) ?? '',
-      avatarUrl: json['avatar_url'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-    );
-  }
+  factory ProfileDto.fromJson(Map<String, dynamic> json) =>
+      _$ProfileDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': displayName,
-        'avatar_url': avatarUrl,
-        'created_at': createdAt.toUtc().toIso8601String(),
-      };
+  Map<String, dynamic> toJson() => _$ProfileDtoToJson(this);
 }

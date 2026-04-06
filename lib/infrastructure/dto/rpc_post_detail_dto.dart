@@ -1,4 +1,15 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'rpc_post_detail_dto.g.dart';
+
+String _rpcDetailAuthorNameFromJson(Object? json) => (json as String?) ?? '';
+
+int _detailIntFromNum(Object? json) => (json as num).toInt();
+
+double _detailDoubleFromNum(Object? json) => (json as num).toDouble();
+
 /// `get_post_detail` RPC の戻り（1行）の JSON 表現。
+@JsonSerializable()
 final class RpcPostDetailDto {
   const RpcPostDetailDto({
     required this.id,
@@ -16,32 +27,41 @@ final class RpcPostDetailDto {
   });
 
   final String id;
+
+  @JsonKey(name: 'user_id')
   final String userId;
+
   final String content;
+
+  @JsonKey(name: 'image_url')
   final String? imageUrl;
+
+  @JsonKey(name: 'location_lat', fromJson: _detailDoubleFromNum)
   final double locationLat;
+
+  @JsonKey(name: 'location_lng', fromJson: _detailDoubleFromNum)
   final double locationLng;
+
+  @JsonKey(name: 'created_at')
   final DateTime createdAt;
+
+  @JsonKey(name: 'expires_at')
   final DateTime expiresAt;
+
+  @JsonKey(name: 'reaction_count', fromJson: _detailIntFromNum)
   final int reactionCount;
+
+  @JsonKey(name: 'comment_count', fromJson: _detailIntFromNum)
   final int commentCount;
+
+  @JsonKey(name: 'author_name', fromJson: _rpcDetailAuthorNameFromJson)
   final String authorName;
+
+  @JsonKey(name: 'distance_meters', fromJson: _detailDoubleFromNum)
   final double distanceMeters;
 
-  factory RpcPostDetailDto.fromJson(Map<String, dynamic> json) {
-    return RpcPostDetailDto(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      content: json['content'] as String,
-      imageUrl: json['image_url'] as String?,
-      locationLat: (json['location_lat'] as num).toDouble(),
-      locationLng: (json['location_lng'] as num).toDouble(),
-      createdAt: DateTime.parse(json['created_at'] as String),
-      expiresAt: DateTime.parse(json['expires_at'] as String),
-      reactionCount: (json['reaction_count'] as num).toInt(),
-      commentCount: (json['comment_count'] as num).toInt(),
-      authorName: (json['author_name'] as String?) ?? '',
-      distanceMeters: (json['distance_meters'] as num).toDouble(),
-    );
-  }
+  factory RpcPostDetailDto.fromJson(Map<String, dynamic> json) =>
+      _$RpcPostDetailDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$RpcPostDetailDtoToJson(this);
 }
