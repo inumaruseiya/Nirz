@@ -124,6 +124,40 @@ final class PostDetailNotifier
     await _loadComments(postId: id);
   }
 
+  /// トップレベルコメント投稿（Phase 9-1-4、[AddCommentUseCase]）。
+  ///
+  /// 成功時は一覧末尾にマージし、[FeedPost.commentCount] があれば +1。失敗時はユーザー向け文言を返す。
+  Future<String?> submitTopLevelComment(String content) async {
+    final cur = state;
+    if (cur is! PostDetailReady) return null;
+
+    final postId = cur.post.id;
+    final result = await ref.read(addCommentUseCaseProvider)(
+      postId: postId,
+      content: content,
+    );
+
+    final after = state;
+    if (after is! PostDetailReady) return null;
+
+    switch (result) {
+      case Ok(:final value):
+        final merged = _mergeCommentsSorted(after.comments, value);
+        final nextPost = _feedPostWithCommentCountDelta(after.post, 1);
+        state = PostDetailReady(
+          nextPost,
+          myReactionType: after.myReactionType,
+          reactionSending: after.reactionSending,
+          comments: merged,
+          commentsLoading: after.commentsLoading,
+          commentsError: null,
+        );
+        return null;
+      case Err(:final error):
+        return _messageForFailure(error);
+    }
+  }
+
   /// 自分の投稿の削除。成功時は [PostDetailDeleted]、失敗時は元の [PostDetailReady] に戻し、エラー文言を返す。
   Future<String?> deletePost() async {
     final current = state;
@@ -227,6 +261,27 @@ final class PostDetailNotifier
       distanceKm: p.distanceKm,
       commentCount: p.commentCount,
     );
+  }
+
+  static FeedPost _feedPostWithCommentCountDelta(FeedPost p, int delta) {
+    final c = p.commentCount;
+    final next = c == null ? null : c + delta;
+    return FeedPost(
+      post: p.post,
+      reactionCount: p.reactionCount,
+      authorName: p.authorName,
+      distanceKm: p.distanceKm,
+      commentCount: next != null && next < 0 ? 0 : next,
+    );
+  }
+
+  static List<Comment> _mergeCommentsSorted(
+    List<Comment> existing,
+    Comment added,
+  ) {
+    final out = [...existing, added];
+    out.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+    return out;
   }
 
   Future<void> _load() async {

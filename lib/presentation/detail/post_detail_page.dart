@@ -9,6 +9,7 @@ import '../../domain/entities/comment.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/value_objects/reaction_type.dart';
+import '../shared/comment_composer.dart';
 import '../shared/comment_thread.dart';
 import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
@@ -101,14 +102,20 @@ void showPostDetailImageViewer(BuildContext context, String imageUrl) {
 
 /// 投稿詳細（実装計画 Phase 8-1-1、詳細設計 4.5）。
 ///
-/// 状態は [PostDetailNotifier]（Phase 8-1-2）。コメント・[ReactionPicker]・削除メニューは後続タスク。
-class PostDetailPage extends ConsumerWidget {
+/// 状態は [PostDetailNotifier]（Phase 8-1-2）。
+class PostDetailPage extends ConsumerStatefulWidget {
   const PostDetailPage({super.key, required this.postId});
 
   final String postId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PostDetailPage> createState() => _PostDetailPageState();
+}
+
+class _PostDetailPageState extends ConsumerState<PostDetailPage> {
+  @override
+  Widget build(BuildContext context) {
+    final postId = widget.postId;
     final theme = Theme.of(context);
     final detailState = ref.watch(postDetailNotifierProvider(postId));
     final sessionAsync = ref.watch(sessionStateProvider);
@@ -138,6 +145,11 @@ class PostDetailPage extends ConsumerWidget {
     };
 
     final showDeleteMenu = isOwner && detailState is PostDetailReady;
+
+    final canComposeComment = switch (sessionAsync) {
+      AsyncData(:final value) => value is SessionSignedIn,
+      _ => false,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -256,9 +268,23 @@ class PostDetailPage extends ConsumerWidget {
               comments: comments,
               commentsLoading: commentsLoading,
               commentsError: commentsError,
+              commentComposerEnabled: canComposeComment &&
+                  !commentsLoading &&
+                  !reactionSending,
               onRetryComments: () => ref
                   .read(postDetailNotifierProvider(postId).notifier)
                   .reloadComments(),
+              onSubmitTopLevelComment: (content) async {
+                final err = await ref
+                    .read(postDetailNotifierProvider(postId).notifier)
+                    .submitTopLevelComment(content);
+                if (!context.mounted) return;
+                if (err != null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(err)),
+                  );
+                }
+              },
               onReactionSelected: (next) async {
                 final err = await ref
                     .read(postDetailNotifierProvider(postId).notifier)
@@ -288,7 +314,9 @@ class PostDetailPage extends ConsumerWidget {
               comments: comments,
               commentsLoading: commentsLoading,
               commentsError: commentsError,
+              commentComposerEnabled: false,
               onRetryComments: null,
+              onSubmitTopLevelComment: (_) async {},
               onReactionSelected: (_) async {},
             ),
           ),
@@ -337,7 +365,9 @@ class _PostDetailContent extends StatelessWidget {
     required this.comments,
     required this.commentsLoading,
     required this.commentsError,
+    required this.commentComposerEnabled,
     required this.onRetryComments,
+    required this.onSubmitTopLevelComment,
     required this.onReactionSelected,
   });
 
@@ -347,7 +377,9 @@ class _PostDetailContent extends StatelessWidget {
   final List<Comment> comments;
   final bool commentsLoading;
   final String? commentsError;
+  final bool commentComposerEnabled;
   final Future<void> Function()? onRetryComments;
+  final Future<void> Function(String content) onSubmitTopLevelComment;
   final ValueChanged<ReactionType?> onReactionSelected;
 
   @override
@@ -524,6 +556,13 @@ class _PostDetailContent extends StatelessWidget {
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
+              ),
+            ],
+            if (commentComposerEnabled) ...[
+              const SizedBox(height: AppTokens.spaceUnit * 2),
+              CommentComposer(
+                enabled: commentComposerEnabled,
+                onSubmit: onSubmitTopLevelComment,
               ),
             ],
           ],
