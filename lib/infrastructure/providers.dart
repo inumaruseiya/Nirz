@@ -5,11 +5,15 @@ import '../domain/repositories/auth_repository.dart';
 import '../domain/repositories/comment_repository.dart';
 import '../domain/repositories/feed_repository.dart';
 import '../domain/repositories/location_repository.dart';
+import '../domain/repositories/ng_word_list_repository.dart';
 import '../domain/repositories/post_repository.dart';
 import '../domain/repositories/profile_repository.dart';
 import '../domain/repositories/reaction_repository.dart';
 import '../domain/repositories/storage_repository.dart';
 import 'location/geolocator_location_repository.dart';
+import 'moderation/embedded_ng_word_list_repository.dart';
+import 'moderation/fallback_ng_word_list_repository.dart';
+import 'moderation/supabase_ng_word_list_repository.dart';
 import 'supabase/supabase_auth_repository.dart';
 import 'supabase/supabase_comment_repository.dart';
 import 'supabase/supabase_feed_repository.dart';
@@ -63,4 +67,12 @@ final storageRepositoryProvider = Provider<StorageRepository>(
 /// [LocationRepository] → [GeolocatorLocationRepository]（Phase 3-4-1）
 final locationRepositoryProvider = Provider<LocationRepository>(
   (ref) => const GeolocatorLocationRepository(),
+);
+
+/// NG ワード一覧（Phase 10-1-1）。Supabase `ng_words` を優先し、失敗時は埋め込み一覧。
+final ngWordListRepositoryProvider = Provider<NgWordListRepository>(
+  (ref) => FallbackNgWordListRepository(
+    SupabaseNgWordListRepository(ref.watch(supabaseClientProvider)),
+    const EmbeddedNgWordListRepository(),
+  ),
 );
