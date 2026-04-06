@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/repositories/auth_repository.dart';
 import '../domain/services/location_obfuscation_service.dart';
 import '../infrastructure/providers.dart';
 import 'auth/request_password_reset_use_case.dart';
@@ -13,11 +14,13 @@ import 'comments/add_reply_use_case.dart';
 import 'comments/load_comments_use_case.dart';
 import 'feed/load_local_feed_use_case.dart';
 import 'feed/load_more_feed_use_case.dart';
+import 'feed/load_post_detail_use_case.dart';
 import 'location/get_current_position_use_case.dart';
 import 'location/obfuscate_location_use_case.dart';
 import 'location/request_location_permission_use_case.dart';
 import 'posts/create_post_use_case.dart';
 import 'posts/delete_post_use_case.dart';
+import 'reactions/get_my_reaction_use_case.dart';
 import 'reactions/remove_reaction_use_case.dart';
 import 'reactions/submit_reaction_use_case.dart';
 
@@ -47,6 +50,11 @@ final signOutUseCaseProvider = Provider<SignOutUseCase>(
 final watchSessionUseCaseProvider = Provider<WatchSessionUseCase>(
   (ref) => WatchSessionUseCase(ref.watch(authRepositoryProvider)),
 );
+
+/// 現在の認証セッション（UI で「自分の投稿」判定などに利用）。
+final sessionStateProvider = StreamProvider<SessionState>((ref) {
+  return ref.watch(watchSessionUseCaseProvider)();
+});
 
 final requestPasswordResetUseCaseProvider =
     Provider<RequestPasswordResetUseCase>(
@@ -100,6 +108,13 @@ final loadMoreFeedUseCaseProvider = Provider<LoadMoreFeedUseCase>(
   ),
 );
 
+final loadPostDetailUseCaseProvider = Provider<LoadPostDetailUseCase>(
+  (ref) => LoadPostDetailUseCase(
+    ref.watch(feedRepositoryProvider),
+    ref.watch(locationRepositoryProvider),
+  ),
+);
+
 // --- Reactions (Phase 4-5) ---
 
 final submitReactionUseCaseProvider = Provider<SubmitReactionUseCase>(
@@ -108,6 +123,10 @@ final submitReactionUseCaseProvider = Provider<SubmitReactionUseCase>(
 
 final removeReactionUseCaseProvider = Provider<RemoveReactionUseCase>(
   (ref) => RemoveReactionUseCase(ref.watch(reactionRepositoryProvider)),
+);
+
+final getMyReactionUseCaseProvider = Provider<GetMyReactionUseCase>(
+  (ref) => GetMyReactionUseCase(ref.watch(reactionRepositoryProvider)),
 );
 
 // --- Comments (Phase 4-6) ---

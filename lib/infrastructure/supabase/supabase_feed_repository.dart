@@ -9,7 +9,9 @@ import '../../domain/core/result.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/feed_repository.dart';
 import '../../domain/value_objects/geo_coordinate.dart';
+import '../../domain/value_objects/post_id.dart';
 import '../dto/rpc_feed_item_dto.dart';
+import '../dto/rpc_post_detail_dto.dart';
 import '../dto/rpc_feed_params.dart';
 import '../mappers/post_mapper.dart';
 
@@ -67,6 +69,54 @@ final class SupabaseFeedRepository implements FeedRepository {
         }
       }
       return Ok(out);
+    } on AuthException {
+      return const Err(AuthFailure());
+    } on PostgrestException catch (e) {
+      return Err(_mapPostgrest(e));
+    } on SocketException {
+      return const Err(NetworkFailure());
+    } catch (_) {
+      return const Err(ServerFailure());
+    }
+  }
+
+  @override
+  Future<Result<List<FeedPost>, Failure>> fetchPostDetail({
+    required PostId postId,
+    required GeoCoordinate viewerQueryPoint,
+  }) async {
+    if (_client.auth.currentUser == null) {
+      return const Err(AuthFailure());
+    }
+    try {
+      final raw = await _client.rpc<dynamic>(
+        'get_post_detail',
+        params: <String, dynamic>{
+          'p_post_id': postId.value,
+          'p_lat': viewerQueryPoint.latitude,
+          'p_lng': viewerQueryPoint.longitude,
+        },
+      );
+      if (raw == null) {
+        return const Ok([]);
+      }
+      if (raw is! List) {
+        return const Err(ServerFailure());
+      }
+      if (raw.isEmpty) {
+        return const Ok([]);
+      }
+      final first = raw.first;
+      if (first is! Map) {
+        return const Err(ServerFailure());
+      }
+      final row = Map<String, dynamic>.from(first);
+      try {
+        final dto = RpcPostDetailDto.fromJson(row);
+        return Ok([PostMapper.postDetailToDomain(dto)]);
+      } on FormatException catch (e) {
+        return Err(ValidationFailure(e.message));
+      }
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
