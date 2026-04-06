@@ -159,13 +159,27 @@ final class PostDetailNotifier
     }
   }
 
-  /// 1 階層返信（Phase 9-1-5、[AddReplyUseCase]）。親はトップレベルコメントのみ（UseCase 側でも検証）。
+  /// 1 階層返信（Phase 9-1-5、[AddReplyUseCase]）。親はトップレベルコメントのみ（9-1-6: UseCase と二重検証）。
   Future<String?> submitReply({
     required CommentId parentId,
     required String content,
   }) async {
     final cur = state;
     if (cur is! PostDetailReady) return null;
+
+    Comment? parent;
+    for (final c in cur.comments) {
+      if (c.id == parentId) {
+        parent = c;
+        break;
+      }
+    }
+    if (parent == null) {
+      return '対象のコメントが見つかりません。';
+    }
+    if (!parent.isTopLevelComment) {
+      return '返信の返信はできません。トップレベルのコメントにのみ返信できます。';
+    }
 
     final postId = cur.post.id;
     final result = await ref.read(addReplyUseCaseProvider)(

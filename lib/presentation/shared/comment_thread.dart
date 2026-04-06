@@ -105,18 +105,24 @@ class _TopLevelCommentBlock extends StatelessWidget {
           const SizedBox(height: AppTokens.spaceUnit / 2),
           Align(
             alignment: AlignmentDirectional.centerStart,
-            child: TextButton(
-              onPressed: onReply,
-              style: TextButton.styleFrom(
-                minimumSize: const Size(
-                  AppTokens.minTapTarget,
-                  AppTokens.minTapTarget,
+            child: Semantics(
+              button: true,
+              label: '返信',
+              hint:
+                  'このコメントに1階層だけ返信できます。返信コメントにさらに返信することはできません。',
+              child: TextButton(
+                onPressed: onReply,
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(
+                    AppTokens.minTapTarget,
+                    AppTokens.minTapTarget,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTokens.spaceUnit,
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTokens.spaceUnit,
-                ),
+                child: const Text('返信'),
               ),
-              child: const Text('返信'),
             ),
           ),
         ],

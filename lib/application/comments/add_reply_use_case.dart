@@ -27,11 +27,15 @@ final class AddReplyUseCase {
           }
         }
         if (parent == null) {
-          return const Err(ValidationFailure('parent comment not found'));
-        }
-        if (parent.parentId != null) {
           return const Err(
-            ValidationFailure('replies cannot be nested deeper than one level'),
+            ValidationFailure('対象のコメントが見つかりません。'),
+          );
+        }
+        if (!parent.isTopLevelComment) {
+          return const Err(
+            ValidationFailure(
+              '返信の返信はできません。トップレベルのコメントにのみ返信できます。',
+            ),
           );
         }
         return _comments.addReply(
