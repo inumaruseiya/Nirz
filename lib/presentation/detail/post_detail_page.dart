@@ -8,6 +8,7 @@ import '../../application/providers.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/reaction_type.dart';
 import '../shared/comment_composer.dart';
 import '../shared/comment_thread.dart';
@@ -113,6 +114,9 @@ class PostDetailPage extends ConsumerStatefulWidget {
 }
 
 class _PostDetailPageState extends ConsumerState<PostDetailPage> {
+  /// 返信先（トップレベル [Comment.id] のみ）。9-1-5。
+  CommentId? _replyParentId;
+
   @override
   Widget build(BuildContext context) {
     final postId = widget.postId;
@@ -125,6 +129,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       (previous, next) {
         if (next is PostDetailDeleted && context.mounted) {
           context.pop(true);
+        }
+        if (next is! PostDetailReady && _replyParentId != null) {
+          setState(() => _replyParentId = null);
         }
       },
     );
@@ -261,40 +268,91 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
           :final commentsError,
         ) =>
           _PostDetailBody(
-            child: _PostDetailContent(
-              post: post,
-              myReactionType: myReactionType,
-              reactionPickerEnabled: !reactionSending,
-              comments: comments,
-              commentsLoading: commentsLoading,
-              commentsError: commentsError,
-              commentComposerEnabled: canComposeComment &&
-                  !commentsLoading &&
-                  !reactionSending,
-              onRetryComments: () => ref
-                  .read(postDetailNotifierProvider(postId).notifier)
-                  .reloadComments(),
-              onSubmitTopLevelComment: (content) async {
-                final err = await ref
-                    .read(postDetailNotifierProvider(postId).notifier)
-                    .submitTopLevelComment(content);
-                if (!context.mounted) return;
-                if (err != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(err)),
-                  );
+            child: Builder(
+              builder: (context) {
+                final rawReplyId = _replyParentId;
+                final replyParentValid = rawReplyId != null &&
+                    comments.any(
+                      (c) => c.id == rawReplyId && c.parentId == null,
+                    );
+                if (rawReplyId != null && !replyParentValid) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!context.mounted) return;
+                    if (_replyParentId == rawReplyId) {
+                      setState(() => _replyParentId = null);
+                    }
+                  });
                 }
-              },
-              onReactionSelected: (next) async {
-                final err = await ref
-                    .read(postDetailNotifierProvider(postId).notifier)
-                    .applyReactionSelection(next);
-                if (!context.mounted) return;
-                if (err != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(err)),
-                  );
+                final effectiveReplyParentId =
+                    replyParentValid ? rawReplyId : null;
+                String? replyToLabel;
+                if (effectiveReplyParentId != null) {
+                  for (final c in comments) {
+                    if (c.id == effectiveReplyParentId) {
+                      final t = c.content.trim();
+                      replyToLabel = t.isEmpty
+                          ? 'コメント'
+                          : (t.length > 40 ? '${t.substring(0, 40)}…' : t);
+                      break;
+                    }
+                  }
                 }
+
+                final composerOn = canComposeComment &&
+                    !commentsLoading &&
+                    !reactionSending;
+
+                return _PostDetailContent(
+                  post: post,
+                  myReactionType: myReactionType,
+                  reactionPickerEnabled: !reactionSending,
+                  comments: comments,
+                  commentsLoading: commentsLoading,
+                  commentsError: commentsError,
+                  commentComposerEnabled: composerOn,
+                  replyToLabel: replyToLabel,
+                  onCancelReply: effectiveReplyParentId != null
+                      ? () => setState(() => _replyParentId = null)
+                      : null,
+                  onReplyTo:
+                      composerOn ? (id) => setState(() => _replyParentId = id) : null,
+                  onRetryComments: () => ref
+                      .read(postDetailNotifierProvider(postId).notifier)
+                      .reloadComments(),
+                  onSubmitComment: (content) async {
+                    final notifier =
+                        ref.read(postDetailNotifierProvider(postId).notifier);
+                    final String? err;
+                    if (effectiveReplyParentId != null) {
+                      err = await notifier.submitReply(
+                        parentId: effectiveReplyParentId,
+                        content: content,
+                      );
+                    } else {
+                      err = await notifier.submitTopLevelComment(content);
+                    }
+                    if (!context.mounted) return;
+                    if (err == null && effectiveReplyParentId != null) {
+                      setState(() => _replyParentId = null);
+                    }
+                    if (err != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(err)),
+                      );
+                    }
+                  },
+                  onReactionSelected: (next) async {
+                    final err = await ref
+                        .read(postDetailNotifierProvider(postId).notifier)
+                        .applyReactionSelection(next);
+                    if (!context.mounted) return;
+                    if (err != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(err)),
+                      );
+                    }
+                  },
+                );
               },
             ),
           ),
@@ -315,8 +373,11 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               commentsLoading: commentsLoading,
               commentsError: commentsError,
               commentComposerEnabled: false,
+              replyToLabel: null,
+              onCancelReply: null,
+              onReplyTo: null,
               onRetryComments: null,
-              onSubmitTopLevelComment: (_) async {},
+              onSubmitComment: (_) async {},
               onReactionSelected: (_) async {},
             ),
           ),
@@ -366,8 +427,11 @@ class _PostDetailContent extends StatelessWidget {
     required this.commentsLoading,
     required this.commentsError,
     required this.commentComposerEnabled,
+    this.replyToLabel,
+    this.onCancelReply,
+    this.onReplyTo,
     required this.onRetryComments,
-    required this.onSubmitTopLevelComment,
+    required this.onSubmitComment,
     required this.onReactionSelected,
   });
 
@@ -378,8 +442,11 @@ class _PostDetailContent extends StatelessWidget {
   final bool commentsLoading;
   final String? commentsError;
   final bool commentComposerEnabled;
+  final String? replyToLabel;
+  final VoidCallback? onCancelReply;
+  final ValueChanged<CommentId>? onReplyTo;
   final Future<void> Function()? onRetryComments;
-  final Future<void> Function(String content) onSubmitTopLevelComment;
+  final Future<void> Function(String content) onSubmitComment;
   final ValueChanged<ReactionType?> onReactionSelected;
 
   @override
@@ -547,7 +614,10 @@ class _PostDetailContent extends StatelessWidget {
                   ),
                 )
               else if (comments.isNotEmpty)
-                CommentThread(comments: comments),
+                CommentThread(
+                  comments: comments,
+                  onReplyTo: onReplyTo,
+                ),
             ],
             if (commentsLoading && comments.isNotEmpty) ...[
               const SizedBox(height: AppTokens.spaceUnit / 2),
@@ -562,7 +632,9 @@ class _PostDetailContent extends StatelessWidget {
               const SizedBox(height: AppTokens.spaceUnit * 2),
               CommentComposer(
                 enabled: commentComposerEnabled,
-                onSubmit: onSubmitTopLevelComment,
+                replyToLabel: replyToLabel,
+                onCancelReply: onCancelReply,
+                onSubmit: onSubmitComment,
               ),
             ],
           ],

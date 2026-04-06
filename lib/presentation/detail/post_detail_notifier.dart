@@ -7,6 +7,7 @@ import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/entities/feed_post.dart';
+import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/post_id.dart';
 import '../../domain/value_objects/reaction_type.dart';
 
@@ -134,6 +135,42 @@ final class PostDetailNotifier
     final postId = cur.post.id;
     final result = await ref.read(addCommentUseCaseProvider)(
       postId: postId,
+      content: content,
+    );
+
+    final after = state;
+    if (after is! PostDetailReady) return null;
+
+    switch (result) {
+      case Ok(:final value):
+        final merged = _mergeCommentsSorted(after.comments, value);
+        final nextPost = _feedPostWithCommentCountDelta(after.post, 1);
+        state = PostDetailReady(
+          nextPost,
+          myReactionType: after.myReactionType,
+          reactionSending: after.reactionSending,
+          comments: merged,
+          commentsLoading: after.commentsLoading,
+          commentsError: null,
+        );
+        return null;
+      case Err(:final error):
+        return _messageForFailure(error);
+    }
+  }
+
+  /// 1 階層返信（Phase 9-1-5、[AddReplyUseCase]）。親はトップレベルコメントのみ（UseCase 側でも検証）。
+  Future<String?> submitReply({
+    required CommentId parentId,
+    required String content,
+  }) async {
+    final cur = state;
+    if (cur is! PostDetailReady) return null;
+
+    final postId = cur.post.id;
+    final result = await ref.read(addReplyUseCaseProvider)(
+      postId: postId,
+      parentId: parentId,
       content: content,
     );
 
