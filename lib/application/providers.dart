@@ -85,6 +85,7 @@ final createPostUseCaseProvider = Provider<CreatePostUseCase>(
   (ref) => CreatePostUseCase(
     ref.watch(postRepositoryProvider),
     ref.watch(storageRepositoryProvider),
+    ref.watch(ngWordListRepositoryProvider),
   ),
 );
 
@@ -136,9 +137,15 @@ final loadCommentsUseCaseProvider = Provider<LoadCommentsUseCase>(
 );
 
 final addCommentUseCaseProvider = Provider<AddCommentUseCase>(
-  (ref) => AddCommentUseCase(ref.watch(commentRepositoryProvider)),
+  (ref) => AddCommentUseCase(
+    ref.watch(commentRepositoryProvider),
+    ref.watch(ngWordListRepositoryProvider),
+  ),
 );
 
 final addReplyUseCaseProvider = Provider<AddReplyUseCase>(
-  (ref) => AddReplyUseCase(ref.watch(commentRepositoryProvider)),
+  (ref) => AddReplyUseCase(
+    ref.watch(commentRepositoryProvider),
+    ref.watch(ngWordListRepositoryProvider),
+  ),
 );
