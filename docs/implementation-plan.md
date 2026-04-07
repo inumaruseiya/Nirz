@@ -459,6 +459,8 @@
 | 10-2-3 | `reports` テーブルへの INSERT | 通報データ保存 | FR-MOD-02 |
 | 10-2-4 | 管理者確認フロー（ダッシュボード or Supabase直接） | 通報一覧・対応ステータス管理 | FR-MOD-02 |
 
+> **手順の正本（ダッシュボード / SQL）**: [`docs/supabase-reports-moderation.md`](./supabase-reports-moderation.md)
+
 ### 10-3. ブロック
 
 | タスクID | タスク | 詳細 | 対応要件 |
