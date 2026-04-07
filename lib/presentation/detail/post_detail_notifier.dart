@@ -10,6 +10,7 @@ import '../../domain/entities/feed_post.dart';
 import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/post_id.dart';
 import '../../domain/value_objects/reaction_type.dart';
+import '../../domain/value_objects/report_target_type.dart';
 
 /// 投稿詳細画面の状態（実装計画 Phase 8-1-2）。
 ///
@@ -51,6 +52,7 @@ final class PostDetailReady extends PostDetailState {
     this.post, {
     this.myReactionType,
     this.reactionSending = false,
+    this.reportSubmitting = false,
     this.comments = const [],
     this.commentsLoading = false,
     this.commentsError,
@@ -63,6 +65,9 @@ final class PostDetailReady extends PostDetailState {
 
   /// リアクション API 送信中（[ReactionPicker] 無効化用）。
   final bool reactionSending;
+
+  /// 通報送信中（Phase 10-2-3）。
+  final bool reportSubmitting;
 
   /// [LoadCommentsUseCase] で取得したコメント（実装計画 Phase 9-1-3）。
   final List<Comment> comments;
@@ -79,6 +84,7 @@ final class PostDetailDeleting extends PostDetailState {
   const PostDetailDeleting(
     this.post, {
     this.myReactionType,
+    this.reportSubmitting = false,
     this.comments = const [],
     this.commentsLoading = false,
     this.commentsError,
@@ -86,6 +92,9 @@ final class PostDetailDeleting extends PostDetailState {
 
   final FeedPost post;
   final ReactionType? myReactionType;
+
+  /// 削除待ち中に通報送信が走っていた場合に引き継ぐ（通常は false）。
+  final bool reportSubmitting;
 
   final List<Comment> comments;
   final bool commentsLoading;
@@ -130,7 +139,7 @@ final class PostDetailNotifier
   /// 成功時は一覧末尾にマージし、[FeedPost.commentCount] があれば +1。失敗時はユーザー向け文言を返す。
   Future<String?> submitTopLevelComment(String content) async {
     final cur = state;
-    if (cur is! PostDetailReady) return null;
+    if (cur is! PostDetailReady || cur.reportSubmitting) return null;
 
     final postId = cur.post.id;
     final result = await ref.read(addCommentUseCaseProvider)(
@@ -149,6 +158,7 @@ final class PostDetailNotifier
           nextPost,
           myReactionType: after.myReactionType,
           reactionSending: after.reactionSending,
+          reportSubmitting: after.reportSubmitting,
           comments: merged,
           commentsLoading: after.commentsLoading,
           commentsError: null,
@@ -165,7 +175,7 @@ final class PostDetailNotifier
     required String content,
   }) async {
     final cur = state;
-    if (cur is! PostDetailReady) return null;
+    if (cur is! PostDetailReady || cur.reportSubmitting) return null;
 
     Comment? parent;
     for (final c in cur.comments) {
@@ -199,6 +209,7 @@ final class PostDetailNotifier
           nextPost,
           myReactionType: after.myReactionType,
           reactionSending: after.reactionSending,
+          reportSubmitting: after.reportSubmitting,
           comments: merged,
           commentsLoading: after.commentsLoading,
           commentsError: null,
@@ -209,16 +220,67 @@ final class PostDetailNotifier
     }
   }
 
+  /// 通報を送信（Phase 10-2-3、[SubmitReportUseCase]）。
+  Future<String?> submitReport(ReportSubmission submission) async {
+    final cur = state;
+    if (cur is! PostDetailReady ||
+        cur.reactionSending ||
+        cur.reportSubmitting) {
+      return null;
+    }
+
+    state = PostDetailReady(
+      cur.post,
+      myReactionType: cur.myReactionType,
+      reactionSending: cur.reactionSending,
+      reportSubmitting: true,
+      comments: cur.comments,
+      commentsLoading: cur.commentsLoading,
+      commentsError: cur.commentsError,
+    );
+
+    final result = await ref.read(submitReportUseCaseProvider)(submission);
+
+    final after = state;
+    if (after is! PostDetailReady) return null;
+
+    switch (result) {
+      case Ok():
+        state = PostDetailReady(
+          after.post,
+          myReactionType: after.myReactionType,
+          reactionSending: after.reactionSending,
+          reportSubmitting: false,
+          comments: after.comments,
+          commentsLoading: after.commentsLoading,
+          commentsError: after.commentsError,
+        );
+        return null;
+      case Err(:final error):
+        state = PostDetailReady(
+          after.post,
+          myReactionType: after.myReactionType,
+          reactionSending: after.reactionSending,
+          reportSubmitting: false,
+          comments: after.comments,
+          commentsLoading: after.commentsLoading,
+          commentsError: after.commentsError,
+        );
+        return _messageForFailure(error);
+    }
+  }
+
   /// 自分の投稿の削除。成功時は [PostDetailDeleted]、失敗時は元の [PostDetailReady] に戻し、エラー文言を返す。
   Future<String?> deletePost() async {
     final current = state;
-    if (current is! PostDetailReady) return null;
+    if (current is! PostDetailReady || current.reportSubmitting) return null;
     final post = current.post;
     final myReactionType = current.myReactionType;
 
     state = PostDetailDeleting(
       post,
       myReactionType: myReactionType,
+      reportSubmitting: current.reportSubmitting,
       comments: current.comments,
       commentsLoading: current.commentsLoading,
       commentsError: current.commentsError,
@@ -235,6 +297,7 @@ final class PostDetailNotifier
         state = PostDetailReady(
           post,
           myReactionType: myReactionType,
+          reportSubmitting: false,
           comments: current.comments,
           commentsLoading: current.commentsLoading,
           commentsError: current.commentsError,
@@ -246,7 +309,11 @@ final class PostDetailNotifier
   /// [ReactionPicker] からの選択。楽観的に件数更新し、失敗時はロールバックしてエラー文言を返す（8-2-2 / 8-2-3）。
   Future<String?> applyReactionSelection(ReactionType? nextType) async {
     final cur = state;
-    if (cur is! PostDetailReady || cur.reactionSending) return null;
+    if (cur is! PostDetailReady ||
+        cur.reactionSending ||
+        cur.reportSubmitting) {
+      return null;
+    }
 
     final before = cur;
     final prevType = before.myReactionType;
@@ -260,6 +327,7 @@ final class PostDetailNotifier
       optimisticPost,
       myReactionType: nextType,
       reactionSending: true,
+      reportSubmitting: before.reportSubmitting,
       comments: before.comments,
       commentsLoading: before.commentsLoading,
       commentsError: before.commentsError,
@@ -280,6 +348,7 @@ final class PostDetailNotifier
         state = PostDetailReady(
           afterCall.post,
           myReactionType: nextType,
+          reportSubmitting: afterCall.reportSubmitting,
           comments: afterCall.comments,
           commentsLoading: afterCall.commentsLoading,
           commentsError: afterCall.commentsError,
@@ -289,6 +358,7 @@ final class PostDetailNotifier
         state = PostDetailReady(
           before.post,
           myReactionType: prevType,
+          reportSubmitting: before.reportSubmitting,
           comments: before.comments,
           commentsLoading: before.commentsLoading,
           commentsError: before.commentsError,
@@ -363,6 +433,7 @@ final class PostDetailNotifier
           state = PostDetailReady(
             feedPost,
             myReactionType: myType,
+            reportSubmitting: false,
             comments: const [],
             commentsLoading: true,
           );
@@ -435,6 +506,7 @@ final class PostDetailNotifier
           s.post,
           myReactionType: s.myReactionType,
           reactionSending: s.reactionSending,
+          reportSubmitting: s.reportSubmitting,
           comments: comments,
           commentsLoading: loading,
           commentsError: error,
@@ -443,6 +515,7 @@ final class PostDetailNotifier
         state = PostDetailDeleting(
           s.post,
           myReactionType: s.myReactionType,
+          reportSubmitting: s.reportSubmitting,
           comments: comments,
           commentsLoading: loading,
           commentsError: error,

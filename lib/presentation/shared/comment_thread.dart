@@ -17,6 +17,7 @@ class CommentThread extends StatelessWidget {
     this.resolveAuthorLabel,
     this.onReplyTo,
     this.viewerUserId,
+    this.reportMenuEnabled = true,
     this.onReportComment,
   });
 
@@ -31,6 +32,9 @@ class CommentThread extends StatelessWidget {
 
   /// ログイン中の閲覧者。自分のコメントには「通報」を出さない（Phase 10-2-1）。
   final UserId? viewerUserId;
+
+  /// 通報送信中などに false（Phase 10-2-3）。
+  final bool reportMenuEnabled;
 
   /// 他人のコメントの「通報」押下（理由 UI・INSERT は Phase 10-2-2/3）。
   final Future<void> Function(CommentId)? onReportComment;
@@ -77,6 +81,7 @@ class CommentThread extends StatelessWidget {
             replyAuthorLabel: _label,
             onReply: onReplyTo == null ? null : () => onReplyTo!(tops[i].id),
             viewerUserId: viewerUserId,
+            reportMenuEnabled: reportMenuEnabled,
             onReportComment: onReportComment,
           ),
         ],
@@ -93,6 +98,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
     required this.replyAuthorLabel,
     this.onReply,
     this.viewerUserId,
+    this.reportMenuEnabled = true,
     this.onReportComment,
   });
 
@@ -102,6 +108,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
   final String Function(UserId id) replyAuthorLabel;
   final VoidCallback? onReply;
   final UserId? viewerUserId;
+  final bool reportMenuEnabled;
   final Future<void> Function(CommentId)? onReportComment;
 
   @override
@@ -115,6 +122,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
           comment: comment,
           authorLabel: authorLabel,
           viewerUserId: viewerUserId,
+          reportMenuEnabled: reportMenuEnabled,
           onReportComment: onReportComment,
         ),
         if (onReply != null) ...[
@@ -168,6 +176,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
                         comment: replies[j],
                         authorLabel: replyAuthorLabel(replies[j].authorId),
                         viewerUserId: viewerUserId,
+                        reportMenuEnabled: reportMenuEnabled,
                         onReportComment: onReportComment,
                       ),
                     ),
@@ -187,12 +196,14 @@ class _CommentBody extends StatelessWidget {
     required this.comment,
     required this.authorLabel,
     this.viewerUserId,
+    this.reportMenuEnabled = true,
     this.onReportComment,
   });
 
   final Comment comment;
   final String authorLabel;
   final UserId? viewerUserId;
+  final bool reportMenuEnabled;
   final Future<void> Function(CommentId)? onReportComment;
 
   @override
@@ -201,7 +212,8 @@ class _CommentBody extends StatelessWidget {
     final relative = formatRelativeTimeJa(comment.createdAt);
     final semanticsLabel =
         '$authorLabel、$relative。${comment.content}';
-    final showReport = viewerUserId != null &&
+    final showReport = reportMenuEnabled &&
+        viewerUserId != null &&
         onReportComment != null &&
         comment.authorId.value != viewerUserId!.value;
 

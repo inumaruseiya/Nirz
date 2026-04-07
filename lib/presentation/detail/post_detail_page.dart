@@ -10,6 +10,7 @@ import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/value_objects/user_id.dart';
 import '../../domain/value_objects/comment_id.dart';
+import '../../domain/value_objects/report_target_type.dart';
 import '../../domain/value_objects/reaction_type.dart';
 import '../shared/comment_composer.dart';
 import '../shared/comment_thread.dart';
@@ -153,7 +154,13 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       _ => false,
     };
 
-    final showDeleteMenu = isOwner && detailState is PostDetailReady;
+    final reportSubmitting = switch (detailState) {
+      PostDetailReady(:final reportSubmitting) => reportSubmitting,
+      _ => false,
+    };
+
+    final showDeleteMenu =
+        isOwner && detailState is PostDetailReady && !reportSubmitting;
 
     final viewerUserId = switch (sessionAsync) {
       AsyncData(:final value) => switch (value) {
@@ -165,7 +172,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
     final showReportPostMenu = viewerUserId != null &&
         !isOwner &&
-        detailState is PostDetailReady;
+        detailState is PostDetailReady &&
+        !reportSubmitting;
 
     final canComposeComment = switch (sessionAsync) {
       AsyncData(:final value) => value is SessionSignedIn,
@@ -184,22 +192,31 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   if (detailState is! PostDetailReady || !context.mounted) {
                     return;
                   }
+                  final readyPost = detailState.post;
                   final draft = await showReportReasonDialog(
                     context,
                     title: '投稿を通報',
                   );
                   if (!context.mounted || draft == null) return;
-                  final summary = draft.reasonForStorage;
-                  final short = summary.length > 100
-                      ? '${summary.substring(0, 100)}…'
-                      : summary;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '通報の送信は次の実装で行います。理由: $short',
-                      ),
-                    ),
-                  );
+                  final err = await ref
+                      .read(postDetailNotifierProvider(postId).notifier)
+                      .submitReport(
+                        ReportSubmission(
+                          targetType: ReportTargetType.post,
+                          targetId: readyPost.id.value,
+                          reason: draft.reasonForStorage,
+                        ),
+                      );
+                  if (!context.mounted) return;
+                  if (err != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(err)),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('通報を受け付けました。')),
+                    );
+                  }
                   return;
                 }
                 if (value != 'delete') return;
@@ -305,6 +322,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
           :final post,
           :final myReactionType,
           :final reactionSending,
+          :final reportSubmitting,
           :final comments,
           :final commentsLoading,
           :final commentsError,
@@ -342,17 +360,20 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
                 final composerOn = canComposeComment &&
                     !commentsLoading &&
-                    !reactionSending;
+                    !reactionSending &&
+                    !reportSubmitting;
 
                 return _PostDetailContent(
                   post: post,
                   myReactionType: myReactionType,
-                  reactionPickerEnabled: !reactionSending,
+                  reactionPickerEnabled:
+                      !reactionSending && !reportSubmitting,
                   comments: comments,
                   commentsLoading: commentsLoading,
                   commentsError: commentsError,
                   commentComposerEnabled: composerOn,
                   viewerUserId: viewerUserId,
+                  reportMenuEnabled: !reportSubmitting,
                   replyToLabel: replyToLabel,
                   onCancelReply: effectiveReplyParentId != null
                       ? () => setState(() => _replyParentId = null)
@@ -402,6 +423,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
         PostDetailDeleting(
           :final post,
           :final myReactionType,
+          :final reportSubmitting,
           :final comments,
           :final commentsLoading,
           :final commentsError,
@@ -417,6 +439,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               commentsError: commentsError,
               commentComposerEnabled: false,
               viewerUserId: viewerUserId,
+              reportMenuEnabled: !reportSubmitting,
               replyToLabel: null,
               onCancelReply: null,
               onReplyTo: null,
@@ -472,6 +495,7 @@ class _PostDetailContent extends StatelessWidget {
     required this.commentsError,
     required this.commentComposerEnabled,
     this.viewerUserId,
+    this.reportMenuEnabled = true,
     this.replyToLabel,
     this.onCancelReply,
     this.onReplyTo,
@@ -490,6 +514,9 @@ class _PostDetailContent extends StatelessWidget {
 
   /// ログイン中の閲覧者。未ログイン時はコメントの「通報」を出さない。
   final UserId? viewerUserId;
+
+  /// 通報送信中はコメントの通報メニューを無効化。
+  final bool reportMenuEnabled;
   final String? replyToLabel;
   final VoidCallback? onCancelReply;
   final ValueChanged<CommentId>? onReplyTo;
@@ -666,25 +693,38 @@ class _PostDetailContent extends StatelessWidget {
                   comments: comments,
                   onReplyTo: onReplyTo,
                   viewerUserId: viewerUserId,
-                  onReportComment: viewerUserId == null
+                  reportMenuEnabled: reportMenuEnabled,
+                  onReportComment: viewerUserId == null || !reportMenuEnabled
                       ? null
-                      : (_) async {
+                      : (commentId) async {
                           final draft = await showReportReasonDialog(
                             context,
                             title: 'コメントを通報',
                           );
                           if (!context.mounted || draft == null) return;
-                          final summary = draft.reasonForStorage;
-                          final short = summary.length > 100
-                              ? '${summary.substring(0, 100)}…'
-                              : summary;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '通報の送信は次の実装で行います。理由: $short',
+                          final err = await ref
+                              .read(
+                                postDetailNotifierProvider(postId).notifier,
+                              )
+                              .submitReport(
+                                ReportSubmission(
+                                  targetType: ReportTargetType.comment,
+                                  targetId: commentId.value,
+                                  reason: draft.reasonForStorage,
+                                ),
+                              );
+                          if (!context.mounted) return;
+                          if (err != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(err)),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('通報を受け付けました。'),
                               ),
-                            ),
-                          );
+                            );
+                          }
                         },
                 ),
             ],

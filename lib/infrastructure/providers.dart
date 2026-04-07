@@ -9,6 +9,7 @@ import '../domain/repositories/ng_word_list_repository.dart';
 import '../domain/repositories/post_repository.dart';
 import '../domain/repositories/profile_repository.dart';
 import '../domain/repositories/reaction_repository.dart';
+import '../domain/repositories/report_repository.dart';
 import '../domain/repositories/storage_repository.dart';
 import 'location/geolocator_location_repository.dart';
 import 'moderation/embedded_ng_word_list_repository.dart';
@@ -20,6 +21,7 @@ import 'supabase/supabase_feed_repository.dart';
 import 'supabase/supabase_post_repository.dart';
 import 'supabase/supabase_profile_repository.dart';
 import 'supabase/supabase_reaction_repository.dart';
+import 'supabase/supabase_report_repository.dart';
 import 'supabase/supabase_storage_repository.dart';
 
 /// アプリ全体で共有する [SupabaseClient]。
@@ -57,6 +59,11 @@ final reactionRepositoryProvider = Provider<ReactionRepository>(
 /// [CommentRepository] → [SupabaseCommentRepository]
 final commentRepositoryProvider = Provider<CommentRepository>(
   (ref) => SupabaseCommentRepository(ref.watch(supabaseClientProvider)),
+);
+
+/// [ReportRepository] → [SupabaseReportRepository]（Phase 10-2-3）
+final reportRepositoryProvider = Provider<ReportRepository>(
+  (ref) => SupabaseReportRepository(ref.watch(supabaseClientProvider)),
 );
 
 /// [StorageRepository] → [SupabaseStorageRepository]
