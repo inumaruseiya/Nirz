@@ -40,8 +40,8 @@ class CommentThread extends StatelessWidget {
   /// 他人のコメントの「通報」押下（理由 UI + `reports` INSERT、Phase 10-2-2/3）。
   final Future<void> Function(CommentId)? onReportComment;
 
-  /// コメント投稿者のブロック（Phase 10-3-1、保存は 10-3-2）。
-  final Future<void> Function(CommentId)? onBlockCommentAuthor;
+  /// コメント投稿者のブロック（Phase 10-3-2）。
+  final Future<void> Function(UserId)? onBlockCommentAuthor;
 
   String _label(UserId id) =>
       resolveAuthorLabel?.call(id) ?? '近くのユーザー';
@@ -116,7 +116,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
   final UserId? viewerUserId;
   final bool reportMenuEnabled;
   final Future<void> Function(CommentId)? onReportComment;
-  final Future<void> Function(CommentId)? onBlockCommentAuthor;
+  final Future<void> Function(UserId)? onBlockCommentAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +215,7 @@ class _CommentBody extends StatelessWidget {
   final UserId? viewerUserId;
   final bool reportMenuEnabled;
   final Future<void> Function(CommentId)? onReportComment;
-  final Future<void> Function(CommentId)? onBlockCommentAuthor;
+  final Future<void> Function(UserId)? onBlockCommentAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -267,7 +267,7 @@ class _CommentBody extends StatelessWidget {
                       if (value == 'report') {
                         onReportComment?.call(comment.id);
                       } else if (value == 'block') {
-                        onBlockCommentAuthor?.call(comment.id);
+                        onBlockCommentAuthor?.call(comment.authorId);
                       }
                     },
                     itemBuilder: (context) => [

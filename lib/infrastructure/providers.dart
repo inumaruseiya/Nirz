@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/repositories/auth_repository.dart';
+import '../domain/repositories/block_repository.dart';
 import '../domain/repositories/comment_repository.dart';
 import '../domain/repositories/feed_repository.dart';
 import '../domain/repositories/location_repository.dart';
@@ -16,6 +17,7 @@ import 'moderation/embedded_ng_word_list_repository.dart';
 import 'moderation/fallback_ng_word_list_repository.dart';
 import 'moderation/supabase_ng_word_list_repository.dart';
 import 'supabase/supabase_auth_repository.dart';
+import 'supabase/supabase_block_repository.dart';
 import 'supabase/supabase_comment_repository.dart';
 import 'supabase/supabase_feed_repository.dart';
 import 'supabase/supabase_post_repository.dart';
@@ -64,6 +66,11 @@ final commentRepositoryProvider = Provider<CommentRepository>(
 /// [ReportRepository] → [SupabaseReportRepository]（Phase 10-2-3）
 final reportRepositoryProvider = Provider<ReportRepository>(
   (ref) => SupabaseReportRepository(ref.watch(supabaseClientProvider)),
+);
+
+/// [BlockRepository] → [SupabaseBlockRepository]（Phase 10-3-2）
+final blockRepositoryProvider = Provider<BlockRepository>(
+  (ref) => SupabaseBlockRepository(ref.watch(supabaseClientProvider)),
 );
 
 /// [StorageRepository] → [SupabaseStorageRepository]

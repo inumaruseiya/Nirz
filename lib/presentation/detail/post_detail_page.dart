@@ -18,7 +18,7 @@ import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
 import '../shared/reaction_picker.dart';
-import '../shared/block_user_placeholder.dart';
+import '../shared/block_user_dialog.dart';
 import '../shared/report_reason_dialog.dart';
 import '../shared/relative_time.dart';
 import '../theme/app_tokens.dart';
@@ -160,8 +160,15 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       _ => false,
     };
 
-    final showDeleteMenu =
-        isOwner && detailState is PostDetailReady && !reportSubmitting;
+    final blockSubmitting = switch (detailState) {
+      PostDetailReady(:final blockSubmitting) => blockSubmitting,
+      _ => false,
+    };
+
+    final showDeleteMenu = isOwner &&
+        detailState is PostDetailReady &&
+        !reportSubmitting &&
+        !blockSubmitting;
 
     final viewerUserId = switch (sessionAsync) {
       AsyncData(:final value) => switch (value) {
@@ -174,12 +181,14 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
     final showReportPostMenu = viewerUserId != null &&
         !isOwner &&
         detailState is PostDetailReady &&
-        !reportSubmitting;
+        !reportSubmitting &&
+        !blockSubmitting;
 
     final showBlockPostAuthorMenu = viewerUserId != null &&
         !isOwner &&
         detailState is PostDetailReady &&
-        !reportSubmitting;
+        !reportSubmitting &&
+        !blockSubmitting;
 
     final canComposeComment = switch (sessionAsync) {
       AsyncData(:final value) => value is SessionSignedIn,
@@ -202,9 +211,13 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   final label = authorName != null && authorName.isNotEmpty
                       ? authorName
                       : 'この投稿の投稿者';
-                  await showBlockUserPlaceholderDialog(
+                  final blockedId = detailState.post.authorId;
+                  await showBlockUserConfirmDialog(
                     context,
                     subjectLabel: label,
+                    onConfirm: () => ref
+                        .read(postDetailNotifierProvider(postId).notifier)
+                        .blockUser(blockedId),
                   );
                   return;
                 }
@@ -348,6 +361,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
           :final myReactionType,
           :final reactionSending,
           :final reportSubmitting,
+          :final blockSubmitting,
           :final comments,
           :final commentsLoading,
           :final commentsError,
@@ -386,25 +400,29 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 final composerOn = canComposeComment &&
                     !commentsLoading &&
                     !reactionSending &&
-                    !reportSubmitting;
+                    !reportSubmitting &&
+                    !blockSubmitting;
 
                 return _PostDetailContent(
                   post: post,
                   myReactionType: myReactionType,
-                  reactionPickerEnabled:
-                      !reactionSending && !reportSubmitting,
+                  reactionPickerEnabled: !reactionSending &&
+                      !reportSubmitting &&
+                      !blockSubmitting,
                   comments: comments,
                   commentsLoading: commentsLoading,
                   commentsError: commentsError,
                   commentComposerEnabled: composerOn,
                   viewerUserId: viewerUserId,
-                  reportMenuEnabled: !reportSubmitting,
-                  onBlockCommentAuthor: viewerUserId == null || reportSubmitting
+                  reportMenuEnabled: !reportSubmitting && !blockSubmitting,
+                  onBlockCommentAuthor: viewerUserId == null ||
+                          reportSubmitting ||
+                          blockSubmitting
                       ? null
-                      : (commentId) async {
+                      : (authorId) async {
                           String? label;
                           for (final c in comments) {
-                            if (c.id == commentId) {
+                            if (c.authorId.value == authorId.value) {
                               final t = c.content.trim();
                               label = t.isEmpty
                                   ? 'このコメントの投稿者'
@@ -414,9 +432,14 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                               break;
                             }
                           }
-                          await showBlockUserPlaceholderDialog(
+                          await showBlockUserConfirmDialog(
                             context,
                             subjectLabel: label ?? 'このコメントの投稿者',
+                            onConfirm: () => ref
+                                .read(
+                                  postDetailNotifierProvider(postId).notifier,
+                                )
+                                .blockUser(authorId),
                           );
                         },
                   replyToLabel: replyToLabel,
@@ -469,6 +492,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
           :final post,
           :final myReactionType,
           :final reportSubmitting,
+          :final blockSubmitting,
           :final comments,
           :final commentsLoading,
           :final commentsError,
@@ -484,7 +508,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               commentsError: commentsError,
               commentComposerEnabled: false,
               viewerUserId: viewerUserId,
-              reportMenuEnabled: !reportSubmitting,
+              reportMenuEnabled: !reportSubmitting && !blockSubmitting,
               onBlockCommentAuthor: null,
               replyToLabel: null,
               onCancelReply: null,
@@ -565,8 +589,8 @@ class _PostDetailContent extends StatelessWidget {
   /// 通報送信中はコメントの通報メニューを無効化。
   final bool reportMenuEnabled;
 
-  /// コメント投稿者のブロック（Phase 10-3-1）。
-  final Future<void> Function(CommentId)? onBlockCommentAuthor;
+  /// コメント投稿者のブロック（Phase 10-3-2）。
+  final Future<void> Function(UserId)? onBlockCommentAuthor;
   final String? replyToLabel;
   final VoidCallback? onCancelReply;
   final ValueChanged<CommentId>? onReplyTo;
