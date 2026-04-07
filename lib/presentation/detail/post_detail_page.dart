@@ -8,6 +8,7 @@ import '../../application/providers.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/entities/feed_post.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/value_objects/user_id.dart';
 import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/reaction_type.dart';
 import '../shared/comment_composer.dart';
@@ -153,6 +154,18 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
 
     final showDeleteMenu = isOwner && detailState is PostDetailReady;
 
+    final viewerUserId = switch (sessionAsync) {
+      AsyncData(:final value) => switch (value) {
+          SessionSignedIn(:final userId) => userId,
+          _ => null,
+        },
+      _ => null,
+    };
+
+    final showReportPostMenu = viewerUserId != null &&
+        !isOwner &&
+        detailState is PostDetailReady;
+
     final canComposeComment = switch (sessionAsync) {
       AsyncData(:final value) => value is SessionSignedIn,
       _ => false,
@@ -162,10 +175,21 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       appBar: AppBar(
         title: const Text('投稿'),
         actions: [
-          if (showDeleteMenu)
+          if (showDeleteMenu || showReportPostMenu)
             PopupMenuButton<String>(
               tooltip: 'その他',
               onSelected: (value) async {
+                if (value == 'report_post') {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        '通報の送信（理由選択など）は次の実装で利用できます。',
+                      ),
+                    ),
+                  );
+                  return;
+                }
                 if (value != 'delete') return;
                 final confirmed = await showDialog<bool>(
                   context: context,
@@ -202,10 +226,16 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem<String>(
-                  value: 'delete',
-                  child: Text('削除'),
-                ),
+                if (showDeleteMenu)
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: Text('削除'),
+                  ),
+                if (showReportPostMenu)
+                  const PopupMenuItem<String>(
+                    value: 'report_post',
+                    child: Text('通報'),
+                  ),
               ],
             ),
         ],
@@ -310,6 +340,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   commentsLoading: commentsLoading,
                   commentsError: commentsError,
                   commentComposerEnabled: composerOn,
+                  viewerUserId: viewerUserId,
                   replyToLabel: replyToLabel,
                   onCancelReply: effectiveReplyParentId != null
                       ? () => setState(() => _replyParentId = null)
@@ -373,6 +404,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               commentsLoading: commentsLoading,
               commentsError: commentsError,
               commentComposerEnabled: false,
+              viewerUserId: viewerUserId,
               replyToLabel: null,
               onCancelReply: null,
               onReplyTo: null,
@@ -427,6 +459,7 @@ class _PostDetailContent extends StatelessWidget {
     required this.commentsLoading,
     required this.commentsError,
     required this.commentComposerEnabled,
+    this.viewerUserId,
     this.replyToLabel,
     this.onCancelReply,
     this.onReplyTo,
@@ -442,6 +475,9 @@ class _PostDetailContent extends StatelessWidget {
   final bool commentsLoading;
   final String? commentsError;
   final bool commentComposerEnabled;
+
+  /// ログイン中の閲覧者。未ログイン時はコメントの「通報」を出さない。
+  final UserId? viewerUserId;
   final String? replyToLabel;
   final VoidCallback? onCancelReply;
   final ValueChanged<CommentId>? onReplyTo;
@@ -617,6 +653,18 @@ class _PostDetailContent extends StatelessWidget {
                 CommentThread(
                   comments: comments,
                   onReplyTo: onReplyTo,
+                  viewerUserId: viewerUserId,
+                  onReportComment: viewerUserId == null
+                      ? null
+                      : (_) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                '通報の送信（理由選択など）は次の実装で利用できます。',
+                              ),
+                            ),
+                          );
+                        },
                 ),
             ],
             if (commentsLoading && comments.isNotEmpty) ...[
