@@ -19,6 +19,7 @@ class CommentThread extends StatelessWidget {
     this.viewerUserId,
     this.reportMenuEnabled = true,
     this.onReportComment,
+    this.onBlockCommentAuthor,
   });
 
   /// 同一投稿に紐づくコメント一覧（`created_at` 昇順を想定）。
@@ -36,8 +37,11 @@ class CommentThread extends StatelessWidget {
   /// 通報送信中などに false（Phase 10-2-3）。
   final bool reportMenuEnabled;
 
-  /// 他人のコメントの「通報」押下（理由 UI・INSERT は Phase 10-2-2/3）。
+  /// 他人のコメントの「通報」押下（理由 UI + `reports` INSERT、Phase 10-2-2/3）。
   final Future<void> Function(CommentId)? onReportComment;
+
+  /// コメント投稿者のブロック（Phase 10-3-1、保存は 10-3-2）。
+  final Future<void> Function(CommentId)? onBlockCommentAuthor;
 
   String _label(UserId id) =>
       resolveAuthorLabel?.call(id) ?? '近くのユーザー';
@@ -83,6 +87,7 @@ class CommentThread extends StatelessWidget {
             viewerUserId: viewerUserId,
             reportMenuEnabled: reportMenuEnabled,
             onReportComment: onReportComment,
+            onBlockCommentAuthor: onBlockCommentAuthor,
           ),
         ],
       ],
@@ -100,6 +105,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
     this.viewerUserId,
     this.reportMenuEnabled = true,
     this.onReportComment,
+    this.onBlockCommentAuthor,
   });
 
   final Comment comment;
@@ -110,6 +116,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
   final UserId? viewerUserId;
   final bool reportMenuEnabled;
   final Future<void> Function(CommentId)? onReportComment;
+  final Future<void> Function(CommentId)? onBlockCommentAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +131,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
           viewerUserId: viewerUserId,
           reportMenuEnabled: reportMenuEnabled,
           onReportComment: onReportComment,
+          onBlockCommentAuthor: onBlockCommentAuthor,
         ),
         if (onReply != null) ...[
           const SizedBox(height: AppTokens.spaceUnit / 2),
@@ -178,6 +186,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
                         viewerUserId: viewerUserId,
                         reportMenuEnabled: reportMenuEnabled,
                         onReportComment: onReportComment,
+                        onBlockCommentAuthor: onBlockCommentAuthor,
                       ),
                     ),
                   ),
@@ -198,6 +207,7 @@ class _CommentBody extends StatelessWidget {
     this.viewerUserId,
     this.reportMenuEnabled = true,
     this.onReportComment,
+    this.onBlockCommentAuthor,
   });
 
   final Comment comment;
@@ -205,6 +215,7 @@ class _CommentBody extends StatelessWidget {
   final UserId? viewerUserId;
   final bool reportMenuEnabled;
   final Future<void> Function(CommentId)? onReportComment;
+  final Future<void> Function(CommentId)? onBlockCommentAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +227,11 @@ class _CommentBody extends StatelessWidget {
         viewerUserId != null &&
         onReportComment != null &&
         comment.authorId.value != viewerUserId!.value;
+    final showBlock = reportMenuEnabled &&
+        viewerUserId != null &&
+        onBlockCommentAuthor != null &&
+        comment.authorId.value != viewerUserId!.value;
+    final showOverflowMenu = showReport || showBlock;
 
     return Semantics(
       container: true,
@@ -235,7 +251,7 @@ class _CommentBody extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (showReport)
+              if (showOverflowMenu)
                 Semantics(
                   button: true,
                   label: 'コメントのその他メニュー',
@@ -249,17 +265,22 @@ class _CommentBody extends StatelessWidget {
                     icon: const Icon(Icons.more_vert, size: 22),
                     onSelected: (value) {
                       if (value == 'report') {
-                        final f = onReportComment;
-                        if (f != null) {
-                          f(comment.id);
-                        }
+                        onReportComment?.call(comment.id);
+                      } else if (value == 'block') {
+                        onBlockCommentAuthor?.call(comment.id);
                       }
                     },
                     itemBuilder: (context) => [
-                      const PopupMenuItem<String>(
-                        value: 'report',
-                        child: Text('通報'),
-                      ),
+                      if (showReport)
+                        const PopupMenuItem<String>(
+                          value: 'report',
+                          child: Text('通報'),
+                        ),
+                      if (showBlock)
+                        const PopupMenuItem<String>(
+                          value: 'block',
+                          child: Text('このユーザーをブロック'),
+                        ),
                     ],
                   ),
                 ),

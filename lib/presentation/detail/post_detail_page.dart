@@ -18,6 +18,7 @@ import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
 import '../shared/reaction_picker.dart';
+import '../shared/block_user_placeholder.dart';
 import '../shared/report_reason_dialog.dart';
 import '../shared/relative_time.dart';
 import '../theme/app_tokens.dart';
@@ -175,6 +176,11 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
         detailState is PostDetailReady &&
         !reportSubmitting;
 
+    final showBlockPostAuthorMenu = viewerUserId != null &&
+        !isOwner &&
+        detailState is PostDetailReady &&
+        !reportSubmitting;
+
     final canComposeComment = switch (sessionAsync) {
       AsyncData(:final value) => value is SessionSignedIn,
       _ => false,
@@ -184,10 +190,24 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       appBar: AppBar(
         title: const Text('投稿'),
         actions: [
-          if (showDeleteMenu || showReportPostMenu)
+          if (showDeleteMenu || showReportPostMenu || showBlockPostAuthorMenu)
             PopupMenuButton<String>(
               tooltip: 'その他',
               onSelected: (value) async {
+                if (value == 'block_post_author') {
+                  if (detailState is! PostDetailReady || !context.mounted) {
+                    return;
+                  }
+                  final authorName = detailState.post.authorName?.trim();
+                  final label = authorName != null && authorName.isNotEmpty
+                      ? authorName
+                      : 'この投稿の投稿者';
+                  await showBlockUserPlaceholderDialog(
+                    context,
+                    subjectLabel: label,
+                  );
+                  return;
+                }
                 if (value == 'report_post') {
                   if (detailState is! PostDetailReady || !context.mounted) {
                     return;
@@ -264,6 +284,11 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   const PopupMenuItem<String>(
                     value: 'report_post',
                     child: Text('通報'),
+                  ),
+                if (showBlockPostAuthorMenu)
+                  const PopupMenuItem<String>(
+                    value: 'block_post_author',
+                    child: Text('このユーザーをブロック'),
                   ),
               ],
             ),
@@ -374,6 +399,26 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   commentComposerEnabled: composerOn,
                   viewerUserId: viewerUserId,
                   reportMenuEnabled: !reportSubmitting,
+                  onBlockCommentAuthor: viewerUserId == null || reportSubmitting
+                      ? null
+                      : (commentId) async {
+                          String? label;
+                          for (final c in comments) {
+                            if (c.id == commentId) {
+                              final t = c.content.trim();
+                              label = t.isEmpty
+                                  ? 'このコメントの投稿者'
+                                  : (t.length > 28
+                                      ? '${t.substring(0, 28)}…'
+                                      : t);
+                              break;
+                            }
+                          }
+                          await showBlockUserPlaceholderDialog(
+                            context,
+                            subjectLabel: label ?? 'このコメントの投稿者',
+                          );
+                        },
                   replyToLabel: replyToLabel,
                   onCancelReply: effectiveReplyParentId != null
                       ? () => setState(() => _replyParentId = null)
@@ -440,6 +485,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               commentComposerEnabled: false,
               viewerUserId: viewerUserId,
               reportMenuEnabled: !reportSubmitting,
+              onBlockCommentAuthor: null,
               replyToLabel: null,
               onCancelReply: null,
               onReplyTo: null,
@@ -496,6 +542,7 @@ class _PostDetailContent extends StatelessWidget {
     required this.commentComposerEnabled,
     this.viewerUserId,
     this.reportMenuEnabled = true,
+    this.onBlockCommentAuthor,
     this.replyToLabel,
     this.onCancelReply,
     this.onReplyTo,
@@ -517,6 +564,9 @@ class _PostDetailContent extends StatelessWidget {
 
   /// 通報送信中はコメントの通報メニューを無効化。
   final bool reportMenuEnabled;
+
+  /// コメント投稿者のブロック（Phase 10-3-1）。
+  final Future<void> Function(CommentId)? onBlockCommentAuthor;
   final String? replyToLabel;
   final VoidCallback? onCancelReply;
   final ValueChanged<CommentId>? onReplyTo;
@@ -694,6 +744,7 @@ class _PostDetailContent extends StatelessWidget {
                   onReplyTo: onReplyTo,
                   viewerUserId: viewerUserId,
                   reportMenuEnabled: reportMenuEnabled,
+                  onBlockCommentAuthor: onBlockCommentAuthor,
                   onReportComment: viewerUserId == null || !reportMenuEnabled
                       ? null
                       : (commentId) async {
