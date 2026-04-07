@@ -17,6 +17,7 @@ import '../shared/distance_label.dart';
 import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
 import '../shared/reaction_picker.dart';
+import '../shared/report_reason_dialog.dart';
 import '../shared/relative_time.dart';
 import '../theme/app_tokens.dart';
 import 'post_detail_notifier.dart';
@@ -180,11 +181,22 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               tooltip: 'その他',
               onSelected: (value) async {
                 if (value == 'report_post') {
-                  if (!context.mounted) return;
+                  if (detailState is! PostDetailReady || !context.mounted) {
+                    return;
+                  }
+                  final draft = await showReportReasonDialog(
+                    context,
+                    title: '投稿を通報',
+                  );
+                  if (!context.mounted || draft == null) return;
+                  final summary = draft.reasonForStorage;
+                  final short = summary.length > 100
+                      ? '${summary.substring(0, 100)}…'
+                      : summary;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
+                    SnackBar(
                       content: Text(
-                        '通報の送信（理由選択など）は次の実装で利用できます。',
+                        '通報の送信は次の実装で行います。理由: $short',
                       ),
                     ),
                   );
@@ -656,11 +668,20 @@ class _PostDetailContent extends StatelessWidget {
                   viewerUserId: viewerUserId,
                   onReportComment: viewerUserId == null
                       ? null
-                      : (_) {
+                      : (_) async {
+                          final draft = await showReportReasonDialog(
+                            context,
+                            title: 'コメントを通報',
+                          );
+                          if (!context.mounted || draft == null) return;
+                          final summary = draft.reasonForStorage;
+                          final short = summary.length > 100
+                              ? '${summary.substring(0, 100)}…'
+                              : summary;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
+                            SnackBar(
                               content: Text(
-                                '通報の送信（理由選択など）は次の実装で利用できます。',
+                                '通報の送信は次の実装で行います。理由: $short',
                               ),
                             ),
                           );

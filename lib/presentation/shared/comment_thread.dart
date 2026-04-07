@@ -33,7 +33,7 @@ class CommentThread extends StatelessWidget {
   final UserId? viewerUserId;
 
   /// 他人のコメントの「通報」押下（理由 UI・INSERT は Phase 10-2-2/3）。
-  final ValueChanged<CommentId>? onReportComment;
+  final Future<void> Function(CommentId)? onReportComment;
 
   String _label(UserId id) =>
       resolveAuthorLabel?.call(id) ?? '近くのユーザー';
@@ -102,7 +102,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
   final String Function(UserId id) replyAuthorLabel;
   final VoidCallback? onReply;
   final UserId? viewerUserId;
-  final ValueChanged<CommentId>? onReportComment;
+  final Future<void> Function(CommentId)? onReportComment;
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +193,7 @@ class _CommentBody extends StatelessWidget {
   final Comment comment;
   final String authorLabel;
   final UserId? viewerUserId;
-  final ValueChanged<CommentId>? onReportComment;
+  final Future<void> Function(CommentId)? onReportComment;
 
   @override
   Widget build(BuildContext context) {
@@ -237,7 +237,10 @@ class _CommentBody extends StatelessWidget {
                     icon: const Icon(Icons.more_vert, size: 22),
                     onSelected: (value) {
                       if (value == 'report') {
-                        onReportComment!(comment.id);
+                        final f = onReportComment;
+                        if (f != null) {
+                          f(comment.id);
+                        }
                       }
                     },
                     itemBuilder: (context) => [
