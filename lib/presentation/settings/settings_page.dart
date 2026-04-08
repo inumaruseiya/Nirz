@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../application/providers.dart';
 import '../../domain/core/failure.dart';
@@ -27,6 +31,8 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  static const int _maxAvatarBytes = 5 * 1024 * 1024;
+
   final _nicknameFormKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
 
@@ -35,6 +41,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _presenceSaving = false;
   bool _nicknameDirty = false;
   bool _displayNameSaving = false;
+  bool _avatarSaving = false;
 
   @override
   void dispose() {
@@ -88,6 +95,122 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } finally {
       if (mounted) {
         setState(() => _displayNameSaving = false);
+      }
+    }
+  }
+
+  Future<void> _pickAvatarImage(ImageSource source) async {
+    if (_avatarSaving) return;
+    try {
+      final picker = ImagePicker();
+      final xFile = await picker.pickImage(
+        source: source,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        imageQuality: 85,
+      );
+      if (xFile == null || !mounted) return;
+
+      final bytes = await xFile.readAsBytes();
+      if (!mounted) return;
+      if (bytes.length > _maxAvatarBytes) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('画像は5MB以下にしてください。')),
+        );
+        return;
+      }
+
+      var mime = xFile.mimeType?.trim();
+      if (mime == null || mime.isEmpty) {
+        mime = 'image/jpeg';
+      }
+
+      await _uploadAndSaveAvatar(bytes, mime);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('画像を取得できませんでした。もう一度お試しください。'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadAndSaveAvatar(
+    Uint8List bytes,
+    String contentType,
+  ) async {
+    if (_avatarSaving) return;
+    setState(() => _avatarSaving = true);
+    try {
+      final upload = await ref.read(storageRepositoryProvider).uploadPostImage(
+            bytes,
+            contentType,
+          );
+      if (!mounted) return;
+      switch (upload) {
+        case Ok(:final value):
+          final result = await ref.read(profileRepositoryProvider).updateProfile(
+                avatarUrl: value.toString(),
+                updateAvatarUrl: true,
+              );
+          if (!mounted) return;
+          switch (result) {
+            case Ok():
+              ref.invalidate(currentUserProfileProvider);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('プロフィール画像を更新しました')),
+              );
+            case Err(:final error):
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(_messageForFailure(error))),
+              );
+          }
+        case Err(:final error):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_messageForFailure(error))),
+          );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _avatarSaving = false);
+      }
+    }
+  }
+
+  Future<void> _removeAvatar(Profile current) async {
+    if (_avatarSaving) return;
+    final url = current.avatarUrl?.trim();
+    if (url == null || url.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('削除する画像がありません')),
+      );
+      return;
+    }
+
+    setState(() => _avatarSaving = true);
+    try {
+      final result = await ref.read(profileRepositoryProvider).updateProfile(
+            updateAvatarUrl: true,
+            avatarUrl: null,
+          );
+      if (!mounted) return;
+      switch (result) {
+        case Ok():
+          ref.invalidate(currentUserProfileProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('プロフィール画像を削除しました')),
+          );
+        case Err(:final error):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_messageForFailure(error))),
+          );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _avatarSaving = false);
       }
     }
   }
@@ -236,42 +359,143 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     ],
                   );
                 }
-                return Form(
-                  key: _nicknameFormKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        controller: _nameController,
-                        textInputAction: TextInputAction.done,
-                        autofillHints: const [AutofillHints.nickname],
-                        decoration: const InputDecoration(
-                          labelText: 'ニックネーム',
-                          hintText: '表示名（フィードなどに表示）',
+                final avatarUrl = profile.avatarUrl?.trim();
+                final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Form(
+                      key: _nicknameFormKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          TextFormField(
+                            controller: _nameController,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.nickname],
+                            decoration: const InputDecoration(
+                              labelText: 'ニックネーム',
+                              hintText: '表示名（フィードなどに表示）',
+                            ),
+                            maxLength: AuthFieldValidators.nicknameMaxLength,
+                            validator: AuthFieldValidators.nickname,
+                            onChanged: (_) {
+                              if (!_nicknameDirty) {
+                                setState(() => _nicknameDirty = true);
+                              }
+                            },
+                          ),
+                          const SizedBox(height: AppTokens.spaceUnit),
+                          FilledButton(
+                            onPressed: _displayNameSaving || _avatarSaving
+                                ? null
+                                : () => _saveDisplayName(profile),
+                            child: _displayNameSaving
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child:
+                                        CircularProgressIndicator(strokeWidth: 2),
+                                  )
+                                : const Text('ニックネームを保存'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppTokens.spaceUnit * 2),
+                    Text(
+                      'プロフィール画像（任意）',
+                      style: textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: AppTokens.spaceUnit),
+                    Text(
+                      '投稿画像と同じストレージに保存します（最大5MB）。',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        ClipOval(
+                          child: SizedBox(
+                            width: 80,
+                            height: 80,
+                            child: hasAvatar
+                                ? CachedNetworkImage(
+                                    imageUrl: avatarUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (_, __) => const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                    errorWidget: (_, __, ___) => ColoredBox(
+                                      color: theme
+                                          .colorScheme.surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        color: theme
+                                            .colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  )
+                                : ColoredBox(
+                                    color: theme
+                                        .colorScheme.surfaceContainerHighest,
+                                    child: Icon(
+                                      Icons.person,
+                                      size: 40,
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                          ),
                         ),
-                        maxLength: AuthFieldValidators.nicknameMaxLength,
-                        validator: AuthFieldValidators.nickname,
-                        onChanged: (_) {
-                          if (!_nicknameDirty) {
-                            setState(() => _nicknameDirty = true);
-                          }
-                        },
-                      ),
+                        const SizedBox(width: AppTokens.spaceUnit * 2),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: _avatarSaving
+                                    ? null
+                                    : () => _pickAvatarImage(ImageSource.gallery),
+                                icon: const Icon(Icons.photo_library_outlined),
+                                label: const Text('ギャラリーから選ぶ'),
+                              ),
+                              if (!kIsWeb) ...[
+                                const SizedBox(height: AppTokens.spaceUnit),
+                                OutlinedButton.icon(
+                                  onPressed: _avatarSaving
+                                      ? null
+                                      : () =>
+                                          _pickAvatarImage(ImageSource.camera),
+                                  icon: const Icon(Icons.photo_camera_outlined),
+                                  label: const Text('カメラで撮る'),
+                                ),
+                              ],
+                              if (hasAvatar) ...[
+                                const SizedBox(height: AppTokens.spaceUnit),
+                                TextButton(
+                                  onPressed: _avatarSaving
+                                      ? null
+                                      : () => _removeAvatar(profile),
+                                  child: const Text('画像を削除'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (_avatarSaving) ...[
                       const SizedBox(height: AppTokens.spaceUnit),
-                      FilledButton(
-                        onPressed: _displayNameSaving
-                            ? null
-                            : () => _saveDisplayName(profile),
-                        child: _displayNameSaving
-                            ? const SizedBox(
-                                width: 22,
-                                height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Text('ニックネームを保存'),
-                      ),
+                      const LinearProgressIndicator(),
                     ],
-                  ),
+                  ],
                 );
               },
               loading: () => const Padding(

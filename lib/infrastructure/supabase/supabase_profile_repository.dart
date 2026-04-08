@@ -48,6 +48,7 @@ final class SupabaseProfileRepository implements ProfileRepository {
   Future<Result<Profile, Failure>> updateProfile({
     String? displayName,
     String? avatarUrl,
+    bool updateAvatarUrl = false,
     bool updatePresenceStatus = false,
     UserPresenceStatus? presenceStatus,
   }) async {
@@ -66,14 +67,15 @@ final class SupabaseProfileRepository implements ProfileRepository {
       }
       final current = ProfileDto.fromJson(Map<String, dynamic>.from(row));
 
-      final hasNameOrAvatarChange =
-          displayName != null || avatarUrl != null;
-      if (!hasNameOrAvatarChange && !updatePresenceStatus) {
+      final hasNameChange = displayName != null;
+      final hasAvatarChange = updateAvatarUrl;
+      if (!hasNameChange && !hasAvatarChange && !updatePresenceStatus) {
         return Ok(ProfileMapper.toDomain(current));
       }
 
       final mergedName = displayName ?? current.displayName;
-      final mergedAvatar = avatarUrl ?? current.avatarUrl;
+      final String? mergedAvatar =
+          updateAvatarUrl ? avatarUrl : current.avatarUrl;
       final payload = <String, dynamic>{
         'name': mergedName,
         'avatar_url': mergedAvatar,

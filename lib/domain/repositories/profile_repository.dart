@@ -10,9 +10,12 @@ abstract interface class ProfileRepository {
   /// 表示名・アバター URL の部分更新。未指定の引数は既存値を維持する（Infrastructure が merge する）。
   ///
   /// [updatePresenceStatus] が true のときだけ [presenceStatus] を反映する（`null` は DB 上でクリア）。
+  ///
+  /// [updateAvatarUrl] が true のときだけ [avatarUrl] を反映する（`null` はアバター削除）。
   Future<Result<Profile, Failure>> updateProfile({
     String? displayName,
     String? avatarUrl,
+    bool updateAvatarUrl = false,
     bool updatePresenceStatus = false,
     UserPresenceStatus? presenceStatus,
   });
