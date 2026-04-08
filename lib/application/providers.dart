@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/core/result.dart';
 import '../domain/entities/profile.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/services/location_obfuscation_service.dart';
@@ -66,6 +67,7 @@ final currentUserProfileProvider = FutureProvider.autoDispose<Profile?>((ref) as
     AsyncData(:final value) => value,
     AsyncLoading() => null,
     AsyncError() => null,
+    AsyncValue<SessionState>() => null,
   };
   if (session is! SessionSignedIn) {
     return null;

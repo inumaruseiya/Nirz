@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -427,12 +425,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 ? CachedNetworkImage(
                                     imageUrl: avatarUrl,
                                     fit: BoxFit.cover,
-                                    placeholder: (_, __) => const Center(
+                                    placeholder: (context, url) => const Center(
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                       ),
                                     ),
-                                    errorWidget: (_, __, ___) => ColoredBox(
+                                    errorWidget: (context, url, error) => ColoredBox(
                                       color: theme
                                           .colorScheme.surfaceContainerHighest,
                                       child: Icon(
@@ -502,7 +500,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (_, __) => Text(
+              error: (error, stackTrace) => Text(
                 'プロフィールを読み込めませんでした。',
                 style: textTheme.bodyLarge,
               ),
@@ -591,7 +589,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (_, __) => Text(
+              error: (error, stackTrace) => Text(
                 'プロフィールを読み込めませんでした。',
                 style: textTheme.bodyLarge,
               ),
