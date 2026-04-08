@@ -92,7 +92,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
       ValidationFailure(:final message) => message,
       LocationFailure() => '位置情報を利用できません。',
-      _ => '処理に失敗しました。',
     };
   }
 }

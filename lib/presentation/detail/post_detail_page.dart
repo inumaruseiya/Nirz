@@ -204,14 +204,19 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               tooltip: 'その他',
               onSelected: (value) async {
                 if (value == 'block_post_author') {
-                  if (detailState is! PostDetailReady || !context.mounted) {
-                    return;
-                  }
-                  final authorName = detailState.post.authorName?.trim();
+                  if (!context.mounted) return;
+                  // メニュー表示時は [PostDetailReady] だが、非同期後に状態が変わり得る。
+                  final s = ref.read(postDetailNotifierProvider(postId));
+                  final readyPost = switch (s) {
+                    PostDetailReady(:final post) => post,
+                    _ => null,
+                  };
+                  if (readyPost == null) return;
+                  final authorName = readyPost.authorName?.trim();
                   final label = authorName != null && authorName.isNotEmpty
                       ? authorName
                       : 'この投稿の投稿者';
-                  final blockedId = detailState.post.authorId;
+                  final blockedId = readyPost.authorId;
                   await showBlockUserConfirmDialog(
                     context,
                     subjectLabel: label,
@@ -222,10 +227,13 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   return;
                 }
                 if (value == 'report_post') {
-                  if (detailState is! PostDetailReady || !context.mounted) {
-                    return;
-                  }
-                  final readyPost = detailState.post;
+                  if (!context.mounted) return;
+                  final s = ref.read(postDetailNotifierProvider(postId));
+                  final readyPost = switch (s) {
+                    PostDetailReady(:final post) => post,
+                    _ => null,
+                  };
+                  if (readyPost == null) return;
                   final draft = await showReportReasonDialog(
                     context,
                     title: '投稿を通報',
@@ -402,6 +410,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                     !reactionSending &&
                     !reportSubmitting &&
                     !blockSubmitting;
+                final commentMenusEnabled =
+                    !reportSubmitting && !blockSubmitting;
 
                 return _PostDetailContent(
                   post: post,
@@ -414,10 +424,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   commentsError: commentsError,
                   commentComposerEnabled: composerOn,
                   viewerUserId: viewerUserId,
-                  reportMenuEnabled: !reportSubmitting && !blockSubmitting,
+                  reportMenuEnabled: commentMenusEnabled,
                   onBlockCommentAuthor: viewerUserId == null ||
-                          reportSubmitting ||
-                          blockSubmitting
+                          !commentMenusEnabled
                       ? null
                       : (authorId) async {
                           String? label;
@@ -451,6 +460,38 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   onRetryComments: () => ref
                       .read(postDetailNotifierProvider(postId).notifier)
                       .reloadComments(),
+                  onReportComment: viewerUserId == null || !commentMenusEnabled
+                      ? null
+                      : (commentId) async {
+                          final draft = await showReportReasonDialog(
+                            context,
+                            title: 'コメントを通報',
+                          );
+                          if (!context.mounted || draft == null) return;
+                          final err = await ref
+                              .read(
+                                postDetailNotifierProvider(postId).notifier,
+                              )
+                              .submitReport(
+                                ReportSubmission(
+                                  targetType: ReportTargetType.comment,
+                                  targetId: commentId.value,
+                                  reason: draft.reasonForStorage,
+                                ),
+                              );
+                          if (!context.mounted) return;
+                          if (err != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(err)),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('通報を受け付けました。'),
+                              ),
+                            );
+                          }
+                        },
                   onSubmitComment: (content) async {
                     final notifier =
                         ref.read(postDetailNotifierProvider(postId).notifier);
@@ -514,6 +555,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               onCancelReply: null,
               onReplyTo: null,
               onRetryComments: null,
+              onReportComment: null,
               onSubmitComment: (_) async {},
               onReactionSelected: (_) async {},
             ),
@@ -571,6 +613,7 @@ class _PostDetailContent extends StatelessWidget {
     this.onCancelReply,
     this.onReplyTo,
     required this.onRetryComments,
+    this.onReportComment,
     required this.onSubmitComment,
     required this.onReactionSelected,
   });
@@ -595,6 +638,9 @@ class _PostDetailContent extends StatelessWidget {
   final VoidCallback? onCancelReply;
   final ValueChanged<CommentId>? onReplyTo;
   final Future<void> Function()? onRetryComments;
+
+  /// コメント通報（親から [WidgetRef] を渡すためここではクロージャのみ保持）。
+  final Future<void> Function(CommentId)? onReportComment;
   final Future<void> Function(String content) onSubmitComment;
   final ValueChanged<ReactionType?> onReactionSelected;
 
@@ -769,38 +815,7 @@ class _PostDetailContent extends StatelessWidget {
                   viewerUserId: viewerUserId,
                   reportMenuEnabled: reportMenuEnabled,
                   onBlockCommentAuthor: onBlockCommentAuthor,
-                  onReportComment: viewerUserId == null || !reportMenuEnabled
-                      ? null
-                      : (commentId) async {
-                          final draft = await showReportReasonDialog(
-                            context,
-                            title: 'コメントを通報',
-                          );
-                          if (!context.mounted || draft == null) return;
-                          final err = await ref
-                              .read(
-                                postDetailNotifierProvider(postId).notifier,
-                              )
-                              .submitReport(
-                                ReportSubmission(
-                                  targetType: ReportTargetType.comment,
-                                  targetId: commentId.value,
-                                  reason: draft.reasonForStorage,
-                                ),
-                              );
-                          if (!context.mounted) return;
-                          if (err != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(err)),
-                            );
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('通報を受け付けました。'),
-                              ),
-                            );
-                          }
-                        },
+                  onReportComment: onReportComment,
                 ),
             ],
             if (commentsLoading && comments.isNotEmpty) ...[

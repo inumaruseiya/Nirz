@@ -28,7 +28,7 @@ final class ReportReasonDraft {
   String get reasonForStorage {
     final d = detailText.trim();
     if (d.isEmpty) return presetLabel;
-    return '${presetLabel}: $d';
+    return '$presetLabel: $d';
   }
 }
 
@@ -93,14 +93,25 @@ class _ReportReasonDialogState extends State<_ReportReasonDialog> {
             const SizedBox(height: AppTokens.spaceUnit),
             ...List.generate(kReportPresetReasons.length, (i) {
               final item = kReportPresetReasons[i];
-              return RadioListTile<int>(
-                title: Text(item.label),
-                value: i,
-                groupValue: _selectedIndex,
-                onChanged: (v) {
-                  if (v != null) setState(() => _selectedIndex = v);
-                },
-                contentPadding: EdgeInsets.zero,
+              final selected = _selectedIndex == i;
+              return InkWell(
+                onTap: () => setState(() => _selectedIndex = i),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(
+                        selected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_off,
+                        size: 22,
+                      ),
+                      const SizedBox(width: AppTokens.spaceUnit),
+                      Expanded(child: Text(item.label)),
+                    ],
+                  ),
+                ),
               );
             }),
             const SizedBox(height: AppTokens.spaceUnit),
