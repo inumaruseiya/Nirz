@@ -1,5 +1,6 @@
 import '../../domain/entities/profile.dart';
 import '../../domain/value_objects/user_id.dart';
+import '../../domain/value_objects/user_presence_status.dart';
 import '../dto/profile_dto.dart';
 
 /// [ProfileDto] → [Profile]
@@ -12,6 +13,7 @@ final class ProfileMapper {
       id: UserId.parse(dto.id),
       displayName: name.isEmpty ? null : name,
       avatarUrl: _trimOrNull(dto.avatarUrl),
+      presenceStatus: UserPresenceStatus.tryParseDb(dto.presenceStatus),
       createdAt: dto.createdAt,
     );
   }

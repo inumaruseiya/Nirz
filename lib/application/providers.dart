@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../domain/core/result.dart';
+import '../domain/entities/profile.dart';
 import '../domain/repositories/auth_repository.dart';
 import '../domain/services/location_obfuscation_service.dart';
 import '../infrastructure/providers.dart';
@@ -56,6 +58,25 @@ final watchSessionUseCaseProvider = Provider<WatchSessionUseCase>(
 /// 現在の認証セッション（UI で「自分の投稿」判定などに利用）。
 final sessionStateProvider = StreamProvider<SessionState>((ref) {
   return ref.watch(watchSessionUseCaseProvider)();
+});
+
+/// ログイン中の [Profile]。未ログイン・セッション読込中は `null`。取得失敗時も `null`（UI 側で再試行可）。
+final currentUserProfileProvider = FutureProvider.autoDispose<Profile?>((ref) async {
+  final sessionAsync = ref.watch(sessionStateProvider);
+  final SessionState? session = switch (sessionAsync) {
+    AsyncData(:final value) => value,
+    AsyncLoading() => null,
+    AsyncError() => null,
+    AsyncValue<SessionState>() => null,
+  };
+  if (session is! SessionSignedIn) {
+    return null;
+  }
+  final result = await ref.read(profileRepositoryProvider).getCurrentProfile();
+  return switch (result) {
+    Ok(:final value) => value,
+    Err() => null,
+  };
 });
 
 final requestPasswordResetUseCaseProvider =

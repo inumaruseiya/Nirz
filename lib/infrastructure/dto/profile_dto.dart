@@ -13,6 +13,7 @@ final class ProfileDto {
     required this.id,
     required this.displayName,
     this.avatarUrl,
+    this.presenceStatus,
     required this.createdAt,
   });
 
@@ -26,6 +27,10 @@ final class ProfileDto {
   /// `profiles.avatar_url`。
   @JsonKey(name: 'avatar_url')
   final String? avatarUrl;
+
+  /// `profiles.presence_status`（`free` / `working` / `out`、未設定は null）。
+  @JsonKey(name: 'presence_status')
+  final String? presenceStatus;
 
   /// `profiles.created_at`。
   @JsonKey(name: 'created_at')
