@@ -7,14 +7,17 @@ import 'package:go_router/go_router.dart';
 import '../../application/providers.dart';
 import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
+import '../../domain/entities/profile.dart';
 import '../../domain/repositories/auth_repository.dart';
+import '../../domain/value_objects/user_presence_status.dart';
+import '../../infrastructure/providers.dart';
 import '../router/app_route_paths.dart';
 import '../shared/block_user_dialog.dart';
 import '../theme/app_tokens.dart';
 
-/// 設定: 位置・プライバシー説明、OS 設定導線、ログアウト（実装計画 Phase 11-1-1、詳細設計 4.6）。
+/// 設定: 位置・プライバシー説明、OS 設定導線、ログアウト、任意ステータス（実装計画 Phase 11-1、詳細設計 4.6）。
 ///
-/// ブロックは Phase 10-3。プロフィール編集は Phase 11-2。ステータスは Phase 11-1-5。
+/// ブロックは Phase 10-3。プロフィール編集は Phase 11-2。
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
 
@@ -25,6 +28,7 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   bool _blockSubmitting = false;
   bool _signOutInProgress = false;
+  bool _presenceSaving = false;
 
   Future<void> _openAppLocationSettings() async {
     if (kIsWeb) return;
@@ -34,6 +38,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _openDeviceLocationServices() async {
     if (kIsWeb) return;
     await Geolocator.openLocationSettings();
+  }
+
+  Future<void> _savePresenceStatus(UserPresenceStatus? next) async {
+    if (_presenceSaving) return;
+    setState(() => _presenceSaving = true);
+    try {
+      final result = await ref.read(profileRepositoryProvider).updateProfile(
+            updatePresenceStatus: true,
+            presenceStatus: next,
+          );
+      if (!mounted) return;
+      switch (result) {
+        case Ok():
+          ref.invalidate(currentUserProfileProvider);
+        case Err(:final error):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_messageForFailure(error))),
+          );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _presenceSaving = false);
+      }
+    }
   }
 
   Future<void> _signOut() async {
@@ -64,6 +92,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       AsyncData(:final value) => value is SessionSignedIn,
       _ => false,
     };
+    final profileAsync = ref.watch(currentUserProfileProvider);
 
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
@@ -109,6 +138,95 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Divider(height: AppTokens.spaceUnit * 3),
           ],
           if (signedIn) ...[
+            Text(
+              'マイステータス（任意）',
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppTokens.spaceUnit),
+            profileAsync.when(
+              data: (Profile? profile) {
+                if (profile == null) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'プロフィールを読み込めませんでした。',
+                        style: textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: AppTokens.spaceUnit),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: _presenceSaving
+                              ? null
+                              : () => ref.invalidate(currentUserProfileProvider),
+                          child: const Text('再試行'),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                final current = profile.presenceStatus;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: SegmentedButton<UserPresenceStatus?>(
+                        showSelectedIcon: false,
+                        emptySelectionAllowed: true,
+                        segments: const [
+                          ButtonSegment<UserPresenceStatus?>(
+                            value: null,
+                            label: Text('なし'),
+                          ),
+                          ButtonSegment<UserPresenceStatus?>(
+                            value: UserPresenceStatus.free,
+                            label: Text('暇'),
+                          ),
+                          ButtonSegment<UserPresenceStatus?>(
+                            value: UserPresenceStatus.working,
+                            label: Text('作業中'),
+                          ),
+                          ButtonSegment<UserPresenceStatus?>(
+                            value: UserPresenceStatus.out,
+                            label: Text('外出中'),
+                          ),
+                        ],
+                        selected: {current},
+                        onSelectionChanged: (Set<UserPresenceStatus?> selected) {
+                          if (_presenceSaving) return;
+                          final next =
+                              selected.isEmpty ? null : selected.first;
+                          if (next == current) return;
+                          _savePresenceStatus(next);
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                    Text(
+                      '近くの投稿の一覧（カード）には表示されません。設定やプロフィール周りでのみ使えます。',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    if (_presenceSaving) ...[
+                      const SizedBox(height: AppTokens.spaceUnit),
+                      const LinearProgressIndicator(),
+                    ],
+                  ],
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, __) => Text(
+                'プロフィールを読み込めませんでした。',
+                style: textTheme.bodyLarge,
+              ),
+            ),
+            const Divider(height: AppTokens.spaceUnit * 3),
             Semantics(
               button: true,
               label: 'ログアウト',

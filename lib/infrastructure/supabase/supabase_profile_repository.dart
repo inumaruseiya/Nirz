@@ -6,6 +6,7 @@ import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/entities/profile.dart';
 import '../../domain/repositories/profile_repository.dart';
+import '../../domain/value_objects/user_presence_status.dart';
 import '../dto/profile_dto.dart';
 import '../mappers/profile_mapper.dart';
 
@@ -24,7 +25,7 @@ final class SupabaseProfileRepository implements ProfileRepository {
     try {
       final row = await _client
           .from('profiles')
-          .select('id, name, avatar_url, created_at')
+          .select('id, name, avatar_url, presence_status, created_at')
           .eq('id', uid)
           .maybeSingle();
       if (row == null) {
@@ -47,6 +48,8 @@ final class SupabaseProfileRepository implements ProfileRepository {
   Future<Result<Profile, Failure>> updateProfile({
     String? displayName,
     String? avatarUrl,
+    bool updatePresenceStatus = false,
+    UserPresenceStatus? presenceStatus,
   }) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null || uid.isEmpty) {
@@ -55,7 +58,7 @@ final class SupabaseProfileRepository implements ProfileRepository {
     try {
       final row = await _client
           .from('profiles')
-          .select('id, name, avatar_url, created_at')
+          .select('id, name, avatar_url, presence_status, created_at')
           .eq('id', uid)
           .maybeSingle();
       if (row == null) {
@@ -63,21 +66,27 @@ final class SupabaseProfileRepository implements ProfileRepository {
       }
       final current = ProfileDto.fromJson(Map<String, dynamic>.from(row));
 
-      if (displayName == null && avatarUrl == null) {
+      final hasNameOrAvatarChange =
+          displayName != null || avatarUrl != null;
+      if (!hasNameOrAvatarChange && !updatePresenceStatus) {
         return Ok(ProfileMapper.toDomain(current));
       }
 
       final mergedName = displayName ?? current.displayName;
       final mergedAvatar = avatarUrl ?? current.avatarUrl;
+      final payload = <String, dynamic>{
+        'name': mergedName,
+        'avatar_url': mergedAvatar,
+      };
+      if (updatePresenceStatus) {
+        payload['presence_status'] = presenceStatus?.dbValue;
+      }
 
       final updated = await _client
           .from('profiles')
-          .update({
-            'name': mergedName,
-            'avatar_url': mergedAvatar,
-          })
+          .update(payload)
           .eq('id', uid)
-          .select('id, name, avatar_url, created_at')
+          .select('id, name, avatar_url, presence_status, created_at')
           .single();
 
       final dto = ProfileDto.fromJson(Map<String, dynamic>.from(updated));
