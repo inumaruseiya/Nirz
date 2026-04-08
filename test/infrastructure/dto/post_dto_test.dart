@@ -1,0 +1,68 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nirz/infrastructure/dto/post_dto.dart';
+
+void main() {
+  final created = DateTime.utc(2026, 4, 1);
+  final expires = DateTime.utc(2026, 4, 2);
+
+  group('GeoJsonLocation', () {
+    test('fromJson swaps coordinates to lat/lng', () {
+      final loc = GeoJsonLocation.fromJson({
+        'type': 'Point',
+        'coordinates': [139.7, 35.6],
+      });
+      expect(loc.longitude, 139.7);
+      expect(loc.latitude, 35.6);
+    });
+
+    test('toJson round-trip', () {
+      const loc = GeoJsonLocation(latitude: 1.5, longitude: 2.5);
+      final back = GeoJsonLocation.fromJson(loc.toJson());
+      expect(back.latitude, loc.latitude);
+      expect(back.longitude, loc.longitude);
+    });
+
+    test('rejects non-Point type', () {
+      expect(
+        () => GeoJsonLocation.fromJson({
+          'type': 'LineString',
+          'coordinates': [0, 0],
+        }),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects short coordinates', () {
+      expect(
+        () => GeoJsonLocation.fromJson({
+          'type': 'Point',
+          'coordinates': [139.0],
+        }),
+        throwsA(isA<FormatException>()),
+      );
+    });
+  });
+
+  group('PostDto', () {
+    test('fromJson / toJson round-trip', () {
+      final original = PostDto(
+        id: '11111111-1111-4111-8111-111111111111',
+        userId: '22222222-2222-4222-8222-222222222222',
+        content: 'hello',
+        imageUrl: 'https://x.test/img.png',
+        location: const GeoJsonLocation(latitude: 35.0, longitude: 139.0),
+        createdAt: created,
+        expiresAt: expires,
+      );
+      final back = PostDto.fromJson(original.toJson());
+      expect(back.id, original.id);
+      expect(back.userId, original.userId);
+      expect(back.content, original.content);
+      expect(back.imageUrl, original.imageUrl);
+      expect(back.locationLat, 35.0);
+      expect(back.locationLng, 139.0);
+      expect(back.createdAt, original.createdAt);
+      expect(back.expiresAt, original.expiresAt);
+    });
+  });
+}

@@ -27,6 +27,8 @@ migrate_working_dir/
 #.vscode/
 
 # Flutter/Dart/Pub related
+# Local Flutter SDK clone (e.g. cloud agent / CI without global flutter)
+.flutter-sdk/
 **/doc/api/
 **/ios/Flutter/.last_build_id
 .dart_tool/
