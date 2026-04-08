@@ -38,16 +38,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
     super.dispose();
   }
 
-  String? _nameFieldError(String? value) {
-    final v = value?.trim() ?? '';
-    if (v.isEmpty) {
-      return 'ニックネームを入力してください';
-    }
-    if (v.length > 50) {
-      return 'ニックネームは50文字以内にしてください';
-    }
-    return null;
-  }
+  String? _nameFieldError(String? value) => AuthFieldValidators.nickname(value);
 
   String? _emailFieldError(String? value) => AuthFieldValidators.email(value);
 

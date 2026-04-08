@@ -7,6 +7,9 @@ abstract final class AuthFieldValidators {
 
   static const int passwordMaxLength = 128;
 
+  /// プロフィール表示名（`profiles.name`）。登録・設定で共通（FR-AUTH-02）。
+  static const int nicknameMaxLength = 50;
+
   /// 実用的な簡易メール形式（厳密な RFC 検証はサーバ側に委ねる）。
   static final RegExp _emailLoose = RegExp(
     r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$',
@@ -33,6 +36,18 @@ abstract final class AuthFieldValidators {
     }
     if (p.length > passwordMaxLength) {
       return 'パスワードは$passwordMaxLength文字以内にしてください';
+    }
+    return null;
+  }
+
+  /// ニックネーム（空不可・最大 [nicknameMaxLength]）。
+  static String? nickname(String? value) {
+    final v = value?.trim() ?? '';
+    if (v.isEmpty) {
+      return 'ニックネームを入力してください';
+    }
+    if (v.length > nicknameMaxLength) {
+      return 'ニックネームは$nicknameMaxLength文字以内にしてください';
     }
     return null;
   }

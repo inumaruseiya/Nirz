@@ -11,6 +11,7 @@ import '../../domain/entities/profile.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/value_objects/user_presence_status.dart';
 import '../../infrastructure/providers.dart';
+import '../auth/auth_field_validators.dart';
 import '../router/app_route_paths.dart';
 import '../shared/block_user_dialog.dart';
 import '../theme/app_tokens.dart';
@@ -26,9 +27,20 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  final _nicknameFormKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+
   bool _blockSubmitting = false;
   bool _signOutInProgress = false;
   bool _presenceSaving = false;
+  bool _nicknameDirty = false;
+  bool _displayNameSaving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _openAppLocationSettings() async {
     if (kIsWeb) return;
@@ -38,6 +50,46 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _openDeviceLocationServices() async {
     if (kIsWeb) return;
     await Geolocator.openLocationSettings();
+  }
+
+  Future<void> _saveDisplayName(Profile current) async {
+    if (_displayNameSaving) return;
+    if (!(_nicknameFormKey.currentState?.validate() ?? false)) {
+      return;
+    }
+    final name = _nameController.text.trim();
+    final before = (current.displayName ?? '').trim();
+    if (name == before) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('変更がありません')),
+      );
+      return;
+    }
+
+    setState(() => _displayNameSaving = true);
+    try {
+      final result = await ref.read(profileRepositoryProvider).updateProfile(
+            displayName: name,
+          );
+      if (!mounted) return;
+      switch (result) {
+        case Ok():
+          setState(() => _nicknameDirty = false);
+          ref.invalidate(currentUserProfileProvider);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('ニックネームを保存しました')),
+          );
+        case Err(:final error):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_messageForFailure(error))),
+          );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _displayNameSaving = false);
+      }
+    }
   }
 
   Future<void> _savePresenceStatus(UserPresenceStatus? next) async {
@@ -94,6 +146,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     };
     final profileAsync = ref.watch(currentUserProfileProvider);
 
+    if (signedIn) {
+      final profile = switch (profileAsync) {
+        AsyncData(:final value) => value,
+        _ => null,
+      };
+      if (profile != null && !_nicknameDirty) {
+        final nextName = profile.displayName?.trim() ?? '';
+        if (_nameController.text != nextName) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || _nicknameDirty) return;
+            if (_nameController.text != nextName) {
+              _nameController.text = nextName;
+            }
+          });
+        }
+      }
+    }
+
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
@@ -138,6 +208,82 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Divider(height: AppTokens.spaceUnit * 3),
           ],
           if (signedIn) ...[
+            Text(
+              'ニックネーム',
+              style: textTheme.titleMedium,
+            ),
+            const SizedBox(height: AppTokens.spaceUnit),
+            profileAsync.when(
+              data: (Profile? profile) {
+                if (profile == null) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'プロフィールを読み込めませんでした。',
+                        style: textTheme.bodyLarge,
+                      ),
+                      const SizedBox(height: AppTokens.spaceUnit),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: _displayNameSaving
+                              ? null
+                              : () => ref.invalidate(currentUserProfileProvider),
+                          child: const Text('再試行'),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return Form(
+                  key: _nicknameFormKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.nickname],
+                        decoration: const InputDecoration(
+                          labelText: 'ニックネーム',
+                          hintText: '表示名（フィードなどに表示）',
+                        ),
+                        maxLength: AuthFieldValidators.nicknameMaxLength,
+                        validator: AuthFieldValidators.nickname,
+                        onChanged: (_) {
+                          if (!_nicknameDirty) {
+                            setState(() => _nicknameDirty = true);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: AppTokens.spaceUnit),
+                      FilledButton(
+                        onPressed: _displayNameSaving
+                            ? null
+                            : () => _saveDisplayName(profile),
+                        child: _displayNameSaving
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('ニックネームを保存'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (_, __) => Text(
+                'プロフィールを読み込めませんでした。',
+                style: textTheme.bodyLarge,
+              ),
+            ),
+            const Divider(height: AppTokens.spaceUnit * 3),
             Text(
               'マイステータス（任意）',
               style: textTheme.titleMedium,
