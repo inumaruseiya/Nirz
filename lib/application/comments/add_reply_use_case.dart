@@ -2,20 +2,37 @@ import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/entities/comment.dart';
 import '../../domain/repositories/comment_repository.dart';
+import '../../domain/repositories/ng_word_list_repository.dart';
+import '../../domain/services/ng_word_moderation.dart';
 import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/post_id.dart';
 
 /// 1階層返信のみ。[parentId] はトップレベルコメント（`parentId == null`）であること。
 final class AddReplyUseCase {
-  AddReplyUseCase(this._comments);
+  AddReplyUseCase(
+    this._comments,
+    this._ngWords,
+  );
 
   final CommentRepository _comments;
+  final NgWordListRepository _ngWords;
 
   Future<Result<Comment, Failure>> call({
     required PostId postId,
     required CommentId parentId,
     required String content,
   }) async {
+    final wordsResult = await _ngWords.loadNgWords();
+    switch (wordsResult) {
+      case Ok(:final value):
+        final ngFail = ngWordValidationFailure(content, value);
+        if (ngFail != null) {
+          return Err(ngFail);
+        }
+      case Err(:final error):
+        return Err(error);
+    }
+
     final listResult = await _comments.listByPost(postId);
     switch (listResult) {
       case Ok(:final value):

@@ -16,6 +16,10 @@ class CommentThread extends StatelessWidget {
     required this.comments,
     this.resolveAuthorLabel,
     this.onReplyTo,
+    this.viewerUserId,
+    this.reportMenuEnabled = true,
+    this.onReportComment,
+    this.onBlockCommentAuthor,
   });
 
   /// 同一投稿に紐づくコメント一覧（`created_at` 昇順を想定）。
@@ -26,6 +30,18 @@ class CommentThread extends StatelessWidget {
 
   /// トップレベルコメントの「返信」押下。返信行には出さない。
   final ValueChanged<CommentId>? onReplyTo;
+
+  /// ログイン中の閲覧者。自分のコメントには「通報」を出さない（Phase 10-2-1）。
+  final UserId? viewerUserId;
+
+  /// 通報送信中などに false（Phase 10-2-3）。
+  final bool reportMenuEnabled;
+
+  /// 他人のコメントの「通報」押下（理由 UI + `reports` INSERT、Phase 10-2-2/3）。
+  final Future<void> Function(CommentId)? onReportComment;
+
+  /// コメント投稿者のブロック（Phase 10-3-2）。
+  final Future<void> Function(UserId)? onBlockCommentAuthor;
 
   String _label(UserId id) =>
       resolveAuthorLabel?.call(id) ?? '近くのユーザー';
@@ -68,6 +84,10 @@ class CommentThread extends StatelessWidget {
             replies: replyByParent[tops[i].id] ?? const [],
             replyAuthorLabel: _label,
             onReply: onReplyTo == null ? null : () => onReplyTo!(tops[i].id),
+            viewerUserId: viewerUserId,
+            reportMenuEnabled: reportMenuEnabled,
+            onReportComment: onReportComment,
+            onBlockCommentAuthor: onBlockCommentAuthor,
           ),
         ],
       ],
@@ -82,6 +102,10 @@ class _TopLevelCommentBlock extends StatelessWidget {
     required this.replies,
     required this.replyAuthorLabel,
     this.onReply,
+    this.viewerUserId,
+    this.reportMenuEnabled = true,
+    this.onReportComment,
+    this.onBlockCommentAuthor,
   });
 
   final Comment comment;
@@ -89,6 +113,10 @@ class _TopLevelCommentBlock extends StatelessWidget {
   final List<Comment> replies;
   final String Function(UserId id) replyAuthorLabel;
   final VoidCallback? onReply;
+  final UserId? viewerUserId;
+  final bool reportMenuEnabled;
+  final Future<void> Function(CommentId)? onReportComment;
+  final Future<void> Function(UserId)? onBlockCommentAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +128,10 @@ class _TopLevelCommentBlock extends StatelessWidget {
         _CommentBody(
           comment: comment,
           authorLabel: authorLabel,
+          viewerUserId: viewerUserId,
+          reportMenuEnabled: reportMenuEnabled,
+          onReportComment: onReportComment,
+          onBlockCommentAuthor: onBlockCommentAuthor,
         ),
         if (onReply != null) ...[
           const SizedBox(height: AppTokens.spaceUnit / 2),
@@ -151,6 +183,10 @@ class _TopLevelCommentBlock extends StatelessWidget {
                       child: _CommentBody(
                         comment: replies[j],
                         authorLabel: replyAuthorLabel(replies[j].authorId),
+                        viewerUserId: viewerUserId,
+                        reportMenuEnabled: reportMenuEnabled,
+                        onReportComment: onReportComment,
+                        onBlockCommentAuthor: onBlockCommentAuthor,
                       ),
                     ),
                   ),
@@ -168,10 +204,18 @@ class _CommentBody extends StatelessWidget {
   const _CommentBody({
     required this.comment,
     required this.authorLabel,
+    this.viewerUserId,
+    this.reportMenuEnabled = true,
+    this.onReportComment,
+    this.onBlockCommentAuthor,
   });
 
   final Comment comment;
   final String authorLabel;
+  final UserId? viewerUserId;
+  final bool reportMenuEnabled;
+  final Future<void> Function(CommentId)? onReportComment;
+  final Future<void> Function(UserId)? onBlockCommentAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -179,6 +223,15 @@ class _CommentBody extends StatelessWidget {
     final relative = formatRelativeTimeJa(comment.createdAt);
     final semanticsLabel =
         '$authorLabel、$relative。${comment.content}';
+    final showReport = reportMenuEnabled &&
+        viewerUserId != null &&
+        onReportComment != null &&
+        comment.authorId.value != viewerUserId!.value;
+    final showBlock = reportMenuEnabled &&
+        viewerUserId != null &&
+        onBlockCommentAuthor != null &&
+        comment.authorId.value != viewerUserId!.value;
+    final showOverflowMenu = showReport || showBlock;
 
     return Semantics(
       container: true,
@@ -198,6 +251,39 @@ class _CommentBody extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (showOverflowMenu)
+                Semantics(
+                  button: true,
+                  label: 'コメントのその他メニュー',
+                  child: PopupMenuButton<String>(
+                    tooltip: 'コメントのその他',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: AppTokens.minTapTarget,
+                      minHeight: AppTokens.minTapTarget,
+                    ),
+                    icon: const Icon(Icons.more_vert, size: 22),
+                    onSelected: (value) {
+                      if (value == 'report') {
+                        onReportComment?.call(comment.id);
+                      } else if (value == 'block') {
+                        onBlockCommentAuthor?.call(comment.authorId);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      if (showReport)
+                        const PopupMenuItem<String>(
+                          value: 'report',
+                          child: Text('通報'),
+                        ),
+                      if (showBlock)
+                        const PopupMenuItem<String>(
+                          value: 'block',
+                          child: Text('このユーザーをブロック'),
+                        ),
+                    ],
+                  ),
+                ),
               Text(
                 relative,
                 style: theme.textTheme.bodySmall?.copyWith(

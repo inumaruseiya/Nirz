@@ -18,6 +18,8 @@ import 'feed/load_post_detail_use_case.dart';
 import 'location/get_current_position_use_case.dart';
 import 'location/obfuscate_location_use_case.dart';
 import 'location/request_location_permission_use_case.dart';
+import 'moderation/block_user_use_case.dart';
+import 'moderation/submit_report_use_case.dart';
 import 'posts/create_post_use_case.dart';
 import 'posts/delete_post_use_case.dart';
 import 'reactions/get_my_reaction_use_case.dart';
@@ -85,6 +87,7 @@ final createPostUseCaseProvider = Provider<CreatePostUseCase>(
   (ref) => CreatePostUseCase(
     ref.watch(postRepositoryProvider),
     ref.watch(storageRepositoryProvider),
+    ref.watch(ngWordListRepositoryProvider),
   ),
 );
 
@@ -136,9 +139,28 @@ final loadCommentsUseCaseProvider = Provider<LoadCommentsUseCase>(
 );
 
 final addCommentUseCaseProvider = Provider<AddCommentUseCase>(
-  (ref) => AddCommentUseCase(ref.watch(commentRepositoryProvider)),
+  (ref) => AddCommentUseCase(
+    ref.watch(commentRepositoryProvider),
+    ref.watch(ngWordListRepositoryProvider),
+  ),
 );
 
 final addReplyUseCaseProvider = Provider<AddReplyUseCase>(
-  (ref) => AddReplyUseCase(ref.watch(commentRepositoryProvider)),
+  (ref) => AddReplyUseCase(
+    ref.watch(commentRepositoryProvider),
+    ref.watch(ngWordListRepositoryProvider),
+  ),
+);
+
+// --- Moderation (Phase 10-2-3) ---
+
+final submitReportUseCaseProvider = Provider<SubmitReportUseCase>(
+  (ref) => SubmitReportUseCase(ref.watch(reportRepositoryProvider)),
+);
+
+final blockUserUseCaseProvider = Provider<BlockUserUseCase>(
+  (ref) => BlockUserUseCase(
+    ref.watch(blockRepositoryProvider),
+    ref.watch(authRepositoryProvider),
+  ),
 );
