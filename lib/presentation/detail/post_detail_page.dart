@@ -87,6 +87,11 @@ void showPostDetailImageViewer(BuildContext context, String imageUrl) {
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.white24,
                       foregroundColor: Colors.white,
+                      minimumSize: const Size(
+                        AppTokens.minTapTarget,
+                        AppTokens.minTapTarget,
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     tooltip: '閉じる',
                     icon: const Icon(Icons.close),
