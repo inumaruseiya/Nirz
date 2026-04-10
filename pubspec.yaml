@@ -60,6 +60,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4
+  network_image_mock: ^2.1.1
   # main の 2.13 系は build ^4 になり riverpod_generator 2.6 と非互換
   build_runner: ^2.5.4
   json_serializable: ^6.9.5

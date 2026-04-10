@@ -728,6 +728,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  mockito:
+    dependency: transitive
+    description:
+      name: mockito
+      sha256: "4546eac99e8967ea91bae633d2ca7698181d008e95fa4627330cf903d573277a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.4.6"
   mocktail:
     dependency: "direct dev"
     description:
@@ -744,6 +752,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.17.6"
+  network_image_mock:
+    dependency: "direct dev"
+    description:
+      name: network_image_mock
+      sha256: "855cdd01d42440e0cffee0d6c2370909fc31b3bcba308a59829f24f64be42db7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.1"
   objective_c:
     dependency: transitive
     description:

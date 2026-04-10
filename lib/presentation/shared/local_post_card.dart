@@ -122,12 +122,14 @@ class LocalPostCard extends StatelessWidget {
     final reactionLabel = post.reactionCount == 0
         ? 'リアクションなし'
         : 'リアクション合計 ${post.reactionCount} 件（いいね・見た・炎の合計）';
+    final imageSummary =
+        post.imageUrl != null ? '画像あり。' : '';
 
     return Semantics(
       button: onTap != null,
       excludeSemantics: true,
       label:
-          '$name、$relative${distanceText != null ? '、$distanceText' : ''}。${post.content}。$reactionLabel',
+          '$name、$relative${distanceText != null ? '、$distanceText' : ''}。${post.content}。$imageSummary$reactionLabel',
       child: card,
     );
   }

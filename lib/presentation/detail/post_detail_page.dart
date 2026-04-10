@@ -59,20 +59,24 @@ void showPostDetailImageViewer(BuildContext context, String imageUrl) {
                   child: InteractiveViewer(
                     minScale: 0.5,
                     maxScale: 4,
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl,
-                      fit: BoxFit.contain,
-                      placeholder: (context, url) => const SizedBox(
-                        width: 56,
-                        height: 56,
-                        child: Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                    child: Semantics(
+                      image: true,
+                      label: '拡大表示中の投稿画像',
+                      child: CachedNetworkImage(
+                        imageUrl: imageUrl,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => const SizedBox(
+                          width: 56,
+                          height: 56,
+                          child: Center(
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         ),
-                      ),
-                      errorWidget: (context, url, error) => Icon(
-                        Icons.broken_image_outlined,
-                        color: Theme.of(dialogContext).colorScheme.onSurface,
-                        size: 64,
+                        errorWidget: (context, url, error) => Icon(
+                          Icons.broken_image_outlined,
+                          color: Theme.of(dialogContext).colorScheme.onSurface,
+                          size: 64,
+                        ),
                       ),
                     ),
                   ),
@@ -660,12 +664,13 @@ class _PostDetailContent extends StatelessWidget {
     final reactionLabel = post.reactionCount == 0
         ? 'リアクションなし'
         : 'リアクション合計 ${post.reactionCount} 件（いいね・見た・炎の合計）';
+    final imageSummary = post.imageUrl != null ? '画像あり。' : '';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
       child: Semantics(
         label:
-            '$name、$relative${distanceText != null ? '、$distanceText' : ''}。${post.content}。$reactionLabel',
+            '$name、$relative${distanceText != null ? '、$distanceText' : ''}。${post.content}。$imageSummary$reactionLabel',
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -708,7 +713,8 @@ class _PostDetailContent extends StatelessWidget {
                   final url = post.imageUrl!.toString();
                   return Semantics(
                     button: true,
-                    label: '投稿画像。タップで拡大表示',
+                    image: true,
+                    label: '投稿に添付された画像。タップで拡大表示',
                     child: Material(
                       color: Colors.transparent,
                       child: InkWell(
