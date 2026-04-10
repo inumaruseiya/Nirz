@@ -78,7 +78,7 @@ final class FeedError extends FeedState {
   final String message;
 }
 
-final class FeedNotifier extends Notifier<FeedState> {
+class FeedNotifier extends Notifier<FeedState> {
   @override
   FeedState build() => const FeedInitial();
 
