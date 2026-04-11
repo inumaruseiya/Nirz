@@ -69,13 +69,13 @@ jobs:
           exit 1
 
       # db reset 末尾のコンテナ再起動直後、Kong 越しの Storage が 502 / タイムアウトになることがある。
-      # ゲートウェイ経由で Storage ルートが応答するまで待ってから reset し、失敗時も同様に待機してリトライする。
+      # ゲートウェイ経由で Storage が「応答」するまで待ってから reset する（未認証の list は HTTP 400 が返るのが正常）。
       - name: Wait for Storage via API gateway
         run: |
           for i in $(seq 1 120); do
             code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:54321/storage/v1/bucket" 2>/dev/null || echo 000)"
             case "$code" in
-              401|403|404|200|201|204)
+              400|401|403|404|200|201|204)
                 echo "Storage route reachable (HTTP $code)."
                 exit 0
                 ;;
@@ -96,7 +96,7 @@ jobs:
               n=$((n + 1))
               code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:54321/storage/v1/bucket" 2>/dev/null || echo 000)"
               case "$code" in
-                401|403|404|200|201|204)
+                400|401|403|404|200|201|204)
                   echo "Storage route reachable (HTTP $code)."
                   return 0
                   ;;
