@@ -1,0 +1,21 @@
+-- -----------------------------------------------------------------------------
+-- Phase 12-6-2: EXPLAIN ANALYZE for public.create_post (NFR-PERF-02 server slice)
+--
+-- Measures DB work for one insert (+ NG-word check + RETURNING read). Client-side
+-- Storage upload and full "submit → feed visible" budget (~1s) include network RTT.
+--
+-- Run inside a transaction so the probe row is rolled back:
+--   BEGIN;
+--   SELECT set_config('request.jwt.claim.sub', '<auth.users.id>', true);
+--   SELECT set_config('request.jwt.claim.role', 'authenticated', true);
+--   EXPLAIN (ANALYZE, BUFFERS, VERBOSE)
+--   SELECT * FROM public.create_post(
+--     'EXPLAIN probe (rollback)',
+--     NULL,
+--     35.681236,
+--     139.767125
+--   );
+--   ROLLBACK;
+--
+-- If NG words reject the string, use a harmless unique sentence instead.
+-- -----------------------------------------------------------------------------
