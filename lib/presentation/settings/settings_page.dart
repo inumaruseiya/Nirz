@@ -422,32 +422,40 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                             width: 80,
                             height: 80,
                             child: hasAvatar
-                                ? CachedNetworkImage(
-                                    imageUrl: avatarUrl,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => const Center(
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
+                                ? Semantics(
+                                    image: true,
+                                    label: '現在のプロフィール画像',
+                                    child: CachedNetworkImage(
+                                      imageUrl: avatarUrl,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => const Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
                                       ),
-                                    ),
-                                    errorWidget: (context, url, error) => ColoredBox(
-                                      color: theme
-                                          .colorScheme.surfaceContainerHighest,
-                                      child: Icon(
-                                        Icons.broken_image_outlined,
+                                      errorWidget: (context, url, error) =>
+                                          ColoredBox(
                                         color: theme
-                                            .colorScheme.onSurfaceVariant,
+                                            .colorScheme.surfaceContainerHighest,
+                                        child: Icon(
+                                          Icons.broken_image_outlined,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
                                       ),
                                     ),
                                   )
-                                : ColoredBox(
-                                    color: theme
-                                        .colorScheme.surfaceContainerHighest,
-                                    child: Icon(
-                                      Icons.person,
-                                      size: 40,
-                                      color:
-                                          theme.colorScheme.onSurfaceVariant,
+                                : Semantics(
+                                    label: 'プロフィール画像は未設定です',
+                                    child: ColoredBox(
+                                      color: theme
+                                          .colorScheme.surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 40,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                      ),
                                     ),
                                   ),
                           ),
