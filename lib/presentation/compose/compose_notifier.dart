@@ -68,7 +68,7 @@ final class ComposeFailure extends ComposeState {
 }
 
 /// 投稿作成モーダル用（画面を離れたら破棄）。
-final class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
+class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
   /// 非同期位置準備と競合しないよう、破棄時に無効化する。
   int _locationPrepareGeneration = 0;
 

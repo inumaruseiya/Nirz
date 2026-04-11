@@ -60,7 +60,9 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   mocktail: ^1.0.4
-  # Tests: in-memory FileSystem for flutter_cache_manager (Phase 12-6-5)
+  # Widget テストで CachedNetworkImage / NetworkImage をスタブ（Phase 12-4）
+  network_image_mock: ^2.1.1
+  # Tests: in-memory FileSystem for flutter_cache_manager（Phase 12-6-5）
   file: ^7.0.1
   flutter_cache_manager: ^3.4.1
   # main の 2.13 系は build ^4 になり riverpod_generator 2.6 と非互換

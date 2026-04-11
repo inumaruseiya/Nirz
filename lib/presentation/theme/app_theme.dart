@@ -86,13 +86,23 @@ abstract final class AppTheme {
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
-      pageTransitionsTheme: const PageTransitionsTheme(
+      pageTransitionsTheme: PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.android: ReduceMotionAwarePageTransitionsBuilder(
+            const FadeUpwardsPageTransitionsBuilder(),
+          ),
+          TargetPlatform.iOS: ReduceMotionAwarePageTransitionsBuilder(
+            const CupertinoPageTransitionsBuilder(),
+          ),
+          TargetPlatform.macOS: ReduceMotionAwarePageTransitionsBuilder(
+            const CupertinoPageTransitionsBuilder(),
+          ),
+          TargetPlatform.linux: ReduceMotionAwarePageTransitionsBuilder(
+            const FadeUpwardsPageTransitionsBuilder(),
+          ),
+          TargetPlatform.windows: ReduceMotionAwarePageTransitionsBuilder(
+            const FadeUpwardsPageTransitionsBuilder(),
+          ),
         },
       ),
     );
@@ -134,6 +144,34 @@ abstract final class AppTheme {
       labelLarge: body(base.labelLarge),
       labelMedium: body(base.labelMedium),
       labelSmall: body(base.labelSmall),
+    );
+  }
+}
+
+/// [MediaQuery.disableAnimations] が true のときページ遷移アニメを省略（詳細設計 2.2・Phase 12-5-6）。
+final class ReduceMotionAwarePageTransitionsBuilder
+    extends PageTransitionsBuilder {
+  const ReduceMotionAwarePageTransitionsBuilder(this._delegate);
+
+  final PageTransitionsBuilder _delegate;
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    if (MediaQuery.disableAnimationsOf(context)) {
+      return child;
+    }
+    return _delegate.buildTransitions(
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }
