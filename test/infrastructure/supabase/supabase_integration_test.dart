@@ -4,9 +4,12 @@ import 'package:nirz/domain/core/feed_sort.dart';
 import 'package:nirz/domain/core/failure.dart';
 import 'package:nirz/domain/core/result.dart';
 import 'package:nirz/domain/entities/feed_post.dart';
+import 'package:nirz/domain/entities/post.dart';
 import 'package:nirz/domain/value_objects/geo_coordinate.dart';
+import 'package:nirz/domain/value_objects/obfuscated_location.dart';
 import 'package:nirz/domain/value_objects/post_id.dart';
 import 'package:nirz/infrastructure/supabase/supabase_feed_repository.dart';
+import 'package:nirz/infrastructure/supabase/supabase_post_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Phase **12-3-3**（任意）: 実 Supabase への結合テスト。既定はスキップ。
@@ -14,6 +17,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// `INTEGRATION_TEST_EMAIL` / `INTEGRATION_TEST_PASSWORD`。
 /// 例: `flutter test test/infrastructure/supabase/supabase_integration_test.dart`
 /// に上記 `--dart-define=...` を付与。`fetchPostDetail` は `INTEGRATION_TEST_POST_ID` も必要。
+///
+/// Phase **12-6-2**（任意）: `create_post` 直後の `get_local_feed` に同一投稿が載ることと、
+/// 往復レイテンシを `--dart-define=INTEGRATION_PERF_SUBMIT_TO_FEED_MAX_MS=1000` で検証可能。
 const bool _runIntegration = bool.fromEnvironment(
   'RUN_SUPABASE_INTEGRATION',
   defaultValue: false,
@@ -31,6 +37,13 @@ const String _testPassword = String.fromEnvironment(
 
 const String _integrationPostId = String.fromEnvironment(
   'INTEGRATION_TEST_POST_ID',
+  defaultValue: '',
+);
+
+/// Optional: assert `create_post` + `get_local_feed` round-trip stays within this many
+/// milliseconds (Phase 12-6-2 / NFR-PERF-02). Example: `--dart-define=INTEGRATION_PERF_SUBMIT_TO_FEED_MAX_MS=1000`
+const String _perfSubmitToFeedMaxMs = String.fromEnvironment(
+  'INTEGRATION_PERF_SUBMIT_TO_FEED_MAX_MS',
   defaultValue: '',
 );
 
@@ -131,6 +144,73 @@ void main() {
         }
       },
       skip: _postDetailSkipReason(),
+    );
+
+    test(
+      'SupabasePostRepository.createPost then fetchFeed lists the new post (12-6-2)',
+      () async {
+        final client = SupabaseClient(
+          SupabaseConfig.url,
+          SupabaseConfig.anonKey,
+          authOptions: const AuthClientOptions(autoRefreshToken: false),
+        );
+        final postRepo = SupabasePostRepository(client);
+        final feedRepo = SupabaseFeedRepository(client);
+        PostId? createdId;
+
+        try {
+          await client.auth.signInWithPassword(
+            email: _testEmail,
+            password: _testPassword,
+          );
+
+          final marker =
+              'integration_probe_${DateTime.now().microsecondsSinceEpoch}';
+          final location = ObfuscatedLocation(_viewerTokyo);
+
+          final sw = Stopwatch()..start();
+          final created = await postRepo.createPost(
+            content: marker,
+            imageUrl: null,
+            location: location,
+          );
+          expect(created, isA<Ok<Post, Failure>>());
+          createdId = (created as Ok<Post, Failure>).value.id;
+
+          final feed = await feedRepo.fetchFeed(
+            viewerQueryPoint: _viewerTokyo,
+            sort: FeedSort.newest,
+          );
+          sw.stop();
+
+          expect(feed, isA<Ok<List<FeedPost>, Failure>>());
+          switch (feed) {
+            case Ok(:final value):
+              final ids = value.map((e) => e.id.value).toList();
+              expect(ids, contains(createdId.value));
+            case Err(:final error):
+              fail('fetchFeed after createPost: $error');
+          }
+
+          final maxMs = int.tryParse(_perfSubmitToFeedMaxMs.trim());
+          if (maxMs != null && maxMs > 0) {
+            expect(
+              sw.elapsedMilliseconds,
+              lessThanOrEqualTo(maxMs),
+              reason:
+                  'NFR-PERF-02: create_post + get_local_feed within ${maxMs}ms '
+                  '(unset INTEGRATION_PERF_SUBMIT_TO_FEED_MAX_MS to skip timing assert)',
+            );
+          }
+        } finally {
+          if (createdId != null) {
+            await postRepo.deletePost(createdId);
+          }
+          await client.auth.signOut();
+          await client.dispose();
+        }
+      },
+      skip: _integrationSkipReason(),
     );
   });
 }

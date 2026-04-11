@@ -50,8 +50,33 @@ jobs:
       - name: Start local stack
         run: supabase start
 
+      # 初回起動直後は Kong / Storage が未準備で db reset 末尾の再起動後に
+      # "context deadline exceeded" となることがあるため、API 到達を待ってから reset する。
+      - name: Wait for Supabase API
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sS --max-time 5 "http://127.0.0.1:54321/" -o /dev/null; then
+              echo "Supabase API (port 54321) is reachable."
+              exit 0
+            fi
+            echo "Waiting for API... ($i/90)"
+            sleep 2
+          done
+          echo "Timed out waiting for Supabase API on 127.0.0.1:54321"
+          exit 1
+
+      # db reset 内の「Restarting containers」直後に Storage へのアクセスがタイムアウトすることがあるためリトライする。
       - name: Apply migrations
-        run: supabase db reset --no-seed
+        run: |
+          for attempt in 1 2 3 4; do
+            echo "=== supabase db reset (attempt $attempt) ==="
+            if supabase db reset --no-seed; then
+              exit 0
+            fi
+            echo "db reset failed; sleeping 25s before retry..."
+            sleep 25
+          done
+          exit 1
 
       - name: Database lint
         run: supabase db lint
