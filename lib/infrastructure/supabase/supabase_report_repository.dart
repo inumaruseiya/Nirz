@@ -14,7 +14,9 @@ final class SupabaseReportRepository implements ReportRepository {
   final SupabaseClient _client;
 
   @override
-  Future<Result<void, Failure>> submitReport(ReportSubmission submission) async {
+  Future<Result<void, Failure>> submitReport(
+    ReportSubmission submission,
+  ) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) {
       return const Err(AuthFailure());

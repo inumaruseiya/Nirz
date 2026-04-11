@@ -32,9 +32,4 @@ class AsyncStateSwitcher extends StatelessWidget {
   }
 }
 
-enum AsyncViewPhase {
-  loading,
-  ready,
-  empty,
-  error,
-}
+enum AsyncViewPhase { loading, ready, empty, error }

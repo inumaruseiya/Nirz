@@ -5,10 +5,7 @@ import 'package:nirz/domain/services/location_obfuscation_service.dart';
 import 'package:nirz/domain/value_objects/geo_coordinate.dart';
 
 /// 2 点間の大圏距離（メートル）。WGS84 球近似 R = 6371000。
-double greatCircleDistanceMeters(
-  GeoCoordinate a,
-  GeoCoordinate b,
-) {
+double greatCircleDistanceMeters(GeoCoordinate a, GeoCoordinate b) {
   const earthRadiusMeters = 6371000.0;
   final lat1 = a.latitude * math.pi / 180;
   final lat2 = b.latitude * math.pi / 180;
@@ -16,8 +13,8 @@ double greatCircleDistanceMeters(
   final dLon = (b.longitude - a.longitude) * math.pi / 180;
   final sinDLat = math.sin(dLat / 2);
   final sinDLon = math.sin(dLon / 2);
-  final h = sinDLat * sinDLat +
-      math.cos(lat1) * math.cos(lat2) * sinDLon * sinDLon;
+  final h =
+      sinDLat * sinDLat + math.cos(lat1) * math.cos(lat2) * sinDLon * sinDLon;
   final c = 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h));
   return earthRadiusMeters * c;
 }
@@ -28,7 +25,8 @@ double initialBearingDegrees(GeoCoordinate from, GeoCoordinate to) {
   final lat2 = to.latitude * math.pi / 180;
   final dLon = (to.longitude - from.longitude) * math.pi / 180;
   final y = math.sin(dLon) * math.cos(lat2);
-  final x = math.cos(lat1) * math.sin(lat2) -
+  final x =
+      math.cos(lat1) * math.sin(lat2) -
       math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
   var brng = math.atan2(y, x) * 180 / math.pi;
   return (brng + 360) % 360;
@@ -88,29 +86,39 @@ void main() {
         chi2 += diff * diff / expected;
       }
       // 一様分布の適合度（自由度 bins - 1）。p≈0.001 の閾値を緩めに採用してフレーク抑制。
-      expect(chi2, lessThan(40.0), reason: 'distance bin counts=$counts chi2=$chi2');
+      expect(
+        chi2,
+        lessThan(40.0),
+        reason: 'distance bin counts=$counts chi2=$chi2',
+      );
     });
 
-    test('statistical sample: bearing ~ uniform (no single quadrant dominates)', () {
-      final raw = GeoCoordinate(latitude: 35.0, longitude: 139.0);
-      final random = math.Random(7);
-      final svc = LocationObfuscationService(random: random);
-      const n = 2000;
-      final quadrantCounts = [0, 0, 0, 0];
-      for (var i = 0; i < n; i++) {
-        final to = svc.obfuscate(raw).coordinate;
-        final deg = initialBearingDegrees(raw, to);
-        quadrantCounts[(deg / 90).floor().clamp(0, 3)]++;
-      }
-      final expected = n / 4;
-      // 各象限が期待から大きく外れないこと（明らかな偏りの検知）
-      for (var q = 0; q < 4; q++) {
-        expect(
-          quadrantCounts[q],
-          inInclusiveRange((expected * 0.65).round(), (expected * 1.35).round()),
-          reason: 'quadrant $q counts=$quadrantCounts',
-        );
-      }
-    });
+    test(
+      'statistical sample: bearing ~ uniform (no single quadrant dominates)',
+      () {
+        final raw = GeoCoordinate(latitude: 35.0, longitude: 139.0);
+        final random = math.Random(7);
+        final svc = LocationObfuscationService(random: random);
+        const n = 2000;
+        final quadrantCounts = [0, 0, 0, 0];
+        for (var i = 0; i < n; i++) {
+          final to = svc.obfuscate(raw).coordinate;
+          final deg = initialBearingDegrees(raw, to);
+          quadrantCounts[(deg / 90).floor().clamp(0, 3)]++;
+        }
+        final expected = n / 4;
+        // 各象限が期待から大きく外れないこと（明らかな偏りの検知）
+        for (var q = 0; q < 4; q++) {
+          expect(
+            quadrantCounts[q],
+            inInclusiveRange(
+              (expected * 0.65).round(),
+              (expected * 1.35).round(),
+            ),
+            reason: 'quadrant $q counts=$quadrantCounts',
+          );
+        }
+      },
+    );
   });
 }

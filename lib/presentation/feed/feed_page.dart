@@ -52,9 +52,9 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
     ref.read(feedNotifierProvider.notifier).loadMore().then((ok) {
       if (!mounted || ok) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('続きを読み込めませんでした')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('続きを読み込めませんでした')));
     });
   }
 
@@ -65,9 +65,9 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     final ok = await ref.read(feedNotifierProvider.notifier).refresh();
     if (!mounted) return;
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('更新できませんでした')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('更新できませんでした')));
     }
   }
 
@@ -92,9 +92,9 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           final ok = await ref.read(feedNotifierProvider.notifier).refresh();
           if (!context.mounted) return;
           if (!ok) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('更新できませんでした')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('更新できませんでした')));
           }
         },
         child: CustomScrollView(
@@ -122,94 +122,87 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   List<Widget> _feedBodySlivers(BuildContext context, FeedState feedState) {
     return switch (feedState) {
       FeedReady(:final posts, :final loadingMore, :final hasMore) => [
-          ..._postListSlivers(
-            posts,
-            showTrailingLoader: loadingMore && hasMore,
-          ),
-        ],
+        ..._postListSlivers(posts, showTrailingLoader: loadingMore && hasMore),
+      ],
       FeedRefreshing(:final posts) => [
-          ..._postListSlivers(posts, showTrailingLoader: false),
-        ],
+        ..._postListSlivers(posts, showTrailingLoader: false),
+      ],
       FeedLocationDenied() => [
-          _sliverFillAsyncChild(
-            child: Center(
-              child: LocationPermissionCallout(
-                onOpenSettings: () async {
-                  await Geolocator.openAppSettings();
-                },
-              ),
-            ),
-          ),
-        ],
-      FeedInitial() || FeedLoading() => [
-          SliverSemantics(
-            label: '近くの投稿を読み込んでいます',
-            sliver: SliverList.builder(
-              itemCount: _skeletonCardCount,
-              itemBuilder: (context, index) => const FeedSkeletonCard(),
-            ),
-          ),
-        ],
-      FeedEmpty() ||
-      FeedError() =>
-        [
-          _sliverFillAsyncChild(
-            child: AsyncStateSwitcher(
-              phase: _asyncPhase(feedState),
-              loading: (_) => const SizedBox.shrink(),
-              ready: (_) => const SizedBox.shrink(),
-              empty: (ctx) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'まだ近くに投稿がありません',
-                        style: Theme.of(ctx).textTheme.bodyLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: AppTokens.spaceUnit * 2),
-                      FilledButton.icon(
-                        onPressed: () async {
-                          final created =
-                              await ctx.push<bool>(AppRoutePaths.compose);
-                          if (!ctx.mounted) return;
-                          if (created != true) return;
-                          final ok = await ref
-                              .read(feedNotifierProvider.notifier)
-                              .refresh();
-                          if (!ctx.mounted) return;
-                          if (!ok) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                content: Text('更新できませんでした'),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('最初の投稿をする'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              error: (ctx) {
-                final msg = switch (feedState) {
-                  FeedError(:final message) => message,
-                  _ => '',
-                };
-                return ErrorRetryPanel(
-                  message: msg,
-                  onRetry: () => ref
-                      .read(feedNotifierProvider.notifier)
-                      .loadInitial(),
-                );
+        _sliverFillAsyncChild(
+          child: Center(
+            child: LocationPermissionCallout(
+              onOpenSettings: () async {
+                await Geolocator.openAppSettings();
               },
             ),
           ),
-        ],
+        ),
+      ],
+      FeedInitial() || FeedLoading() => [
+        SliverSemantics(
+          label: '近くの投稿を読み込んでいます',
+          sliver: SliverList.builder(
+            itemCount: _skeletonCardCount,
+            itemBuilder: (context, index) => const FeedSkeletonCard(),
+          ),
+        ),
+      ],
+      FeedEmpty() || FeedError() => [
+        _sliverFillAsyncChild(
+          child: AsyncStateSwitcher(
+            phase: _asyncPhase(feedState),
+            loading: (_) => const SizedBox.shrink(),
+            ready: (_) => const SizedBox.shrink(),
+            empty: (ctx) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'まだ近くに投稿がありません',
+                      style: Theme.of(ctx).textTheme.bodyLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppTokens.spaceUnit * 2),
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final created = await ctx.push<bool>(
+                          AppRoutePaths.compose,
+                        );
+                        if (!ctx.mounted) return;
+                        if (created != true) return;
+                        final ok = await ref
+                            .read(feedNotifierProvider.notifier)
+                            .refresh();
+                        if (!ctx.mounted) return;
+                        if (!ok) {
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            const SnackBar(content: Text('更新できませんでした')),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('最初の投稿をする'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            error: (ctx) {
+              final msg = switch (feedState) {
+                FeedError(:final message) => message,
+                _ => '',
+              };
+              return ErrorRetryPanel(
+                message: msg,
+                onRetry: () =>
+                    ref.read(feedNotifierProvider.notifier).loadInitial(),
+              );
+            },
+          ),
+        ),
+      ],
     };
   }
 
@@ -222,10 +215,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   }
 
   Widget _sliverFillAsyncChild({required Widget child}) {
-    return SliverFillRemaining(
-      hasScrollBody: false,
-      child: child,
-    );
+    return SliverFillRemaining(hasScrollBody: false, child: child);
   }
 
   List<Widget> _postListSlivers(
@@ -258,12 +248,14 @@ class _FeedPageState extends ConsumerState<FeedPage> {
               );
               if (!context.mounted) return;
               if (deleted != true) return;
-              final ok = await ref.read(feedNotifierProvider.notifier).refresh();
+              final ok = await ref
+                  .read(feedNotifierProvider.notifier)
+                  .refresh();
               if (!context.mounted) return;
               if (!ok) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('更新できませんでした')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('更新できませんでした')));
               }
             },
           );

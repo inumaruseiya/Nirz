@@ -45,9 +45,7 @@ void main() {
 
   group('Post', () {
     test('equality uses all fields', () {
-      final loc = ObfuscatedLocation(
-        GeoCoordinate(latitude: 0, longitude: 0),
-      );
+      final loc = ObfuscatedLocation(GeoCoordinate(latitude: 0, longitude: 0));
       final a = Post(
         id: PostId.parse('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
         authorId: UserId.parse('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),

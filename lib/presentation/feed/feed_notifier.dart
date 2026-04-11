@@ -194,7 +194,10 @@ class FeedNotifier extends Notifier<FeedState> {
     }
   }
 
-  static List<FeedPost> _mergePosts(List<FeedPost> existing, List<FeedPost> page) {
+  static List<FeedPost> _mergePosts(
+    List<FeedPost> existing,
+    List<FeedPost> page,
+  ) {
     final seen = existing.map((e) => e.id.value).toSet();
     final out = List<FeedPost>.from(existing);
     for (final p in page) {
@@ -242,5 +245,6 @@ class FeedNotifier extends Notifier<FeedState> {
   }
 }
 
-final feedNotifierProvider =
-    NotifierProvider<FeedNotifier, FeedState>(FeedNotifier.new);
+final feedNotifierProvider = NotifierProvider<FeedNotifier, FeedState>(
+  FeedNotifier.new,
+);

@@ -10,8 +10,7 @@ class LocationPermissionCallout extends StatelessWidget {
     super.key,
     required this.onOpenSettings,
     this.title = '位置情報をオンにしてください',
-    this.message =
-        '近くの投稿を表示するには、端末の位置情報を有効にし、このアプリへの許可が必要です。設定アプリから変更できます。',
+    this.message = '近くの投稿を表示するには、端末の位置情報を有効にし、このアプリへの許可が必要です。設定アプリから変更できます。',
     this.openSettingsLabel = '設定を開く',
   });
 

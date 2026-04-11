@@ -548,11 +548,7 @@ final class PostDetailNotifier
 
     switch (result) {
       case Ok(:final value):
-        _patchCommentFields(
-          comments: value,
-          loading: false,
-          error: null,
-        );
+        _patchCommentFields(comments: value, loading: false, error: null);
       case Err(:final error):
         _patchCommentFields(
           comments: _currentCommentsIfSamePost(postId),
@@ -617,12 +613,9 @@ final class PostDetailNotifier
 
   static String _messageForFailure(Failure f) {
     return switch (f) {
-      NetworkFailure() =>
-        '接続できませんでした。通信環境を確認してください。',
-      AuthFailure() =>
-        'セッションの有効期限が切れました。再度ログインしてください。',
-      ServerFailure() =>
-        'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
+      NetworkFailure() => '接続できませんでした。通信環境を確認してください。',
+      AuthFailure() => 'セッションの有効期限が切れました。再度ログインしてください。',
+      ServerFailure() => 'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
       ValidationFailure(:final message) => message,
       LocationFailure() => '位置情報を利用できません。',
     };
@@ -631,5 +624,5 @@ final class PostDetailNotifier
 
 final postDetailNotifierProvider = NotifierProvider.autoDispose
     .family<PostDetailNotifier, PostDetailState, String>(
-  PostDetailNotifier.new,
-);
+      PostDetailNotifier.new,
+    );

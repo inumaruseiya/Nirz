@@ -7,7 +7,9 @@ void main() {
   group('Reduce motion (disableAnimations)', () {
     const inner = Text('inner_page');
 
-    testWidgets('ReduceMotionAwarePageTransitionsBuilder は子をそのまま返す', (tester) async {
+    testWidgets('ReduceMotionAwarePageTransitionsBuilder は子をそのまま返す', (
+      tester,
+    ) async {
       const builder = ReduceMotionAwarePageTransitionsBuilder(
         FadeUpwardsPageTransitionsBuilder(),
       );

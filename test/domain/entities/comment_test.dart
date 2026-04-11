@@ -39,13 +39,13 @@ void main() {
 
   group('Comment one-level nesting (FR-COMMENT-02)', () {
     Comment topLevel() => Comment(
-          id: topId,
-          postId: postId,
-          authorId: authorId,
-          parentId: null,
-          content: 'root',
-          createdAt: createdAt,
-        );
+      id: topId,
+      postId: postId,
+      authorId: authorId,
+      parentId: null,
+      content: 'root',
+      createdAt: createdAt,
+    );
 
     test('valid: reply references top-level id on same post', () {
       final top = topLevel();

@@ -11,11 +11,7 @@ import '../../domain/value_objects/obfuscated_location.dart';
 
 /// ① NG ワード検査 ② 画像があれば Storage アップロード ③ ぼかし位置 ④ [PostRepository.createPost]。
 final class CreatePostUseCase {
-  CreatePostUseCase(
-    this._posts,
-    this._storage,
-    this._ngWords,
-  );
+  CreatePostUseCase(this._posts, this._storage, this._ngWords);
 
   final PostRepository _posts;
   final StorageRepository _storage;
@@ -42,7 +38,11 @@ final class CreatePostUseCase {
     if (imageBytes != null && imageBytes.isNotEmpty) {
       final ct = imageContentType?.trim();
       if (ct == null || ct.isEmpty) {
-        return const Err(ValidationFailure('imageContentType is required when imageBytes is set'));
+        return const Err(
+          ValidationFailure(
+            'imageContentType is required when imageBytes is set',
+          ),
+        );
       }
       final upload = await _storage.uploadPostImage(imageBytes, ct);
       switch (upload) {

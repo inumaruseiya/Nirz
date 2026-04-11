@@ -6,10 +6,7 @@ import '../../domain/value_objects/user_id.dart';
 
 /// 自分以外のユーザーをブロックする（Phase 10-3-2）。
 final class BlockUserUseCase {
-  BlockUserUseCase(
-    this._blocks,
-    this._auth,
-  );
+  BlockUserUseCase(this._blocks, this._auth);
 
   final BlockRepository _blocks;
   final AuthRepository _auth;

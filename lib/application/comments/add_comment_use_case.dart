@@ -7,10 +7,7 @@ import '../../domain/services/ng_word_moderation.dart';
 import '../../domain/value_objects/post_id.dart';
 
 final class AddCommentUseCase {
-  AddCommentUseCase(
-    this._comments,
-    this._ngWords,
-  );
+  AddCommentUseCase(this._comments, this._ngWords);
 
   final CommentRepository _comments;
   final NgWordListRepository _ngWords;

@@ -35,6 +35,11 @@ final class FeedPost extends Equatable {
   bool get isExpired => post.isExpired;
 
   @override
-  List<Object?> get props =>
-      [post, reactionCount, authorName, distanceKm, commentCount];
+  List<Object?> get props => [
+    post,
+    reactionCount,
+    authorName,
+    distanceKm,
+    commentCount,
+  ];
 }

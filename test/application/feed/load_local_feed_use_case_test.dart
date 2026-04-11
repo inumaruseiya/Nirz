@@ -47,9 +47,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(FeedSort.newest);
-    registerFallbackValue(
-      GeoCoordinate(latitude: 0, longitude: 0),
-    );
+    registerFallbackValue(GeoCoordinate(latitude: 0, longitude: 0));
   });
 
   setUp(() {
@@ -156,9 +154,9 @@ void main() {
     });
 
     test('maps location timeout to NetworkFailure', () async {
-      when(() => location.getCurrentPosition()).thenThrow(
-        LocationPositionException(LocationPositionIssue.timeout),
-      );
+      when(
+        () => location.getCurrentPosition(),
+      ).thenThrow(LocationPositionException(LocationPositionIssue.timeout));
 
       final result = await useCase(sort: FeedSort.newest);
 

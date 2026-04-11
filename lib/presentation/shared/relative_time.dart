@@ -1,10 +1,7 @@
 /// 投稿カード等向けの相対時刻（日本語・ざっくり）（実装計画 Phase 6-2-3、詳細設計 4.3）。
 ///
 /// [clock] を省略すると [DateTime.now] を使う（テストでは固定時刻を渡せる）。
-String formatRelativeTimeJa(
-  DateTime createdAt, {
-  DateTime? clock,
-}) {
+String formatRelativeTimeJa(DateTime createdAt, {DateTime? clock}) {
   final now = clock ?? DateTime.now();
   final at = createdAt.isUtc ? createdAt.toLocal() : createdAt;
   final diff = now.difference(at);

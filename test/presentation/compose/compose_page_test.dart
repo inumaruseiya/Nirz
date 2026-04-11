@@ -25,22 +25,18 @@ class _TestComposeNotifier extends ComposeNotifier {
     Uint8List? imageBytes,
     String? imageContentType,
   }) async {
-    submitted.add(
-      (
-        content: content,
-        imageBytes: imageBytes,
-        imageContentType: imageContentType,
-      ),
-    );
+    submitted.add((
+      content: content,
+      imageBytes: imageBytes,
+      imageContentType: imageContentType,
+    ));
     state = const ComposeSuccess();
   }
 
   final List<
-      ({
-        String content,
-        Uint8List? imageBytes,
-        String? imageContentType,
-      })> submitted = [];
+    ({String content, Uint8List? imageBytes, String? imageContentType})
+  >
+  submitted = [];
 }
 
 /// [ComposePage] の `context.pop` 用に、下にスタックを積む。
@@ -74,9 +70,7 @@ Future<void> _pumpCompose(
   final n = notifier ?? _TestComposeNotifier(composeState);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [
-        composeNotifierProvider.overrideWith(() => n),
-      ],
+      overrides: [composeNotifierProvider.overrideWith(() => n)],
       child: MaterialApp.router(
         routerConfig: GoRouter(
           initialLocation: '/',
@@ -135,10 +129,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.send_outlined));
       await tester.pump();
 
-      expect(
-        find.text('本文を入力してください。空白だけの投稿はできません。'),
-        findsOneWidget,
-      );
+      expect(find.text('本文を入力してください。空白だけの投稿はできません。'), findsOneWidget);
     });
 
     testWidgets('位置準備済み・空白のみ: 送信タップでバリデーション文言', (tester) async {
@@ -153,17 +144,18 @@ void main() {
       await tester.tap(find.byIcon(Icons.send_outlined));
       await tester.pump();
 
-      expect(
-        find.text('本文を入力してください。空白だけの投稿はできません。'),
-        findsOneWidget,
-      );
+      expect(find.text('本文を入力してください。空白だけの投稿はできません。'), findsOneWidget);
     });
 
     testWidgets('位置準備済み・本文あり: 送信で submitPost が呼ばれて閉じる', (tester) async {
       final notifier = _TestComposeNotifier(
         const ComposeEditing(locationReady: true),
       );
-      await _pumpCompose(tester, composeState: notifier.build(), notifier: notifier);
+      await _pumpCompose(
+        tester,
+        composeState: notifier.build(),
+        notifier: notifier,
+      );
 
       await tester.enterText(find.byType(TextField), 'こんにちは');
       await tester.pump();
@@ -182,10 +174,7 @@ void main() {
     });
 
     testWidgets('ComposeObfuscating: テキストが読み取り専用・送信無効', (tester) async {
-      await _pumpCompose(
-        tester,
-        composeState: const ComposeObfuscating(),
-      );
+      await _pumpCompose(tester, composeState: const ComposeObfuscating());
 
       final field = tester.widget<TextField>(find.byType(TextField));
       expect(field.readOnly, isTrue);
@@ -194,10 +183,7 @@ void main() {
     });
 
     testWidgets('ComposeSubmitting: 送信中ラベルとインジケータ', (tester) async {
-      await _pumpCompose(
-        tester,
-        composeState: const ComposeSubmitting(),
-      );
+      await _pumpCompose(tester, composeState: const ComposeSubmitting());
 
       expect(find.text('送信中…'), findsOneWidget);
       expect(

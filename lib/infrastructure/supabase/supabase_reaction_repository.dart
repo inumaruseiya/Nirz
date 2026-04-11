@@ -29,14 +29,11 @@ final class SupabaseReactionRepository implements ReactionRepository {
       return const Err(AuthFailure());
     }
     try {
-      await _client.from('reactions').upsert(
-        {
-          'user_id': uid,
-          'post_id': postId.value,
-          'type': type.storageValue,
-        },
-        onConflict: 'user_id, post_id',
-      );
+      await _client.from('reactions').upsert({
+        'user_id': uid,
+        'post_id': postId.value,
+        'type': type.storageValue,
+      }, onConflict: 'user_id, post_id');
       return const Ok<void, Failure>(null);
     } on AuthException {
       return const Err(AuthFailure());

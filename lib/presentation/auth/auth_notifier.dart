@@ -98,7 +98,9 @@ final class AuthNotifier extends AutoDisposeNotifier<AuthState> {
     );
     switch (result) {
       case Ok():
-        final userId = await ref.read(authRepositoryProvider).getCurrentUserId();
+        final userId = await ref
+            .read(authRepositoryProvider)
+            .getCurrentUserId();
         state = AuthSuccess(awaitingEmailConfirmation: userId == null);
       case Err(:final error):
         state = AuthError(_messageForSignUpFailure(error));

@@ -43,8 +43,7 @@ class CommentThread extends StatelessWidget {
   /// コメント投稿者のブロック（Phase 10-3-2）。
   final Future<void> Function(UserId)? onBlockCommentAuthor;
 
-  String _label(UserId id) =>
-      resolveAuthorLabel?.call(id) ?? '近くのユーザー';
+  String _label(UserId id) => resolveAuthorLabel?.call(id) ?? '近くのユーザー';
 
   @override
   Widget build(BuildContext context) {
@@ -140,8 +139,7 @@ class _TopLevelCommentBlock extends StatelessWidget {
             child: Semantics(
               button: true,
               label: '返信',
-              hint:
-                  'このコメントに1階層だけ返信できます。返信コメントにさらに返信することはできません。',
+              hint: 'このコメントに1階層だけ返信できます。返信コメントにさらに返信することはできません。',
               child: TextButton(
                 onPressed: onReply,
                 style: TextButton.styleFrom(
@@ -221,13 +219,14 @@ class _CommentBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final relative = formatRelativeTimeJa(comment.createdAt);
-    final semanticsLabel =
-        '$authorLabel、$relative。${comment.content}';
-    final showReport = reportMenuEnabled &&
+    final semanticsLabel = '$authorLabel、$relative。${comment.content}';
+    final showReport =
+        reportMenuEnabled &&
         viewerUserId != null &&
         onReportComment != null &&
         comment.authorId.value != viewerUserId!.value;
-    final showBlock = reportMenuEnabled &&
+    final showBlock =
+        reportMenuEnabled &&
         viewerUserId != null &&
         onBlockCommentAuthor != null &&
         comment.authorId.value != viewerUserId!.value;
@@ -293,10 +292,7 @@ class _CommentBody extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppTokens.spaceUnit / 2),
-          Text(
-            comment.content,
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(comment.content, style: theme.textTheme.bodyMedium),
         ],
       ),
     );

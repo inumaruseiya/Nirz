@@ -19,10 +19,7 @@ final class PostMapper {
       content: dto.content,
       imageUrl: _optionalHttpUri(dto.imageUrl),
       location: ObfuscatedLocation(
-        GeoCoordinate(
-          latitude: dto.locationLat,
-          longitude: dto.locationLng,
-        ),
+        GeoCoordinate(latitude: dto.locationLat, longitude: dto.locationLng),
       ),
       createdAt: dto.createdAt,
       expiresAt: dto.expiresAt,
@@ -36,10 +33,7 @@ final class PostMapper {
       content: dto.content,
       imageUrl: _optionalHttpUri(dto.imageUrl),
       location: ObfuscatedLocation(
-        GeoCoordinate(
-          latitude: dto.locationLat,
-          longitude: dto.locationLng,
-        ),
+        GeoCoordinate(latitude: dto.locationLat, longitude: dto.locationLng),
       ),
       createdAt: dto.createdAt,
       expiresAt: dto.expiresAt,
@@ -61,10 +55,7 @@ final class PostMapper {
       content: dto.content,
       imageUrl: _optionalHttpUri(dto.imageUrl),
       location: ObfuscatedLocation(
-        GeoCoordinate(
-          latitude: dto.locationLat,
-          longitude: dto.locationLng,
-        ),
+        GeoCoordinate(latitude: dto.locationLat, longitude: dto.locationLng),
       ),
       createdAt: dto.createdAt,
       expiresAt: dto.expiresAt,

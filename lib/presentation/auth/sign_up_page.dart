@@ -65,7 +65,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
 
     FocusScope.of(context).unfocus();
 
-    await ref.read(signUpAuthNotifierProvider.notifier).signUpWithEmail(
+    await ref
+        .read(signUpAuthNotifierProvider.notifier)
+        .signUpWithEmail(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           displayName: _nameController.text.trim(),
@@ -117,7 +119,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: AppTokens.bodyMaxLineWidth),
+            constraints: const BoxConstraints(
+              maxWidth: AppTokens.bodyMaxLineWidth,
+            ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppTokens.spaceUnit * 3,
@@ -132,14 +136,17 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                       if (pendingEmail) ...[
                         Semantics(
                           liveRegion: true,
-                          label:
-                              '確認メールを送信しました。メール内のリンクを開いたあと、ログインしてください。',
+                          label: '確認メールを送信しました。メール内のリンクを開いたあと、ログインしてください。',
                           excludeSemantics: true,
                           child: Material(
                             color: scheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+                            borderRadius: BorderRadius.circular(
+                              AppTokens.radiusSurface,
+                            ),
                             child: Padding(
-                              padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
+                              padding: const EdgeInsets.all(
+                                AppTokens.spaceUnit * 2,
+                              ),
                               child: Text(
                                 '確認メールを送信しました。メール内のリンクを開いたあと、ログインしてください。',
                                 style: textTheme.bodyMedium?.copyWith(
@@ -152,7 +159,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         SizedBox(height: AppTokens.spaceUnit * 3),
                         OutlinedButton(
                           onPressed: () {
-                            ref.read(signUpAuthNotifierProvider.notifier).reset();
+                            ref
+                                .read(signUpAuthNotifierProvider.notifier)
+                                .reset();
                             context.go(AppRoutePaths.login);
                           },
                           child: const Text('ログイン画面へ'),
@@ -200,8 +209,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             onPressed: loading || pendingEmail
                                 ? null
                                 : () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
-                                    ),
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_outlined
@@ -235,8 +244,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                             onPressed: loading || pendingEmail
                                 ? null
                                 : () => setState(
-                                      () => _obscureConfirm = !_obscureConfirm,
-                                    ),
+                                    () => _obscureConfirm = !_obscureConfirm,
+                                  ),
                             icon: Icon(
                               _obscureConfirm
                                   ? Icons.visibility_outlined
@@ -275,7 +284,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                   child: const SizedBox(
                                     height: 22,
                                     width: 22,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   ),
                                 )
                               : const Text('登録する'),
@@ -284,7 +295,9 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                         AuthOAuthButtons(
                           enabled: !loading && !pendingEmail,
                           onError: (message) {
-                            final n = ref.read(signUpAuthNotifierProvider.notifier);
+                            final n = ref.read(
+                              signUpAuthNotifierProvider.notifier,
+                            );
                             if (message == null) {
                               n.clearError();
                             } else {

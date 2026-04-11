@@ -7,7 +7,8 @@ import '../value_objects/obfuscated_location.dart';
 ///
 /// 方位角は一様、距離は区間上で一様。小距離の目的地は球面三角法（bearing + angular distance）で算出する。
 class LocationObfuscationService {
-  LocationObfuscationService({math.Random? random}) : _random = random ?? math.Random();
+  LocationObfuscationService({math.Random? random})
+    : _random = random ?? math.Random();
 
   final math.Random _random;
 
@@ -16,7 +17,8 @@ class LocationObfuscationService {
   static const double _maxOffsetMeters = 1000;
 
   ObfuscatedLocation obfuscate(GeoCoordinate raw) {
-    final distanceMeters = _minOffsetMeters +
+    final distanceMeters =
+        _minOffsetMeters +
         _random.nextDouble() * (_maxOffsetMeters - _minOffsetMeters);
     final bearingRadians = 2 * math.pi * _random.nextDouble();
 
@@ -32,7 +34,8 @@ class LocationObfuscationService {
     final lat2 = math.asin(
       sinLat1 * cosDelta + cosLat1 * sinDelta * math.cos(bearingRadians),
     );
-    final lon2 = lon1 +
+    final lon2 =
+        lon1 +
         math.atan2(
           math.sin(bearingRadians) * sinDelta * cosLat1,
           cosDelta - sinLat1 * math.sin(lat2),

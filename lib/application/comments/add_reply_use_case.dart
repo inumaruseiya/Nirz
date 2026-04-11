@@ -9,10 +9,7 @@ import '../../domain/value_objects/post_id.dart';
 
 /// 1階層返信のみ。[parentId] はトップレベルコメント（`parentId == null`）であること。
 final class AddReplyUseCase {
-  AddReplyUseCase(
-    this._comments,
-    this._ngWords,
-  );
+  AddReplyUseCase(this._comments, this._ngWords);
 
   final CommentRepository _comments;
   final NgWordListRepository _ngWords;
@@ -44,15 +41,11 @@ final class AddReplyUseCase {
           }
         }
         if (parent == null) {
-          return const Err(
-            ValidationFailure('対象のコメントが見つかりません。'),
-          );
+          return const Err(ValidationFailure('対象のコメントが見つかりません。'));
         }
         if (!parent.isTopLevelComment) {
           return const Err(
-            ValidationFailure(
-              '返信の返信はできません。トップレベルのコメントにのみ返信できます。',
-            ),
+            ValidationFailure('返信の返信はできません。トップレベルのコメントにのみ返信できます。'),
           );
         }
         return _comments.addReply(

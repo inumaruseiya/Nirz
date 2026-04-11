@@ -11,11 +11,7 @@ import '../theme/app_tokens.dart';
 ///
 /// ブラウザ／システム UI に遷移する。戻り後のセッションは [GoRouter] の認証リフレッシュで反映される。
 class AuthOAuthButtons extends ConsumerStatefulWidget {
-  const AuthOAuthButtons({
-    super.key,
-    required this.enabled,
-    this.onError,
-  });
+  const AuthOAuthButtons({super.key, required this.enabled, this.onError});
 
   /// メールフォーム送信中などは false にする。
   final bool enabled;
@@ -108,10 +104,7 @@ class _AuthOAuthButtonsState extends ConsumerState<AuthOAuthButtons> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 )
-              : const Icon(
-                  Icons.account_circle_outlined,
-                  semanticLabel: '',
-                ),
+              : const Icon(Icons.account_circle_outlined, semanticLabel: ''),
           label: const Text('Googleで続行'),
         ),
         SizedBox(height: AppTokens.spaceUnit * 2),
@@ -129,10 +122,7 @@ class _AuthOAuthButtonsState extends ConsumerState<AuthOAuthButtons> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 )
-              : const Icon(
-                  Icons.apple,
-                  semanticLabel: '',
-                ),
+              : const Icon(Icons.apple, semanticLabel: ''),
           label: const Text('Appleで続行'),
         ),
       ],

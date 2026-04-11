@@ -34,17 +34,13 @@ void main() {
     }
 
     testWidgets('LocalPostCard: 画像ありのとき統合ラベルに「画像あり」', (tester) async {
-      final post = buildPost(
-        imageUrl: Uri.parse('https://example.com/p.png'),
-      );
+      final post = buildPost(imageUrl: Uri.parse('https://example.com/p.png'));
 
       await mockNetworkImagesFor(() async {
         await tester.pumpWidget(
           MaterialApp(
             theme: AppTheme.light(),
-            home: Scaffold(
-              body: LocalPostCard(post: post),
-            ),
+            home: Scaffold(body: LocalPostCard(post: post)),
           ),
         );
         await tester.pump();
@@ -62,9 +58,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: AppTheme.light(),
-          home: Scaffold(
-            body: LocalPostCard(post: post),
-          ),
+          home: Scaffold(body: LocalPostCard(post: post)),
         ),
       );
 

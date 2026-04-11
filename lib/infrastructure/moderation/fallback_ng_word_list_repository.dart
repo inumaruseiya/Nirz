@@ -6,10 +6,7 @@ import '../../domain/repositories/ng_word_list_repository.dart';
 ///
 /// リモートが空リストを返す場合は「制限なし」とみなし、フォールバックしない。
 final class FallbackNgWordListRepository implements NgWordListRepository {
-  FallbackNgWordListRepository(
-    this._remote,
-    this._embedded,
-  );
+  FallbackNgWordListRepository(this._remote, this._embedded);
 
   final NgWordListRepository _remote;
   final NgWordListRepository _embedded;

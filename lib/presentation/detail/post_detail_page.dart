@@ -26,8 +26,9 @@ import 'post_detail_notifier.dart';
 
 /// 投稿画像を全画面表示（実装計画 Phase 8-1-3）。ピンチで拡大縮小、背景タップまたは閉じるで戻る。
 void showPostDetailImageViewer(BuildContext context, String imageUrl) {
-  final barrierLabel =
-      MaterialLocalizations.of(context).modalBarrierDismissLabel;
+  final barrierLabel = MaterialLocalizations.of(
+    context,
+  ).modalBarrierDismissLabel;
   final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
   showGeneralDialog<void>(
@@ -35,8 +36,9 @@ void showPostDetailImageViewer(BuildContext context, String imageUrl) {
     barrierDismissible: true,
     barrierLabel: barrierLabel,
     barrierColor: Colors.black.withValues(alpha: 0.92),
-    transitionDuration:
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 200),
+    transitionDuration: reduceMotion
+        ? Duration.zero
+        : const Duration(milliseconds: 200),
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
       return SafeArea(
         child: Semantics(
@@ -137,17 +139,17 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
     final detailState = ref.watch(postDetailNotifierProvider(postId));
     final sessionAsync = ref.watch(sessionStateProvider);
 
-    ref.listen<PostDetailState>(
-      postDetailNotifierProvider(postId),
-      (previous, next) {
-        if (next is PostDetailDeleted && context.mounted) {
-          context.pop(true);
-        }
-        if (next is! PostDetailReady && _replyParentId != null) {
-          setState(() => _replyParentId = null);
-        }
-      },
-    );
+    ref.listen<PostDetailState>(postDetailNotifierProvider(postId), (
+      previous,
+      next,
+    ) {
+      if (next is PostDetailDeleted && context.mounted) {
+        context.pop(true);
+      }
+      if (next is! PostDetailReady && _replyParentId != null) {
+        setState(() => _replyParentId = null);
+      }
+    });
 
     final postForOwnerCheck = switch (detailState) {
       PostDetailReady(:final post) => post,
@@ -156,11 +158,11 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
     };
     final isOwner = switch (sessionAsync) {
       AsyncData(:final value) => switch (value) {
-          SessionSignedIn(:final userId) =>
-            postForOwnerCheck != null &&
-                userId.value == postForOwnerCheck.authorId.value,
-          _ => false,
-        },
+        SessionSignedIn(:final userId) =>
+          postForOwnerCheck != null &&
+              userId.value == postForOwnerCheck.authorId.value,
+        _ => false,
+      },
       _ => false,
     };
 
@@ -174,26 +176,29 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       _ => false,
     };
 
-    final showDeleteMenu = isOwner &&
+    final showDeleteMenu =
+        isOwner &&
         detailState is PostDetailReady &&
         !reportSubmitting &&
         !blockSubmitting;
 
     final viewerUserId = switch (sessionAsync) {
       AsyncData(:final value) => switch (value) {
-          SessionSignedIn(:final userId) => userId,
-          _ => null,
-        },
+        SessionSignedIn(:final userId) => userId,
+        _ => null,
+      },
       _ => null,
     };
 
-    final showReportPostMenu = viewerUserId != null &&
+    final showReportPostMenu =
+        viewerUserId != null &&
         !isOwner &&
         detailState is PostDetailReady &&
         !reportSubmitting &&
         !blockSubmitting;
 
-    final showBlockPostAuthorMenu = viewerUserId != null &&
+    final showBlockPostAuthorMenu =
+        viewerUserId != null &&
         !isOwner &&
         detailState is PostDetailReady &&
         !reportSubmitting &&
@@ -259,9 +264,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                       );
                   if (!context.mounted) return;
                   if (err != null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(err)),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(err)));
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('通報を受け付けました。')),
@@ -274,9 +279,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     title: const Text('投稿を削除'),
-                    content: const Text(
-                      'この投稿を削除しますか？この操作は取り消せません。',
-                    ),
+                    content: const Text('この投稿を削除しますか？この操作は取り消せません。'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(ctx).pop(false),
@@ -299,9 +302,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                     .deletePost();
                 if (!context.mounted) return;
                 if (err != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(err)),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(err)));
                 }
               },
               itemBuilder: (context) => [
@@ -326,53 +329,50 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       ),
       body: switch (detailState) {
         PostDetailInvalidId() => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                '無効な投稿 ID です',
-                style: theme.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              '無効な投稿 ID です',
+              style: theme.textTheme.bodyLarge,
+              textAlign: TextAlign.center,
             ),
           ),
-        PostDetailLoading() => const Center(
-            child: CircularProgressIndicator(),
-          ),
+        ),
+        PostDetailLoading() => const Center(child: CircularProgressIndicator()),
         PostDetailLocationDenied() => Center(
-            child: LocationPermissionCallout(
-              onOpenSettings: () async {
-                await Geolocator.openAppSettings();
-              },
-            ),
+          child: LocationPermissionCallout(
+            onOpenSettings: () async {
+              await Geolocator.openAppSettings();
+            },
           ),
+        ),
         PostDetailError(:final message) => Center(
-            child: ErrorRetryPanel(
-              message: message,
-              onRetry: () => ref
-                  .read(postDetailNotifierProvider(postId).notifier)
-                  .reload(),
-            ),
+          child: ErrorRetryPanel(
+            message: message,
+            onRetry: () =>
+                ref.read(postDetailNotifierProvider(postId).notifier).reload(),
           ),
+        ),
         PostDetailNotFound() => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'この投稿は表示できません（範囲外・削除済み・期限切れの可能性があります）',
-                    style: theme.textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: AppTokens.spaceUnit * 2),
-                  FilledButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    child: const Text('戻る'),
-                  ),
-                ],
-              ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'この投稿は表示できません（範囲外・削除済み・期限切れの可能性があります）',
+                  style: theme.textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppTokens.spaceUnit * 2),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: const Text('戻る'),
+                ),
+              ],
             ),
           ),
+        ),
         PostDetailReady(
           :final post,
           :final myReactionType,
@@ -387,7 +387,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
             child: Builder(
               builder: (context) {
                 final rawReplyId = _replyParentId;
-                final replyParentValid = rawReplyId != null &&
+                final replyParentValid =
+                    rawReplyId != null &&
                     comments.any(
                       (c) => c.id == rawReplyId && c.parentId == null,
                     );
@@ -399,8 +400,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                     }
                   });
                 }
-                final effectiveReplyParentId =
-                    replyParentValid ? rawReplyId : null;
+                final effectiveReplyParentId = replyParentValid
+                    ? rawReplyId
+                    : null;
                 String? replyToLabel;
                 if (effectiveReplyParentId != null) {
                   for (final c in comments) {
@@ -414,7 +416,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   }
                 }
 
-                final composerOn = canComposeComment &&
+                final composerOn =
+                    canComposeComment &&
                     !commentsLoading &&
                     !reactionSending &&
                     !reportSubmitting &&
@@ -425,17 +428,16 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                 return _PostDetailContent(
                   post: post,
                   myReactionType: myReactionType,
-                  reactionPickerEnabled: !reactionSending &&
-                      !reportSubmitting &&
-                      !blockSubmitting,
+                  reactionPickerEnabled:
+                      !reactionSending && !reportSubmitting && !blockSubmitting,
                   comments: comments,
                   commentsLoading: commentsLoading,
                   commentsError: commentsError,
                   commentComposerEnabled: composerOn,
                   viewerUserId: viewerUserId,
                   reportMenuEnabled: commentMenusEnabled,
-                  onBlockCommentAuthor: viewerUserId == null ||
-                          !commentMenusEnabled
+                  onBlockCommentAuthor:
+                      viewerUserId == null || !commentMenusEnabled
                       ? null
                       : (authorId) async {
                           String? label;
@@ -445,8 +447,8 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                               label = t.isEmpty
                                   ? 'このコメントの投稿者'
                                   : (t.length > 28
-                                      ? '${t.substring(0, 28)}…'
-                                      : t);
+                                        ? '${t.substring(0, 28)}…'
+                                        : t);
                               break;
                             }
                           }
@@ -464,8 +466,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   onCancelReply: effectiveReplyParentId != null
                       ? () => setState(() => _replyParentId = null)
                       : null,
-                  onReplyTo:
-                      composerOn ? (id) => setState(() => _replyParentId = id) : null,
+                  onReplyTo: composerOn
+                      ? (id) => setState(() => _replyParentId = id)
+                      : null,
                   onRetryComments: () => ref
                       .read(postDetailNotifierProvider(postId).notifier)
                       .reloadComments(),
@@ -478,9 +481,7 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                           );
                           if (!context.mounted || draft == null) return;
                           final err = await ref
-                              .read(
-                                postDetailNotifierProvider(postId).notifier,
-                              )
+                              .read(postDetailNotifierProvider(postId).notifier)
                               .submitReport(
                                 ReportSubmission(
                                   targetType: ReportTargetType.comment,
@@ -490,20 +491,19 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                               );
                           if (!context.mounted) return;
                           if (err != null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(err)),
-                            );
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(err)));
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('通報を受け付けました。'),
-                              ),
+                              const SnackBar(content: Text('通報を受け付けました。')),
                             );
                           }
                         },
                   onSubmitComment: (content) async {
-                    final notifier =
-                        ref.read(postDetailNotifierProvider(postId).notifier);
+                    final notifier = ref.read(
+                      postDetailNotifierProvider(postId).notifier,
+                    );
                     final String? err;
                     if (effectiveReplyParentId != null) {
                       err = await notifier.submitReply(
@@ -518,9 +518,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                       setState(() => _replyParentId = null);
                     }
                     if (err != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(err)),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(err)));
                     }
                   },
                   onReactionSelected: (next) async {
@@ -529,9 +529,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                         .applyReactionSelection(next);
                     if (!context.mounted) return;
                     if (err != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(err)),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text(err)));
                     }
                   },
                 );
@@ -569,19 +569,14 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               onReactionSelected: (_) async {},
             ),
           ),
-        PostDetailDeleted() => const Center(
-            child: CircularProgressIndicator(),
-          ),
+        PostDetailDeleted() => const Center(child: CircularProgressIndicator()),
       },
     );
   }
 }
 
 class _PostDetailBody extends StatelessWidget {
-  const _PostDetailBody({
-    this.blocking = false,
-    required this.child,
-  });
+  const _PostDetailBody({this.blocking = false, required this.child});
 
   final bool blocking;
   final Widget child;
@@ -593,14 +588,8 @@ class _PostDetailBody extends StatelessWidget {
       children: [
         child,
         if (blocking)
-          const ModalBarrier(
-            dismissible: false,
-            color: Color(0x33000000),
-          ),
-        if (blocking)
-          const Center(
-            child: CircularProgressIndicator(),
-          ),
+          const ModalBarrier(dismissible: false, color: Color(0x33000000)),
+        if (blocking) const Center(child: CircularProgressIndicator()),
       ],
     );
   }
@@ -677,12 +666,7 @@ class _PostDetailContent extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    name,
-                    style: theme.textTheme.titleLarge,
-                  ),
-                ),
+                Expanded(child: Text(name, style: theme.textTheme.titleLarge)),
                 const SizedBox(width: AppTokens.spaceUnit),
                 Text(
                   relative,
@@ -697,10 +681,7 @@ class _PostDetailContent extends StatelessWidget {
               DistanceLabel(kilometers: post.distanceKm),
             ],
             const SizedBox(height: AppTokens.spaceUnit * 2),
-            Text(
-              post.content,
-              style: theme.textTheme.bodyLarge,
-            ),
+            Text(post.content, style: theme.textTheme.bodyLarge),
             if (post.imageUrl != null) ...[
               const SizedBox(height: AppTokens.spaceUnit * 2),
               LayoutBuilder(
@@ -708,8 +689,10 @@ class _PostDetailContent extends StatelessWidget {
                   final dpr = MediaQuery.devicePixelRatioOf(context);
                   final logicalW = constraints.maxWidth;
                   final memW = (logicalW * dpr).round().clamp(1, 4096);
-                  final memH =
-                      ((logicalW * 9 / 16) * dpr).round().clamp(1, 4096);
+                  final memH = ((logicalW * 9 / 16) * dpr).round().clamp(
+                    1,
+                    4096,
+                  );
                   final url = post.imageUrl!.toString();
                   return Semantics(
                     button: true,
@@ -719,11 +702,13 @@ class _PostDetailContent extends StatelessWidget {
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () => showPostDetailImageViewer(context, url),
-                        borderRadius:
-                            BorderRadius.circular(AppTokens.radiusSurface),
+                        borderRadius: BorderRadius.circular(
+                          AppTokens.radiusSurface,
+                        ),
                         child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(AppTokens.radiusSurface),
+                          borderRadius: BorderRadius.circular(
+                            AppTokens.radiusSurface,
+                          ),
                           child: AspectRatio(
                             aspectRatio: 16 / 9,
                             child: CachedNetworkImage(
@@ -771,10 +756,7 @@ class _PostDetailContent extends StatelessWidget {
             const SizedBox(height: AppTokens.spaceUnit * 2),
             _DetailReactionSummaryRow(count: post.reactionCount),
             const SizedBox(height: AppTokens.spaceUnit * 2),
-            Text(
-              'コメント',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('コメント', style: theme.textTheme.titleMedium),
             const SizedBox(height: AppTokens.spaceUnit),
             if (commentsLoading && comments.isEmpty)
               const Padding(
@@ -869,17 +851,9 @@ class _DetailReactionSummaryRow extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          Icons.thumb_up_outlined,
-          size: _iconSize,
-          color: color,
-        ),
+        Icon(Icons.thumb_up_outlined, size: _iconSize, color: color),
         const SizedBox(width: AppTokens.spaceUnit / 2),
-        Icon(
-          Icons.visibility_outlined,
-          size: _iconSize,
-          color: color,
-        ),
+        Icon(Icons.visibility_outlined, size: _iconSize, color: color),
         const SizedBox(width: AppTokens.spaceUnit / 2),
         Icon(
           Icons.local_fire_department_outlined,

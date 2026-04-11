@@ -8,11 +8,7 @@ import '../theme/app_tokens.dart';
 
 /// フィード 1 件のカード（実装計画 Phase 6-2-1、詳細設計 6・4.3）。
 class LocalPostCard extends StatelessWidget {
-  const LocalPostCard({
-    super.key,
-    required this.post,
-    this.onTap,
-  });
+  const LocalPostCard({super.key, required this.post, this.onTap});
 
   final FeedPost post;
   final VoidCallback? onTap;
@@ -64,10 +60,7 @@ class LocalPostCard extends StatelessWidget {
                 DistanceLabel(kilometers: post.distanceKm),
               ],
               const SizedBox(height: AppTokens.spaceUnit),
-              Text(
-                post.content,
-                style: theme.textTheme.bodyLarge,
-              ),
+              Text(post.content, style: theme.textTheme.bodyLarge),
               if (post.imageUrl != null) ...[
                 const SizedBox(height: AppTokens.spaceUnit * 1.5),
                 LayoutBuilder(
@@ -75,11 +68,14 @@ class LocalPostCard extends StatelessWidget {
                     final dpr = MediaQuery.devicePixelRatioOf(context);
                     final logicalW = constraints.maxWidth;
                     final memW = (logicalW * dpr).round().clamp(1, 4096);
-                    final memH =
-                        ((logicalW * 9 / 16) * dpr).round().clamp(1, 4096);
+                    final memH = ((logicalW * 9 / 16) * dpr).round().clamp(
+                      1,
+                      4096,
+                    );
                     return ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(AppTokens.radiusSurface),
+                      borderRadius: BorderRadius.circular(
+                        AppTokens.radiusSurface,
+                      ),
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: CachedNetworkImage(
@@ -93,7 +89,9 @@ class LocalPostCard extends StatelessWidget {
                               child: SizedBox(
                                 width: 28,
                                 height: 28,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             ),
                           ),
@@ -122,8 +120,7 @@ class LocalPostCard extends StatelessWidget {
     final reactionLabel = post.reactionCount == 0
         ? 'リアクションなし'
         : 'リアクション合計 ${post.reactionCount} 件（いいね・見た・炎の合計）';
-    final imageSummary =
-        post.imageUrl != null ? '画像あり。' : '';
+    final imageSummary = post.imageUrl != null ? '画像あり。' : '';
 
     return Semantics(
       button: onTap != null,
@@ -150,17 +147,9 @@ class _ReactionSummaryRow extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          Icons.thumb_up_outlined,
-          size: _iconSize,
-          color: color,
-        ),
+        Icon(Icons.thumb_up_outlined, size: _iconSize, color: color),
         const SizedBox(width: AppTokens.spaceUnit / 2),
-        Icon(
-          Icons.visibility_outlined,
-          size: _iconSize,
-          color: color,
-        ),
+        Icon(Icons.visibility_outlined, size: _iconSize, color: color),
         const SizedBox(width: AppTokens.spaceUnit / 2),
         Icon(
           Icons.local_fire_department_outlined,

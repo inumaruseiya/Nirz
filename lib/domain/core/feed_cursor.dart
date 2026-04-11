@@ -5,10 +5,7 @@ import 'package:equatable/equatable.dart';
 /// RPC の `cursor_created_at` / `cursor_id` に対応。`id` は投稿の UUID 文字列
 ///（後続タスクで `PostId` 値オブジェクトを導入したらその表現と揃える）。
 final class FeedCursor extends Equatable {
-  const FeedCursor({
-    required this.createdAt,
-    required this.id,
-  });
+  const FeedCursor({required this.createdAt, required this.id});
 
   final DateTime createdAt;
 

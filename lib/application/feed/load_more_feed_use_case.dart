@@ -11,10 +11,7 @@ import '../../domain/core/location_position_exception.dart';
 
 /// カーソル付きで次ページを取得（[LoadLocalFeedUseCase] と同様に閲覧者位置を毎回取得）。
 final class LoadMoreFeedUseCase {
-  LoadMoreFeedUseCase(
-    this._feed,
-    this._location,
-  );
+  LoadMoreFeedUseCase(this._feed, this._location);
 
   final FeedRepository _feed;
   final LocationRepository _location;

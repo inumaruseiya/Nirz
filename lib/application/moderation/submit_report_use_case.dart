@@ -19,11 +19,7 @@ final class SubmitReportUseCase {
       return const Err(ValidationFailure('通報理由を入力してください。'));
     }
     if (reason.length > _maxReasonLength) {
-      return Err(
-        ValidationFailure(
-          '通報理由は $_maxReasonLength 文字以内にしてください。',
-        ),
-      );
+      return Err(ValidationFailure('通報理由は $_maxReasonLength 文字以内にしてください。'));
     }
 
     try {

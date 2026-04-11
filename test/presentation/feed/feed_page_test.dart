@@ -64,9 +64,7 @@ Future<void> _pumpFeedPage(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        feedNotifierProvider.overrideWith(
-          () => _StaticFeedNotifier(feedState),
-        ),
+        feedNotifierProvider.overrideWith(() => _StaticFeedNotifier(feedState)),
       ],
       child: MaterialApp.router(
         routerConfig: GoRouter(
@@ -107,10 +105,7 @@ void main() {
 
       expect(find.text('近くの投稿'), findsOneWidget);
       expect(find.byType(FeedSkeletonCard), findsNWidgets(3));
-      expect(
-        find.bySemanticsLabel('近くの投稿を読み込んでいます'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('近くの投稿を読み込んでいます'), findsOneWidget);
     });
 
     testWidgets('FeedReady: 投稿カードが表示される', (tester) async {
@@ -135,10 +130,7 @@ void main() {
     });
 
     testWidgets('FeedError: エラーパネルと再試行', (tester) async {
-      await _pumpFeedPage(
-        tester,
-        feedState: const FeedError('テスト用エラー'),
-      );
+      await _pumpFeedPage(tester, feedState: const FeedError('テスト用エラー'));
 
       expect(find.text('読み込めませんでした'), findsOneWidget);
       expect(find.text('テスト用エラー'), findsOneWidget);
@@ -146,10 +138,7 @@ void main() {
     });
 
     testWidgets('FeedLocationDenied: 位置権限コールアウト', (tester) async {
-      await _pumpFeedPage(
-        tester,
-        feedState: const FeedLocationDenied(),
-      );
+      await _pumpFeedPage(tester, feedState: const FeedLocationDenied());
 
       expect(find.text('位置情報をオンにしてください'), findsOneWidget);
       expect(find.text('設定を開く'), findsOneWidget);

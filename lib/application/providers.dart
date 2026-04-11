@@ -61,7 +61,9 @@ final sessionStateProvider = StreamProvider<SessionState>((ref) {
 });
 
 /// ログイン中の [Profile]。未ログイン・セッション読込中は `null`。取得失敗時も `null`（UI 側で再試行可）。
-final currentUserProfileProvider = FutureProvider.autoDispose<Profile?>((ref) async {
+final currentUserProfileProvider = FutureProvider.autoDispose<Profile?>((
+  ref,
+) async {
   final sessionAsync = ref.watch(sessionStateProvider);
   final SessionState? session = switch (sessionAsync) {
     AsyncData(:final value) => value,
@@ -81,25 +83,25 @@ final currentUserProfileProvider = FutureProvider.autoDispose<Profile?>((ref) as
 
 final requestPasswordResetUseCaseProvider =
     Provider<RequestPasswordResetUseCase>(
-  (ref) => RequestPasswordResetUseCase(ref.watch(authRepositoryProvider)),
-);
+      (ref) => RequestPasswordResetUseCase(ref.watch(authRepositoryProvider)),
+    );
 
 // --- Location (Phase 4-2) ---
 
 final requestLocationPermissionUseCaseProvider =
     Provider<RequestLocationPermissionUseCase>(
-  (ref) =>
-      RequestLocationPermissionUseCase(ref.watch(locationRepositoryProvider)),
-);
+      (ref) => RequestLocationPermissionUseCase(
+        ref.watch(locationRepositoryProvider),
+      ),
+    );
 
 final getCurrentPositionUseCaseProvider = Provider<GetCurrentPositionUseCase>(
   (ref) => GetCurrentPositionUseCase(ref.watch(locationRepositoryProvider)),
 );
 
 final obfuscateLocationUseCaseProvider = Provider<ObfuscateLocationUseCase>(
-  (ref) => ObfuscateLocationUseCase(
-    ref.watch(locationObfuscationServiceProvider),
-  ),
+  (ref) =>
+      ObfuscateLocationUseCase(ref.watch(locationObfuscationServiceProvider)),
 );
 
 // --- Posts (Phase 4-3) ---

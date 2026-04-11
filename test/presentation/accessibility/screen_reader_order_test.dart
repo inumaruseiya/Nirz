@@ -52,8 +52,7 @@ void main() {
       const name = '山田太郎';
       const content = '今日はいい天気です。';
       const distance = '約 1.2 km';
-      const reactionPhrase =
-          'リアクション合計 2 件（いいね・見た・炎の合計）';
+      const reactionPhrase = 'リアクション合計 2 件（いいね・見た・炎の合計）';
 
       final post = buildPost(
         authorName: name,
@@ -67,10 +66,7 @@ void main() {
         MaterialApp(
           theme: AppTheme.light(),
           home: Scaffold(
-            body: LocalPostCard(
-              post: post,
-              onTap: () {},
-            ),
+            body: LocalPostCard(post: post, onTap: () {}),
           ),
         ),
       );
@@ -80,10 +76,7 @@ void main() {
           .getSemanticsData()
           .label;
 
-      expect(
-        label,
-        '$name、$relative、$distance。$content。$reactionPhrase',
-      );
+      expect(label, '$name、$relative、$distance。$content。$reactionPhrase');
 
       expect(label.indexOf(name), lessThan(label.indexOf(relative)));
       expect(label.indexOf(relative), lessThan(label.indexOf(distance)));
@@ -112,9 +105,7 @@ void main() {
         await tester.pumpWidget(
           MaterialApp(
             theme: AppTheme.light(),
-            home: Scaffold(
-              body: LocalPostCard(post: post),
-            ),
+            home: Scaffold(body: LocalPostCard(post: post)),
           ),
         );
         await tester.pump();
@@ -125,10 +116,7 @@ void main() {
           .getSemanticsData()
           .label;
 
-      expect(
-        label,
-        '$name、$relative。$content。画像あり。$reactionPhrase',
-      );
+      expect(label, '$name、$relative。$content。画像あり。$reactionPhrase');
       expect(label.indexOf(content), lessThan(label.indexOf('画像あり')));
       expect(label.indexOf('画像あり'), lessThan(label.indexOf(reactionPhrase)));
     });

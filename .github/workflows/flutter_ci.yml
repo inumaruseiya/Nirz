@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed .
+
       - name: Analyze
         run: flutter analyze
 
@@ -65,16 +68,56 @@ jobs:
           echo "Timed out waiting for Supabase API on 127.0.0.1:54321"
           exit 1
 
+      # db reset 末尾のコンテナ再起動直後、Kong 越しの Storage が 502 / タイムアウトになることがある。
+      # ゲートウェイ経由で Storage が「応答」するまで待ってから reset する（未認証の list は HTTP 400 が返るのが正常）。
+      - name: Wait for Storage via API gateway
+        run: |
+          for i in $(seq 1 120); do
+            code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:54321/storage/v1/bucket" 2>/dev/null || echo 000)"
+            case "$code" in
+              400|401|403|404|200|201|204)
+                echo "Storage route reachable (HTTP $code)."
+                exit 0
+                ;;
+            esac
+            echo "Waiting for Storage route... ($i/120) HTTP=$code"
+            sleep 2
+          done
+          echo "Timed out waiting for Storage on http://127.0.0.1:54321/storage/v1/bucket"
+          exit 1
+
       # db reset 内の「Restarting containers」直後に Storage へのアクセスがタイムアウトすることがあるためリトライする。
       - name: Apply migrations
         run: |
-          for attempt in 1 2 3 4; do
+          wait_storage_route() {
+            local limit="${1:-90}"
+            local n=0
+            while [ "$n" -lt "$limit" ]; do
+              n=$((n + 1))
+              code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 10 "http://127.0.0.1:54321/storage/v1/bucket" 2>/dev/null || echo 000)"
+              case "$code" in
+                400|401|403|404|200|201|204)
+                  echo "Storage route reachable (HTTP $code)."
+                  return 0
+                  ;;
+              esac
+              echo "  storage wait $n/$limit HTTP=$code"
+              sleep 2
+            done
+            return 1
+          }
+
+          for attempt in 1 2 3 4 5 6 7; do
             echo "=== supabase db reset (attempt $attempt) ==="
+            if ! wait_storage_route 90; then
+              echo "Storage route not ready before reset; continuing anyway..."
+            fi
             if supabase db reset --no-seed; then
               exit 0
             fi
-            echo "db reset failed; sleeping 25s before retry..."
-            sleep 25
+            echo "db reset failed; sleeping 30s then waiting for Storage before retry..."
+            sleep 30
+            wait_storage_route 120 || true
           done
           exit 1
 
