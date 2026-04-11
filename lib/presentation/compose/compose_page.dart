@@ -48,8 +48,7 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     super.dispose();
   }
 
-  bool get _contentValid =>
-      _contentController.text.trim().isNotEmpty;
+  bool get _contentValid => _contentController.text.trim().isNotEmpty;
 
   String? get _contentErrorText {
     if (!_emptyContentSubmitted || _contentValid) return null;
@@ -129,24 +128,25 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                             minLines: 6,
                             maxLines: 12,
                             maxLength: _maxContentLength,
-                            buildCounter: (
-                              context, {
-                              required currentLength,
-                              required isFocused,
-                              maxLength,
-                            }) {
-                              return Text(
-                                '$currentLength / $maxLength',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: _contentErrorText != null
-                                      ? theme.colorScheme.error
-                                      : theme.colorScheme.onSurfaceVariant,
-                                ),
-                                semanticsLabel:
-                                    '文字数 $currentLength 文字。上限 $maxLength 文字。'
-                                    '${_contentErrorText != null ? _contentErrorText! : ''}',
-                              );
-                            },
+                            buildCounter:
+                                (
+                                  context, {
+                                  required currentLength,
+                                  required isFocused,
+                                  maxLength,
+                                }) {
+                                  return Text(
+                                    '$currentLength / $maxLength',
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: _contentErrorText != null
+                                          ? theme.colorScheme.error
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                    semanticsLabel:
+                                        '文字数 $currentLength 文字。上限 $maxLength 文字。'
+                                        '${_contentErrorText != null ? _contentErrorText! : ''}',
+                                  );
+                                },
                             onChanged: (_) {
                               if (_emptyContentSubmitted && _contentValid) {
                                 setState(() => _emptyContentSubmitted = false);
@@ -174,9 +174,8 @@ class _ComposePageState extends ConsumerState<ComposePage> {
             ),
             _ComposeStatusStrip(
               state: composeState,
-              onDismissFailure: () => ref
-                  .read(composeNotifierProvider.notifier)
-                  .dismissFailure(),
+              onDismissFailure: () =>
+                  ref.read(composeNotifierProvider.notifier).dismissFailure(),
               onRetryLocation: () => ref
                   .read(composeNotifierProvider.notifier)
                   .retryPrepareLocation(),
@@ -224,9 +223,7 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                                 )
                               : const Icon(Icons.send_outlined),
                           label: Text(
-                            composeState is ComposeSubmitting
-                                ? '送信中…'
-                                : '送信',
+                            composeState is ComposeSubmitting ? '送信中…' : '送信',
                           ),
                         ),
                       ],
@@ -289,11 +286,9 @@ class _ComposePageState extends ConsumerState<ComposePage> {
       final bytes = await xFile.readAsBytes();
       if (!mounted) return;
       if (bytes.length > _maxImageBytes) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('画像は5MB以下にしてください。'),
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('画像は5MB以下にしてください。')));
         return;
       }
 
@@ -307,9 +302,7 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('画像を取得できませんでした。もう一度お試しください。'),
-          ),
+          const SnackBar(content: Text('画像を取得できませんでした。もう一度お試しください。')),
         );
       }
     }
@@ -331,8 +324,7 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     await notifier.submitPost(
       content: _contentController.text,
       imageBytes: _pickedImageBytes,
-      imageContentType:
-          _pickedImageBytes != null ? _pickedImageMimeType : null,
+      imageContentType: _pickedImageBytes != null ? _pickedImageMimeType : null,
     );
   }
 
@@ -351,9 +343,9 @@ class _ComposePageState extends ConsumerState<ComposePage> {
       }
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('設定を開けませんでした。')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('設定を開けませんでした。')));
     }
   }
 }
@@ -401,93 +393,90 @@ class _ComposeStatusStrip extends StatelessWidget {
                       ),
                     )
                   : locationFailureMessage != null
-                      ? _LocationIssueCard(
-                          errorMessage: locationFailureMessage,
-                          settingsShortcut: locationRetryShortcut,
-                          onRetry: onRetryLocation,
-                          onOpenSettingsShortcut: onOpenSettingsShortcut,
-                          showDismiss: false,
-                        )
-                      : Text(
-                          '位置情報の確認が完了すると送信ボタンが有効になります。',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
+                  ? _LocationIssueCard(
+                      errorMessage: locationFailureMessage,
+                      settingsShortcut: locationRetryShortcut,
+                      onRetry: onRetryLocation,
+                      onOpenSettingsShortcut: onOpenSettingsShortcut,
+                      showDismiss: false,
+                    )
+                  : Text(
+                      '位置情報の確認が完了すると送信ボタンが有効になります。',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
             ),
           ),
         ),
       ComposeObfuscating() => Material(
-          color: colorScheme.surfaceContainerHighest,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTokens.spaceUnit * 2,
-              vertical: AppTokens.spaceUnit * 1.5,
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: colorScheme.primary,
-                  ),
+        color: colorScheme.surfaceContainerHighest,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.spaceUnit * 2,
+            vertical: AppTokens.spaceUnit * 1.5,
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: colorScheme.primary,
                 ),
-                const SizedBox(width: AppTokens.spaceUnit * 2),
-                Expanded(
-                  child: Text(
-                    '位置を準備しています',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: AppTokens.spaceUnit * 2),
+              Expanded(
+                child: Text('位置を準備しています', style: theme.textTheme.bodyMedium),
+              ),
+            ],
           ),
         ),
+      ),
       ComposeSubmitting() => const SizedBox.shrink(),
       ComposeSuccess() => Material(
-          color: colorScheme.primaryContainer,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTokens.spaceUnit * 2,
-              vertical: AppTokens.spaceUnit * 1.5,
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.check_circle_outline, color: colorScheme.primary),
-                const SizedBox(width: AppTokens.spaceUnit * 2),
-                Expanded(
-                  child: Text(
-                    '投稿が完了しました',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onPrimaryContainer,
-                    ),
+        color: colorScheme.primaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.spaceUnit * 2,
+            vertical: AppTokens.spaceUnit * 1.5,
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: colorScheme.primary),
+              const SizedBox(width: AppTokens.spaceUnit * 2),
+              Expanded(
+                child: Text(
+                  '投稿が完了しました',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
+      ),
       ComposeFailure(:final message, :final settingsShortcut) => Material(
-          color: colorScheme.errorContainer,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppTokens.spaceUnit * 2,
-              AppTokens.spaceUnit * 1.5,
-              AppTokens.spaceUnit * 2,
-              AppTokens.spaceUnit * 1.5,
-            ),
-            child: _LocationIssueCard(
-              errorMessage: message,
-              settingsShortcut: settingsShortcut,
-              onRetry: onRetryLocation,
-              onOpenSettingsShortcut: onOpenSettingsShortcut,
-              onDismiss: onDismissFailure,
-              showDismiss: true,
-            ),
+        color: colorScheme.errorContainer,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppTokens.spaceUnit * 2,
+            AppTokens.spaceUnit * 1.5,
+            AppTokens.spaceUnit * 2,
+            AppTokens.spaceUnit * 1.5,
+          ),
+          child: _LocationIssueCard(
+            errorMessage: message,
+            settingsShortcut: settingsShortcut,
+            onRetry: onRetryLocation,
+            onOpenSettingsShortcut: onOpenSettingsShortcut,
+            onDismiss: onDismissFailure,
+            showDismiss: true,
           ),
         ),
+      ),
     };
   }
 }
@@ -537,10 +526,7 @@ class _LocationIssueCard extends StatelessWidget {
             if (showDismiss && onDismiss != null)
               TextButton(
                 onPressed: onDismiss,
-                child: Text(
-                  '閉じる',
-                  style: TextStyle(color: onError),
-                ),
+                child: Text('閉じる', style: TextStyle(color: onError)),
               ),
           ],
         ),
@@ -548,7 +534,9 @@ class _LocationIssueCard extends StatelessWidget {
         Text(
           _locationWhyBody,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: isBar ? onError.withValues(alpha: 0.9) : colorScheme.onSurfaceVariant,
+            color: isBar
+                ? onError.withValues(alpha: 0.9)
+                : colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: AppTokens.spaceUnit * 1.5),
@@ -556,15 +544,14 @@ class _LocationIssueCard extends StatelessWidget {
           spacing: AppTokens.spaceUnit,
           runSpacing: AppTokens.spaceUnit,
           children: [
-            FilledButton(
-              onPressed: () => onRetry(),
-              child: const Text('再試行'),
-            ),
-            if (!kIsWeb && settingsShortcut != ComposeLocationSettingsShortcut.none)
+            FilledButton(onPressed: () => onRetry(), child: const Text('再試行')),
+            if (!kIsWeb &&
+                settingsShortcut != ComposeLocationSettingsShortcut.none)
               OutlinedButton(
                 onPressed: () => onOpenSettingsShortcut(settingsShortcut),
                 child: Text(
-                  settingsShortcut == ComposeLocationSettingsShortcut.locationServices
+                  settingsShortcut ==
+                          ComposeLocationSettingsShortcut.locationServices
                       ? '位置サービス設定'
                       : 'アプリの設定',
                 ),

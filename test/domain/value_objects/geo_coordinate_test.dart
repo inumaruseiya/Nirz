@@ -35,14 +35,18 @@ void main() {
     test('rejects longitude below -180', () {
       expect(
         () => GeoCoordinate(latitude: 0, longitude: -180.0001),
-        throwsA(isA<ArgumentError>().having((e) => e.name, 'name', 'longitude')),
+        throwsA(
+          isA<ArgumentError>().having((e) => e.name, 'name', 'longitude'),
+        ),
       );
     });
 
     test('rejects longitude above 180', () {
       expect(
         () => GeoCoordinate(latitude: 0, longitude: 180.0001),
-        throwsA(isA<ArgumentError>().having((e) => e.name, 'name', 'longitude')),
+        throwsA(
+          isA<ArgumentError>().having((e) => e.name, 'name', 'longitude'),
+        ),
       );
     });
 

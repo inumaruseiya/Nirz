@@ -26,10 +26,7 @@ void main() {
           ),
         ),
       );
-      expect(
-        () => ReactionType.parse(''),
-        throwsA(isA<FormatException>()),
-      );
+      expect(() => ReactionType.parse(''), throwsA(isA<FormatException>()));
     });
   });
 

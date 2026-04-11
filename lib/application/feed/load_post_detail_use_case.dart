@@ -10,10 +10,7 @@ import '../location/get_current_position_use_case.dart';
 
 /// 閲覧者の現在位置で `get_post_detail` を呼び、該当投稿を 1 件返す（範囲外・失効は空）。
 final class LoadPostDetailUseCase {
-  LoadPostDetailUseCase(
-    this._feed,
-    this._location,
-  );
+  LoadPostDetailUseCase(this._feed, this._location);
 
   final FeedRepository _feed;
   final LocationRepository _location;
@@ -22,10 +19,7 @@ final class LoadPostDetailUseCase {
     final posResult = await _getViewerPoint();
     switch (posResult) {
       case Ok(:final value):
-        return _feed.fetchPostDetail(
-          postId: postId,
-          viewerQueryPoint: value,
-        );
+        return _feed.fetchPostDetail(postId: postId, viewerQueryPoint: value);
       case Err(:final error):
         return Err(error);
     }

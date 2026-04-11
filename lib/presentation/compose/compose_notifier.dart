@@ -14,11 +14,7 @@ sealed class ComposeState {
 }
 
 /// 位置失敗時に出す設定ショートカット（Phase 7-1-6）。
-enum ComposeLocationSettingsShortcut {
-  none,
-  app,
-  locationServices,
-}
+enum ComposeLocationSettingsShortcut { none, app, locationServices }
 
 /// 入力中。位置が未確定のときは [locationReady] が false で送信不可。
 final class ComposeEditing extends ComposeState {
@@ -96,9 +92,9 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
   }
 
   ComposeEditing? get _editingIfEditing => switch (state) {
-        ComposeEditing s => s,
-        _ => null,
-      };
+    ComposeEditing s => s,
+    _ => null,
+  };
 
   /// 位置取得・ぼかし完了後に true（Phase 7-1-5 から呼ぶ）。
   void setLocationReady(bool ready) {
@@ -123,9 +119,9 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
     startObfuscation();
 
     try {
-      final permission = await ref.read(
-        requestLocationPermissionUseCaseProvider,
-      ).call();
+      final permission = await ref
+          .read(requestLocationPermissionUseCaseProvider)
+          .call();
       if (token != _locationPrepareGeneration) return;
 
       if (permission != LocationPermissionState.granted) {
@@ -147,14 +143,16 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
         return;
       }
 
-      final positionResult =
-          await ref.read(getCurrentPositionUseCaseProvider).call();
+      final positionResult = await ref
+          .read(getCurrentPositionUseCaseProvider)
+          .call();
       if (token != _locationPrepareGeneration) return;
 
       switch (positionResult) {
         case Ok(:final value):
-          _obfuscatedLocation =
-              ref.read(obfuscateLocationUseCaseProvider).call(value);
+          _obfuscatedLocation = ref
+              .read(obfuscateLocationUseCaseProvider)
+              .call(value);
           finishObfuscation(success: true);
         case Err(:final error):
           _obfuscatedLocation = null;
@@ -270,10 +268,10 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
   void dismissFailure() {
     if (state case ComposeFailure(
-          :final message,
-          :final locationReady,
-          :final settingsShortcut,
-        )) {
+      :final message,
+      :final locationReady,
+      :final settingsShortcut,
+    )) {
       state = ComposeEditing(
         locationReady: locationReady,
         locationRetryShortcut: !locationReady
@@ -294,8 +292,7 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
   static String _messageForPermission(LocationPermissionState permission) {
     return switch (permission) {
-      LocationPermissionState.denied =>
-        '位置情報の利用が許可されていません。設定から許可してください。',
+      LocationPermissionState.denied => '位置情報の利用が許可されていません。設定から許可してください。',
       LocationPermissionState.deniedForever =>
         '位置情報が「許可しない」になっています。設定アプリから許可を変更してください。',
       LocationPermissionState.serviceDisabled =>
@@ -306,8 +303,7 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
   static String _messageForPositionFailure(Failure failure) {
     return switch (failure) {
-      NetworkFailure() =>
-        '位置情報の取得がタイムアウトしました。通信環境を確認してから再度お試しください。',
+      NetworkFailure() => '位置情報の取得がタイムアウトしました。通信環境を確認してから再度お試しください。',
       LocationFailure() => '現在地を取得できませんでした。もう一度お試しください。',
       ValidationFailure(:final message) => message,
       AuthFailure() => 'セッションの有効期限が切れました。再度ログインしてください。',
@@ -317,16 +313,13 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
   static String _messageForSubmitFailure(Failure failure) {
     return switch (failure) {
-      NetworkFailure() =>
-        '接続できませんでした。通信環境を確認してから再度お試しください。',
-      AuthFailure() =>
-        'セッションの有効期限が切れました。再度ログインしてください。',
+      NetworkFailure() => '接続できませんでした。通信環境を確認してから再度お試しください。',
+      AuthFailure() => 'セッションの有効期限が切れました。再度ログインしてください。',
       ValidationFailure(:final message) =>
         message.toLowerCase().contains('imagecontenttype')
             ? '画像の送信準備に失敗しました。画像を削除するか、別の画像を選んでください。'
             : message,
-      ServerFailure() =>
-        'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
+      ServerFailure() => 'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
       LocationFailure() => '位置情報の処理に失敗しました。',
     };
   }
@@ -334,5 +327,5 @@ class ComposeNotifier extends AutoDisposeNotifier<ComposeState> {
 
 final composeNotifierProvider =
     NotifierProvider.autoDispose<ComposeNotifier, ComposeState>(
-  ComposeNotifier.new,
-);
+      ComposeNotifier.new,
+    );

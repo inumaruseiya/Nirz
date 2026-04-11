@@ -22,7 +22,10 @@ void main() {
       expect(c.id, CommentId.parse(dto.id));
       expect(c.postId, PostId.parse(dto.postId));
       expect(c.authorId, UserId.parse(dto.userId));
-      expect(c.parentId, CommentId.parse('dddddddd-dddd-4ddd-8ddd-dddddddddddd'));
+      expect(
+        c.parentId,
+        CommentId.parse('dddddddd-dddd-4ddd-8ddd-dddddddddddd'),
+      );
       expect(c.content, 'r');
     });
 

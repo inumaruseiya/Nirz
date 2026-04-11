@@ -22,9 +22,7 @@ class FeedSkeletonCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: _bone(height: 20, color: color),
-                ),
+                Expanded(child: _bone(height: 20, color: color)),
                 const SizedBox(width: AppTokens.spaceUnit),
                 _bone(width: 56, height: 14, color: color),
               ],
@@ -41,8 +39,7 @@ class FeedSkeletonCard extends StatelessWidget {
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius:
-                      BorderRadius.circular(AppTokens.radiusSurface),
+                  borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
                 ),
               ),
             ),
@@ -65,11 +62,7 @@ class FeedSkeletonCard extends StatelessWidget {
   }
 }
 
-Widget _bone({
-  required double height,
-  required Color color,
-  double? width,
-}) {
+Widget _bone({required double height, required Color color, double? width}) {
   return Container(
     height: height,
     width: width,

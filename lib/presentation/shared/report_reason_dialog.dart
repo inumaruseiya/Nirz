@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../theme/app_tokens.dart';
 
 /// 通報ダイアログで選べるプリセット理由（実装計画 Phase 10-2-2、FR-MOD-02）。
-const List<({String id, String label})> kReportPresetReasons = <({String id, String label})>[
-  (id: 'spam', label: 'スパム・宣伝'),
-  (id: 'harassment', label: '嫌がらせ・誹謗中傷'),
-  (id: 'illegal', label: '違法・危険な内容'),
-  (id: 'other', label: 'その他'),
-];
+const List<({String id, String label})> kReportPresetReasons =
+    <({String id, String label})>[
+      (id: 'spam', label: 'スパム・宣伝'),
+      (id: 'harassment', label: '嫌がらせ・誹謗中傷'),
+      (id: 'illegal', label: '違法・危険な内容'),
+      (id: 'other', label: 'その他'),
+    ];
 
 /// プリセット選択と任意の自由記述をまとめた通報理由（DB の `reason` に渡す文字列）。
 final class ReportReasonDraft {
@@ -86,10 +87,7 @@ class _ReportReasonDialogState extends State<_ReportReasonDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              '理由を選んでください',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('理由を選んでください', style: theme.textTheme.titleSmall),
             const SizedBox(height: AppTokens.spaceUnit),
             ...List.generate(kReportPresetReasons.length, (i) {
               final item = kReportPresetReasons[i];
@@ -115,10 +113,7 @@ class _ReportReasonDialogState extends State<_ReportReasonDialog> {
               );
             }),
             const SizedBox(height: AppTokens.spaceUnit),
-            Text(
-              '補足（任意）',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('補足（任意）', style: theme.textTheme.titleSmall),
             const SizedBox(height: AppTokens.spaceUnit / 2),
             TextField(
               controller: _detailController,
@@ -137,10 +132,7 @@ class _ReportReasonDialogState extends State<_ReportReasonDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('キャンセル'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('確定'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('確定')),
       ],
     );
   }

@@ -10,10 +10,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ReactionPicker(
-              selected: null,
-              onChanged: (v) => last = v,
-            ),
+            body: ReactionPicker(selected: null, onChanged: (v) => last = v),
           ),
         ),
       );
@@ -84,10 +81,7 @@ void main() {
         ),
       );
 
-      await tester.tap(
-        find.bySemanticsLabel('いいね'),
-        warnIfMissed: false,
-      );
+      await tester.tap(find.bySemanticsLabel('いいね'), warnIfMissed: false);
       await tester.pump();
 
       expect(calls, 0);
@@ -97,18 +91,12 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: ReactionPicker(
-              selected: null,
-              onChanged: (_) {},
-            ),
+            body: ReactionPicker(selected: null, onChanged: (_) {}),
           ),
         ),
       );
 
-      expect(
-        find.bySemanticsLabel('リアクション。いいね、見た、アツいから選べます'),
-        findsOneWidget,
-      );
+      expect(find.bySemanticsLabel('リアクション。いいね、見た、アツいから選べます'), findsOneWidget);
     });
   });
 }

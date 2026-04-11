@@ -44,9 +44,9 @@ Future<void> showBlockUserByIdInputDialog(
   try {
     blocked = UserId.parse(submitted);
   } catch (_) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('有効なユーザー ID（UUID）を入力してください。')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('有効なユーザー ID（UUID）を入力してください。')));
     return;
   }
 
@@ -72,11 +72,7 @@ Future<void> showBlockUserConfirmDialog(
     context: context,
     builder: (ctx) => AlertDialog(
       title: const Text('ユーザーをブロック'),
-      content: Text(
-        onConfirm == null
-            ? '$body\n\n保存処理は次の実装で有効になります。'
-            : body,
-      ),
+      content: Text(onConfirm == null ? '$body\n\n保存処理は次の実装で有効になります。' : body),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
@@ -93,23 +89,19 @@ Future<void> showBlockUserConfirmDialog(
   if (confirmed != true || !context.mounted) return;
 
   if (onConfirm == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('ブロックの保存は次の実装で利用できます。'),
-      ),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('ブロックの保存は次の実装で利用できます。')));
     return;
   }
 
   final err = await onConfirm();
   if (!context.mounted) return;
   if (err != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(err)),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ブロックしました。')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('ブロックしました。')));
   }
 }

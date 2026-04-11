@@ -78,7 +78,56 @@ class _SplashPageState extends ConsumerState<SplashPage> {
         child: Center(
           child: switch (_ui) {
             _SplashUi.loading => Semantics(
-                label: 'Nirz、起動中',
+              label: 'Nirz、起動中',
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Semantics(
+                    label: 'Nirz ロゴ',
+                    excludeSemantics: true,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: scheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(
+                          AppTokens.radiusCard * 2,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
+                        child: Icon(
+                          Icons.map_outlined,
+                          size: 56,
+                          color: scheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppTokens.spaceUnit * 3),
+                  Text(
+                    'Nirz',
+                    style: textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: AppTokens.spaceUnit * 4),
+                  Semantics(
+                    label: '読み込み中',
+                    child: const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            _SplashUi.errorOffline => Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTokens.spaceUnit * 3,
+              ),
+              child: Semantics(
+                label: 'ネットワークに接続できません。接続を確認してから再試行してください。',
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -88,13 +137,16 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           color: scheme.primaryContainer,
-                          borderRadius:
-                              BorderRadius.circular(AppTokens.radiusCard * 2),
+                          borderRadius: BorderRadius.circular(
+                            AppTokens.radiusCard * 2,
+                          ),
                         ),
                         child: Padding(
-                          padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
+                          padding: const EdgeInsets.all(
+                            AppTokens.spaceUnit * 2,
+                          ),
                           child: Icon(
-                            Icons.map_outlined,
+                            Icons.wifi_off_rounded,
                             size: 56,
                             color: scheme.onPrimaryContainer,
                           ),
@@ -103,82 +155,31 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                     ),
                     SizedBox(height: AppTokens.spaceUnit * 3),
                     Text(
-                      'Nirz',
-                      style: textTheme.headlineMedium?.copyWith(
+                      'オフラインです',
+                      style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w600,
                         color: scheme.onSurface,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: AppTokens.spaceUnit * 2),
+                    Text(
+                      'インターネット接続を確認してから、もう一度お試しください。',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                     SizedBox(height: AppTokens.spaceUnit * 4),
-                    Semantics(
-                      label: '読み込み中',
-                      child: const SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: CircularProgressIndicator(strokeWidth: 2.5),
-                      ),
+                    FilledButton.icon(
+                      onPressed: _runSessionFlow,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('再試行'),
                     ),
                   ],
                 ),
               ),
-            _SplashUi.errorOffline => Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppTokens.spaceUnit * 3,
-                ),
-                child: Semantics(
-                  label:
-                      'ネットワークに接続できません。接続を確認してから再試行してください。',
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Semantics(
-                        label: 'Nirz ロゴ',
-                        excludeSemantics: true,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: scheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(
-                              AppTokens.radiusCard * 2,
-                            ),
-                          ),
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.all(AppTokens.spaceUnit * 2),
-                            child: Icon(
-                              Icons.wifi_off_rounded,
-                              size: 56,
-                              color: scheme.onPrimaryContainer,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: AppTokens.spaceUnit * 3),
-                      Text(
-                        'オフラインです',
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: scheme.onSurface,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: AppTokens.spaceUnit * 2),
-                      Text(
-                        'インターネット接続を確認してから、もう一度お試しください。',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: AppTokens.spaceUnit * 4),
-                      FilledButton.icon(
-                        onPressed: _runSessionFlow,
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('再試行'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            ),
           },
         ),
       ),

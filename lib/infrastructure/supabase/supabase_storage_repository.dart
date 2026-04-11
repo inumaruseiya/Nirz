@@ -50,10 +50,7 @@ final class SupabaseStorageRepository implements StorageRepository {
       await bucket.uploadBinary(
         path,
         bytes,
-        fileOptions: FileOptions(
-          contentType: ct,
-          upsert: true,
-        ),
+        fileOptions: FileOptions(contentType: ct, upsert: true),
       );
       final publicUrl = bucket.getPublicUrl(path);
       final uri = Uri.tryParse(publicUrl);

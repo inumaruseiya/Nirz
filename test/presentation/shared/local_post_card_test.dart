@@ -50,9 +50,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: LocalPostCard(post: post),
-          ),
+          home: Scaffold(body: LocalPostCard(post: post)),
         ),
       );
 
@@ -68,9 +66,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: LocalPostCard(post: post),
-          ),
+          home: Scaffold(body: LocalPostCard(post: post)),
         ),
       );
 
@@ -82,9 +78,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: LocalPostCard(post: post),
-          ),
+          home: Scaffold(body: LocalPostCard(post: post)),
         ),
       );
 
@@ -98,10 +92,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: LocalPostCard(
-              post: post,
-              onTap: () => tapped = true,
-            ),
+            body: LocalPostCard(post: post, onTap: () => tapped = true),
           ),
         ),
       );
@@ -120,9 +111,7 @@ void main() {
       await mockNetworkImagesFor(() async {
         await tester.pumpWidget(
           MaterialApp(
-            home: Scaffold(
-              body: LocalPostCard(post: post),
-            ),
+            home: Scaffold(body: LocalPostCard(post: post)),
           ),
         );
         await tester.pump();

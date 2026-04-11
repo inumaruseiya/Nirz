@@ -6,10 +6,7 @@ part 'post_dto.g.dart';
 ///
 /// `coordinates` は **\[経度, 緯度\]**（RFC 7946）順。
 final class GeoJsonLocation {
-  const GeoJsonLocation({
-    required this.latitude,
-    required this.longitude,
-  });
+  const GeoJsonLocation({required this.latitude, required this.longitude});
 
   final double latitude;
   final double longitude;
@@ -30,9 +27,9 @@ final class GeoJsonLocation {
   }
 
   Map<String, dynamic> toJson() => {
-        'type': 'Point',
-        'coordinates': [longitude, latitude],
-      };
+    'type': 'Point',
+    'coordinates': [longitude, latitude],
+  };
 }
 
 GeoJsonLocation _postLocationFromJson(Object? json) {
@@ -86,7 +83,8 @@ final class PostDto {
   /// ぼかし後の経度（`ST_X(location::geometry)` と同値想定）
   double get locationLng => location.longitude;
 
-  factory PostDto.fromJson(Map<String, dynamic> json) => _$PostDtoFromJson(json);
+  factory PostDto.fromJson(Map<String, dynamic> json) =>
+      _$PostDtoFromJson(json);
 
   Map<String, dynamic> toJson() => _$PostDtoToJson(this);
 }

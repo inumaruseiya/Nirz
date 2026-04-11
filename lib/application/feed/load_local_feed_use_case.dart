@@ -11,10 +11,7 @@ import '../location/get_current_position_use_case.dart';
 
 /// ① 現在位置（クエリ用の生座標）② [FeedRepository.fetchFeed]。
 final class LoadLocalFeedUseCase {
-  LoadLocalFeedUseCase(
-    this._feed,
-    this._location,
-  );
+  LoadLocalFeedUseCase(this._feed, this._location);
 
   final FeedRepository _feed;
   final LocationRepository _location;

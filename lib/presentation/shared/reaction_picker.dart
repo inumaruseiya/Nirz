@@ -68,18 +68,12 @@ class ReactionPicker extends StatelessWidget {
           : null,
     );
 
-    final picker = Semantics(
-      label: 'リアクション。いいね、見た、アツいから選べます',
-      child: button,
-    );
+    final picker = Semantics(label: 'リアクション。いいね、見た、アツいから選べます', child: button);
 
     if (enabled) {
       return picker;
     }
 
-    return Opacity(
-      opacity: 0.45,
-      child: IgnorePointer(child: picker),
-    );
+    return Opacity(opacity: 0.45, child: IgnorePointer(child: picker));
   }
 }

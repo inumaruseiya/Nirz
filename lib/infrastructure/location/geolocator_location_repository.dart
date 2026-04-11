@@ -67,9 +67,7 @@ final class GeolocatorLocationRepository implements LocationRepository {
       }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.unableToDetermine) {
-        throw LocationPositionException(
-          LocationPositionIssue.permissionDenied,
-        );
+        throw LocationPositionException(LocationPositionIssue.permissionDenied);
       }
 
       final position = await Geolocator.getCurrentPosition(
@@ -86,9 +84,7 @@ final class GeolocatorLocationRepository implements LocationRepository {
         LocationPositionIssue.locationServicesDisabled,
       );
     } on PermissionDeniedException {
-      throw LocationPositionException(
-        LocationPositionIssue.permissionDenied,
-      );
+      throw LocationPositionException(LocationPositionIssue.permissionDenied);
     } on TimeoutException {
       throw LocationPositionException(LocationPositionIssue.timeout);
     } on PermissionDefinitionsNotFoundException {

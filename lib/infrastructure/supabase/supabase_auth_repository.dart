@@ -103,10 +103,7 @@ final class SupabaseAuthRepository implements AuthRepository {
     required String password,
   }) async {
     try {
-      await _client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+      await _client.auth.signInWithPassword(email: email, password: password);
       return const Ok<void, Failure>(null);
     } on AuthException {
       return const Err(AuthFailure());

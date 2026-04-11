@@ -109,29 +109,24 @@ abstract final class AppTheme {
   }
 
   static TextTheme _textTheme(ColorScheme scheme, Brightness brightness) {
-    final base = ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      brightness: brightness,
-    ).textTheme.apply(
-      bodyColor: scheme.onSurface,
-      displayColor: scheme.onSurface,
-    );
+    final base =
+        ThemeData(
+          useMaterial3: true,
+          colorScheme: scheme,
+          brightness: brightness,
+        ).textTheme.apply(
+          bodyColor: scheme.onSurface,
+          displayColor: scheme.onSurface,
+        );
 
     TextStyle body(TextStyle? style) {
       final s = style ?? const TextStyle();
-      return s.copyWith(
-        height: 1.45,
-        letterSpacing: 0.15,
-      );
+      return s.copyWith(height: 1.45, letterSpacing: 0.15);
     }
 
     TextStyle title(TextStyle? style) {
       final s = style ?? const TextStyle();
-      return s.copyWith(
-        height: 1.25,
-        letterSpacing: 0.1,
-      );
+      return s.copyWith(height: 1.25, letterSpacing: 0.1);
     }
 
     return base.copyWith(

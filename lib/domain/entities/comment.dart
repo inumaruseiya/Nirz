@@ -29,6 +29,12 @@ final class Comment extends Equatable {
   bool get isTopLevelComment => parentId == null;
 
   @override
-  List<Object?> get props =>
-      [id, postId, authorId, parentId, content, createdAt];
+  List<Object?> get props => [
+    id,
+    postId,
+    authorId,
+    parentId,
+    content,
+    createdAt,
+  ];
 }

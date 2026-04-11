@@ -66,29 +66,29 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final before = (current.displayName ?? '').trim();
     if (name == before) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('変更がありません')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('変更がありません')));
       return;
     }
 
     setState(() => _displayNameSaving = true);
     try {
-      final result = await ref.read(profileRepositoryProvider).updateProfile(
-            displayName: name,
-          );
+      final result = await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(displayName: name);
       if (!mounted) return;
       switch (result) {
         case Ok():
           setState(() => _nicknameDirty = false);
           ref.invalidate(currentUserProfileProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ニックネームを保存しました')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('ニックネームを保存しました')));
         case Err(:final error):
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_messageForFailure(error))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_messageForFailure(error))));
       }
     } finally {
       if (mounted) {
@@ -112,9 +112,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       final bytes = await xFile.readAsBytes();
       if (!mounted) return;
       if (bytes.length > _maxAvatarBytes) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('画像は5MB以下にしてください。')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('画像は5MB以下にしてください。')));
         return;
       }
 
@@ -127,29 +127,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('画像を取得できませんでした。もう一度お試しください。'),
-          ),
+          const SnackBar(content: Text('画像を取得できませんでした。もう一度お試しください。')),
         );
       }
     }
   }
 
-  Future<void> _uploadAndSaveAvatar(
-    Uint8List bytes,
-    String contentType,
-  ) async {
+  Future<void> _uploadAndSaveAvatar(Uint8List bytes, String contentType) async {
     if (_avatarSaving) return;
     setState(() => _avatarSaving = true);
     try {
-      final upload = await ref.read(storageRepositoryProvider).uploadPostImage(
-            bytes,
-            contentType,
-          );
+      final upload = await ref
+          .read(storageRepositoryProvider)
+          .uploadPostImage(bytes, contentType);
       if (!mounted) return;
       switch (upload) {
         case Ok(:final value):
-          final result = await ref.read(profileRepositoryProvider).updateProfile(
+          final result = await ref
+              .read(profileRepositoryProvider)
+              .updateProfile(
                 avatarUrl: value.toString(),
                 updateAvatarUrl: true,
               );
@@ -157,18 +153,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           switch (result) {
             case Ok():
               ref.invalidate(currentUserProfileProvider);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('プロフィール画像を更新しました')),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('プロフィール画像を更新しました')));
             case Err(:final error):
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text(_messageForFailure(error))),
               );
           }
         case Err(:final error):
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_messageForFailure(error))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_messageForFailure(error))));
       }
     } finally {
       if (mounted) {
@@ -182,29 +178,28 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final url = current.avatarUrl?.trim();
     if (url == null || url.isEmpty) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('削除する画像がありません')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('削除する画像がありません')));
       return;
     }
 
     setState(() => _avatarSaving = true);
     try {
-      final result = await ref.read(profileRepositoryProvider).updateProfile(
-            updateAvatarUrl: true,
-            avatarUrl: null,
-          );
+      final result = await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(updateAvatarUrl: true, avatarUrl: null);
       if (!mounted) return;
       switch (result) {
         case Ok():
           ref.invalidate(currentUserProfileProvider);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('プロフィール画像を削除しました')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('プロフィール画像を削除しました')));
         case Err(:final error):
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_messageForFailure(error))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_messageForFailure(error))));
       }
     } finally {
       if (mounted) {
@@ -217,18 +212,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     if (_presenceSaving) return;
     setState(() => _presenceSaving = true);
     try {
-      final result = await ref.read(profileRepositoryProvider).updateProfile(
-            updatePresenceStatus: true,
-            presenceStatus: next,
-          );
+      final result = await ref
+          .read(profileRepositoryProvider)
+          .updateProfile(updatePresenceStatus: true, presenceStatus: next);
       if (!mounted) return;
       switch (result) {
         case Ok():
           ref.invalidate(currentUserProfileProvider);
         case Err(:final error):
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_messageForFailure(error))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_messageForFailure(error))));
       }
     } finally {
       if (mounted) {
@@ -247,9 +241,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         case Ok():
           context.go(AppRoutePaths.login);
         case Err(:final error):
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_messageForFailure(error))),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(_messageForFailure(error))));
       }
     } finally {
       if (mounted) {
@@ -293,10 +287,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
         children: [
-          Text(
-            '位置情報とプライバシー',
-            style: textTheme.titleMedium,
-          ),
+          Text('位置情報とプライバシー', style: textTheme.titleMedium),
           const SizedBox(height: AppTokens.spaceUnit),
           Text(
             'このアプリは、近くの投稿を探すために端末の位置を使います。'
@@ -329,10 +320,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Divider(height: AppTokens.spaceUnit * 3),
           ],
           if (signedIn) ...[
-            Text(
-              'ニックネーム',
-              style: textTheme.titleMedium,
-            ),
+            Text('ニックネーム', style: textTheme.titleMedium),
             const SizedBox(height: AppTokens.spaceUnit),
             profileAsync.when(
               data: (Profile? profile) {
@@ -340,17 +328,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'プロフィールを読み込めませんでした。',
-                        style: textTheme.bodyLarge,
-                      ),
+                      Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
                       const SizedBox(height: AppTokens.spaceUnit),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton(
                           onPressed: _displayNameSaving
                               ? null
-                              : () => ref.invalidate(currentUserProfileProvider),
+                              : () =>
+                                    ref.invalidate(currentUserProfileProvider),
                           child: const Text('再試行'),
                         ),
                       ),
@@ -393,8 +379,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 ? const SizedBox(
                                     width: 22,
                                     height: 22,
-                                    child:
-                                        CircularProgressIndicator(strokeWidth: 2),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
                                   )
                                 : const Text('ニックネームを保存'),
                           ),
@@ -402,10 +389,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       ),
                     ),
                     const SizedBox(height: AppTokens.spaceUnit * 2),
-                    Text(
-                      'プロフィール画像（任意）',
-                      style: textTheme.titleMedium,
-                    ),
+                    Text('プロフィール画像（任意）', style: textTheme.titleMedium),
                     const SizedBox(height: AppTokens.spaceUnit),
                     Text(
                       '投稿画像と同じストレージに保存します（最大5MB）。',
@@ -428,28 +412,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                     child: CachedNetworkImage(
                                       imageUrl: avatarUrl,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => const Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
+                                      placeholder: (context, url) =>
+                                          const Center(
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
                                       errorWidget: (context, url, error) =>
                                           ColoredBox(
-                                        color: theme
-                                            .colorScheme.surfaceContainerHighest,
-                                        child: Icon(
-                                          Icons.broken_image_outlined,
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
+                                            color: theme
+                                                .colorScheme
+                                                .surfaceContainerHighest,
+                                            child: Icon(
+                                              Icons.broken_image_outlined,
+                                              color: theme
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                          ),
                                     ),
                                   )
                                 : Semantics(
                                     label: 'プロフィール画像は未設定です',
                                     child: ColoredBox(
                                       color: theme
-                                          .colorScheme.surfaceContainerHighest,
+                                          .colorScheme
+                                          .surfaceContainerHighest,
                                       child: Icon(
                                         Icons.person,
                                         size: 40,
@@ -468,7 +456,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                               OutlinedButton.icon(
                                 onPressed: _avatarSaving
                                     ? null
-                                    : () => _pickAvatarImage(ImageSource.gallery),
+                                    : () =>
+                                          _pickAvatarImage(ImageSource.gallery),
                                 icon: const Icon(Icons.photo_library_outlined),
                                 label: const Text('ギャラリーから選ぶ'),
                               ),
@@ -477,8 +466,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                                 OutlinedButton.icon(
                                   onPressed: _avatarSaving
                                       ? null
-                                      : () =>
-                                          _pickAvatarImage(ImageSource.camera),
+                                      : () => _pickAvatarImage(
+                                          ImageSource.camera,
+                                        ),
                                   icon: const Icon(Icons.photo_camera_outlined),
                                   label: const Text('カメラで撮る'),
                                 ),
@@ -508,16 +498,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (error, stackTrace) => Text(
-                'プロフィールを読み込めませんでした。',
-                style: textTheme.bodyLarge,
-              ),
+              error: (error, stackTrace) =>
+                  Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
             ),
             const Divider(height: AppTokens.spaceUnit * 3),
-            Text(
-              'マイステータス（任意）',
-              style: textTheme.titleMedium,
-            ),
+            Text('マイステータス（任意）', style: textTheme.titleMedium),
             const SizedBox(height: AppTokens.spaceUnit),
             profileAsync.when(
               data: (Profile? profile) {
@@ -525,17 +510,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'プロフィールを読み込めませんでした。',
-                        style: textTheme.bodyLarge,
-                      ),
+                      Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
                       const SizedBox(height: AppTokens.spaceUnit),
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton(
                           onPressed: _presenceSaving
                               ? null
-                              : () => ref.invalidate(currentUserProfileProvider),
+                              : () =>
+                                    ref.invalidate(currentUserProfileProvider),
                           child: const Text('再試行'),
                         ),
                       ),
@@ -570,13 +553,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                           ),
                         ],
                         selected: {current},
-                        onSelectionChanged: (Set<UserPresenceStatus?> selected) {
-                          if (_presenceSaving) return;
-                          final next =
-                              selected.isEmpty ? null : selected.first;
-                          if (next == current) return;
-                          _savePresenceStatus(next);
-                        },
+                        onSelectionChanged:
+                            (Set<UserPresenceStatus?> selected) {
+                              if (_presenceSaving) return;
+                              final next = selected.isEmpty
+                                  ? null
+                                  : selected.first;
+                              if (next == current) return;
+                              _savePresenceStatus(next);
+                            },
                       ),
                     ),
                     const SizedBox(height: AppTokens.spaceUnit * 1.5),
@@ -597,10 +582,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (error, stackTrace) => Text(
-                'プロフィールを読み込めませんでした。',
-                style: textTheme.bodyLarge,
-              ),
+              error: (error, stackTrace) =>
+                  Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
             ),
             const Divider(height: AppTokens.spaceUnit * 3),
             Semantics(
@@ -625,9 +608,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.block),
               title: const Text('ユーザーをブロック'),
-              subtitle: const Text(
-                'ブロックするユーザーの UUID を入力します。',
-              ),
+              subtitle: const Text('ブロックするユーザーの UUID を入力します。'),
               enabled: !_blockSubmitting,
               onTap: _blockSubmitting
                   ? null
@@ -637,10 +618,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         onConfirm: (blockedUserId) async {
                           setState(() => _blockSubmitting = true);
                           try {
-                            final result =
-                                await ref.read(blockUserUseCaseProvider)(
-                              blockedUserId,
-                            );
+                            final result = await ref.read(
+                              blockUserUseCaseProvider,
+                            )(blockedUserId);
                             return switch (result) {
                               Ok() => null,
                               Err(:final error) => _messageForFailure(error),
@@ -662,12 +642,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   static String _messageForFailure(Failure f) {
     return switch (f) {
-      NetworkFailure() =>
-        '接続できませんでした。通信環境を確認してください。',
-      AuthFailure() =>
-        'セッションの有効期限が切れました。再度ログインしてください。',
-      ServerFailure() =>
-        'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
+      NetworkFailure() => '接続できませんでした。通信環境を確認してください。',
+      AuthFailure() => 'セッションの有効期限が切れました。再度ログインしてください。',
+      ServerFailure() => 'サーバーで問題が発生しました。しばらくしてから再度お試しください。',
       ValidationFailure(:final message) => message,
       LocationFailure() => '位置情報を利用できません。',
     };

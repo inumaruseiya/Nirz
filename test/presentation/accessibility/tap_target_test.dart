@@ -39,10 +39,7 @@ void main() {
     testWidgets('Theme IconButton', (tester) async {
       await pumpWithTheme(
         tester,
-        IconButton(
-          onPressed: () {},
-          icon: const Icon(Icons.settings_outlined),
-        ),
+        IconButton(onPressed: () {}, icon: const Icon(Icons.settings_outlined)),
       );
       final box = tester.renderObject<RenderBox>(find.byType(IconButton));
       expectAtLeastMinTapTarget(box, label: 'IconButton');
@@ -78,13 +75,11 @@ void main() {
     testWidgets('ReactionPicker SegmentedButton', (tester) async {
       await pumpWithTheme(
         tester,
-        ReactionPicker(
-          selected: null,
-          onChanged: (_) {},
-        ),
+        ReactionPicker(selected: null, onChanged: (_) {}),
       );
-      final box =
-          tester.renderObject<RenderBox>(find.byType(SegmentedButton<ReactionType>));
+      final box = tester.renderObject<RenderBox>(
+        find.byType(SegmentedButton<ReactionType>),
+      );
       expectAtLeastMinTapTarget(box, label: 'SegmentedButton<ReactionType>');
     });
   });

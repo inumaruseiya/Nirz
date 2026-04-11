@@ -14,12 +14,15 @@ final class SupabaseNgWordListRepository implements NgWordListRepository {
   Future<Result<List<String>, Failure>> loadNgWords() async {
     try {
       final rows = await _client.from('ng_words').select('word');
-      final list = rows
-          .map((row) => (row['word'] as String?)?.trim().toLowerCase() ?? '')
-          .where((w) => w.isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort();
+      final list =
+          rows
+              .map(
+                (row) => (row['word'] as String?)?.trim().toLowerCase() ?? '',
+              )
+              .where((w) => w.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort();
       return Ok(List.unmodifiable(list));
     } on PostgrestException catch (_) {
       return const Err(ServerFailure());

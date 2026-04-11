@@ -84,7 +84,9 @@ class _CommentComposerState extends State<CommentComposer> {
     final canEdit = widget.enabled && !_submitting;
     final replyLabel = widget.replyToLabel?.trim();
     final inReplyMode =
-        replyLabel != null && replyLabel.isNotEmpty && widget.onCancelReply != null;
+        replyLabel != null &&
+        replyLabel.isNotEmpty &&
+        widget.onCancelReply != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

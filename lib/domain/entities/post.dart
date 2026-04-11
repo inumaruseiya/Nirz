@@ -28,6 +28,13 @@ final class Post extends Equatable {
   bool get isExpired => !expiresAt.isAfter(DateTime.now());
 
   @override
-  List<Object?> get props =>
-      [id, authorId, content, imageUrl, location, createdAt, expiresAt];
+  List<Object?> get props => [
+    id,
+    authorId,
+    content,
+    imageUrl,
+    location,
+    createdAt,
+    expiresAt,
+  ];
 }

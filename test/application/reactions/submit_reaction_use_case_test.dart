@@ -27,8 +27,9 @@ void main() {
 
   group('SubmitReactionUseCase', () {
     test('delegates to upsertReaction and returns Ok', () async {
-      when(() => repo.upsertReaction(postId, ReactionType.fire))
-          .thenAnswer((_) async => const Ok<void, Failure>(null));
+      when(
+        () => repo.upsertReaction(postId, ReactionType.fire),
+      ).thenAnswer((_) async => const Ok<void, Failure>(null));
 
       final result = await useCase(postId, ReactionType.fire);
 
@@ -37,8 +38,9 @@ void main() {
     });
 
     test('propagates repository failure', () async {
-      when(() => repo.upsertReaction(any(), any()))
-          .thenAnswer((_) async => const Err(ServerFailure()));
+      when(
+        () => repo.upsertReaction(any(), any()),
+      ).thenAnswer((_) async => const Err(ServerFailure()));
 
       final result = await useCase(postId, ReactionType.look);
 

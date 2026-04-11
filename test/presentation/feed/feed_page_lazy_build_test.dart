@@ -21,11 +21,8 @@ class _StaticFeedNotifier extends FeedNotifier {
   final List<FeedPost> _posts;
 
   @override
-  FeedState build() => FeedReady(
-        posts: _posts,
-        sort: FeedSort.newest,
-        hasMore: false,
-      );
+  FeedState build() =>
+      FeedReady(posts: _posts, sort: FeedSort.newest, hasMore: false);
 
   @override
   Future<void> loadInitial() async {}
@@ -69,9 +66,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
-          feedNotifierProvider.overrideWith(
-            () => _StaticFeedNotifier(posts),
-          ),
+          feedNotifierProvider.overrideWith(() => _StaticFeedNotifier(posts)),
         ],
         child: MaterialApp.router(
           routerConfig: GoRouter(
@@ -113,8 +108,7 @@ void main() {
     expect(
       built,
       lessThan(totalPosts),
-      reason:
-          'SliverList.builder は表示域＋キャッシュのみ構築する想定（$built / $totalPosts）',
+      reason: 'SliverList.builder は表示域＋キャッシュのみ構築する想定（$built / $totalPosts）',
     );
     expect(built, greaterThan(0));
   });

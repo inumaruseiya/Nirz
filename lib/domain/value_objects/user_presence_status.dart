@@ -7,15 +7,14 @@ enum UserPresenceStatus {
   working,
 
   /// 外出中
-  out,
-  ;
+  out;
 
   /// `profiles.presence_status` の値（PostgREST snake_case 列と対応）。
   String get dbValue => switch (this) {
-        UserPresenceStatus.free => 'free',
-        UserPresenceStatus.working => 'working',
-        UserPresenceStatus.out => 'out',
-      };
+    UserPresenceStatus.free => 'free',
+    UserPresenceStatus.working => 'working',
+    UserPresenceStatus.out => 'out',
+  };
 
   static UserPresenceStatus? tryParseDb(String? raw) {
     if (raw == null) return null;

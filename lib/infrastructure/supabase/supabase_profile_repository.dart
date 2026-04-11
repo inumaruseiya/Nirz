@@ -74,8 +74,9 @@ final class SupabaseProfileRepository implements ProfileRepository {
       }
 
       final mergedName = displayName ?? current.displayName;
-      final String? mergedAvatar =
-          updateAvatarUrl ? avatarUrl : current.avatarUrl;
+      final String? mergedAvatar = updateAvatarUrl
+          ? avatarUrl
+          : current.avatarUrl;
       final payload = <String, dynamic>{
         'name': mergedName,
         'avatar_url': mergedAvatar,

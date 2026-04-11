@@ -79,14 +79,9 @@ void main() {
             const SizedBox(height: AppTokens.spaceUnit * 2),
             const FeedSkeletonCard(),
             const SizedBox(height: AppTokens.spaceUnit * 2),
-            ReactionPicker(
-              selected: ReactionType.like,
-              onChanged: (_) {},
-            ),
+            ReactionPicker(selected: ReactionType.like, onChanged: (_) {}),
             const SizedBox(height: AppTokens.spaceUnit * 2),
-            LocationPermissionCallout(
-              onOpenSettings: () {},
-            ),
+            LocationPermissionCallout(onOpenSettings: () {}),
             const SizedBox(height: AppTokens.spaceUnit * 2),
             ErrorRetryPanel(
               message: '接続できませんでした。通信環境を確認してください。',
@@ -108,10 +103,7 @@ void main() {
           children: [
             LocalPostCard(post: samplePost()),
             const SizedBox(height: AppTokens.spaceUnit * 2),
-            ReactionPicker(
-              selected: null,
-              onChanged: (_) {},
-            ),
+            ReactionPicker(selected: null, onChanged: (_) {}),
           ],
         ),
       );

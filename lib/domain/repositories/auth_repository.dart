@@ -18,10 +18,7 @@ final class SessionSignedIn extends SessionState {
 }
 
 /// OAuth サインインで扱うプロバイダ（Infrastructure で Supabase のプロバイダにマップする）。
-enum AuthOAuthProvider {
-  google,
-  apple,
-}
+enum AuthOAuthProvider { google, apple }
 
 /// 認証の抽象。Supabase Auth の具象は Infrastructure に置く。
 abstract interface class AuthRepository {

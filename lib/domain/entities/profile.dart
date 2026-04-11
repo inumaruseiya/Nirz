@@ -23,6 +23,11 @@ final class Profile extends Equatable {
   final DateTime createdAt;
 
   @override
-  List<Object?> get props =>
-      [id, displayName, avatarUrl, presenceStatus, createdAt];
+  List<Object?> get props => [
+    id,
+    displayName,
+    avatarUrl,
+    presenceStatus,
+    createdAt,
+  ];
 }

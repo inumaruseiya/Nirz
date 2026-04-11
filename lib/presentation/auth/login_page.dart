@@ -60,11 +60,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         messageForFailure: _messageForResetFailure,
         onSent: () {
           messenger.showSnackBar(
-            const SnackBar(
-              content: Text(
-                '再設定用のメールを送信しました。受信トレイをご確認ください。',
-              ),
-            ),
+            const SnackBar(content: Text('再設定用のメールを送信しました。受信トレイをご確認ください。')),
           );
         },
       ),
@@ -81,7 +77,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     FocusScope.of(context).unfocus();
 
-    await ref.read(loginAuthNotifierProvider.notifier).signInWithEmail(
+    await ref
+        .read(loginAuthNotifierProvider.notifier)
+        .signInWithEmail(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -128,7 +126,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: AppTokens.bodyMaxLineWidth),
+            constraints: const BoxConstraints(
+              maxWidth: AppTokens.bodyMaxLineWidth,
+            ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppTokens.spaceUnit * 3,
@@ -170,8 +170,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             onPressed: loading
                                 ? null
                                 : () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
-                                    ),
+                                    () => _obscurePassword = !_obscurePassword,
+                                  ),
                             icon: Icon(
                               _obscurePassword
                                   ? Icons.visibility_outlined
@@ -209,7 +209,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 child: const SizedBox(
                                   height: 22,
                                   width: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               )
                             : const Text('ログイン'),
@@ -218,7 +220,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       AuthOAuthButtons(
                         enabled: !loading,
                         onError: (message) {
-                          final n = ref.read(loginAuthNotifierProvider.notifier);
+                          final n = ref.read(
+                            loginAuthNotifierProvider.notifier,
+                          );
                           if (message == null) {
                             n.clearError();
                           } else {
@@ -243,10 +247,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       Center(
                         child: Tooltip(
-                          message:
-                              'メールアドレス宛にパスワード再設定用のリンクを送ります',
+                          message: 'メールアドレス宛にパスワード再設定用のリンクを送ります',
                           child: TextButton(
-                            onPressed: loading ? null : _showPasswordResetDialog,
+                            onPressed: loading
+                                ? null
+                                : _showPasswordResetDialog,
                             child: const Text('パスワードをお忘れの方'),
                           ),
                         ),

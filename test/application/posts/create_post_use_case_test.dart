@@ -75,26 +75,31 @@ void main() {
       expect(result, isA<Ok<Post, Failure>>());
       expect((result as Ok).value, samplePost());
       verifyNever(() => storage.uploadPostImage(any(), any()));
-      verify(() => posts.createPost(
-            content: 'hello',
-            imageUrl: null,
-            location: location,
-          )).called(1);
+      verify(
+        () => posts.createPost(
+          content: 'hello',
+          imageUrl: null,
+          location: location,
+        ),
+      ).called(1);
     });
 
     test('uploads image then createPost receives public URL', () async {
       final bytes = Uint8List.fromList([1, 2, 3]);
       final uri = Uri.parse('https://example.com/bucket/obj.png');
       when(() => ngWords.loadNgWords()).thenAnswer((_) async => const Ok([]));
-      when(() => storage.uploadPostImage(bytes, 'image/png'))
-          .thenAnswer((_) async => Ok(uri));
+      when(
+        () => storage.uploadPostImage(bytes, 'image/png'),
+      ).thenAnswer((_) async => Ok(uri));
       when(
         () => posts.createPost(
           content: 'with pic',
           imageUrl: uri,
           location: location,
         ),
-      ).thenAnswer((_) async => Ok(samplePost(imageUrl: uri, content: 'with pic')));
+      ).thenAnswer(
+        (_) async => Ok(samplePost(imageUrl: uri, content: 'with pic')),
+      );
 
       final result = await useCase(
         content: 'with pic',
@@ -105,16 +110,19 @@ void main() {
 
       expect(result, isA<Ok<Post, Failure>>());
       verify(() => storage.uploadPostImage(bytes, 'image/png')).called(1);
-      verify(() => posts.createPost(
-            content: 'with pic',
-            imageUrl: uri,
-            location: location,
-          )).called(1);
+      verify(
+        () => posts.createPost(
+          content: 'with pic',
+          imageUrl: uri,
+          location: location,
+        ),
+      ).called(1);
     });
 
     test('returns validation failure when NG word matches', () async {
-      when(() => ngWords.loadNgWords())
-          .thenAnswer((_) async => const Ok(['spam']));
+      when(
+        () => ngWords.loadNgWords(),
+      ).thenAnswer((_) async => const Ok(['spam']));
       final result = await useCase(
         content: 'eat spam today',
         obfuscatedLocation: location,
@@ -126,12 +134,10 @@ void main() {
     });
 
     test('propagates failure when NG word list load fails', () async {
-      when(() => ngWords.loadNgWords())
-          .thenAnswer((_) async => const Err(NetworkFailure()));
-      final result = await useCase(
-        content: 'ok',
-        obfuscatedLocation: location,
-      );
+      when(
+        () => ngWords.loadNgWords(),
+      ).thenAnswer((_) async => const Err(NetworkFailure()));
+      final result = await useCase(content: 'ok', obfuscatedLocation: location);
       expect(result, isA<Err<Post, Failure>>());
       expect((result as Err).error, isA<NetworkFailure>());
       verifyNever(() => storage.uploadPostImage(any(), any()));
@@ -149,7 +155,9 @@ void main() {
       expect(result, isA<Err<Post, Failure>>());
       expect(
         (result as Err).error,
-        const ValidationFailure('imageContentType is required when imageBytes is set'),
+        const ValidationFailure(
+          'imageContentType is required when imageBytes is set',
+        ),
       );
       verifyNever(() => storage.uploadPostImage(any(), any()));
       verifyZeroInteractions(posts);
@@ -157,8 +165,9 @@ void main() {
 
     test('propagates storage upload failure', () async {
       when(() => ngWords.loadNgWords()).thenAnswer((_) async => const Ok([]));
-      when(() => storage.uploadPostImage(any(), any()))
-          .thenAnswer((_) async => const Err(ServerFailure()));
+      when(
+        () => storage.uploadPostImage(any(), any()),
+      ).thenAnswer((_) async => const Err(ServerFailure()));
       final result = await useCase(
         content: 'x',
         imageBytes: Uint8List.fromList([9]),
