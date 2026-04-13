@@ -34,7 +34,7 @@ Google / Apple 等を使う場合のみ実施する。
 
 公式: [Social Login](https://supabase.com/docs/guides/auth/social-login)
 
-Flutter でのリダイレクトやディープリンクは、利用する OAuth に合わせて `app_links` / プラットフォーム設定を別途整備する。
+本リポジトリでは、モバイル向けの既定コールバック URI を [`lib/config/auth_deep_link_config.dart`](../lib/config/auth_deep_link_config.dart) に定義し、Android / iOS / macOS の URL スキーム登録と一致させている（現在の値: `io.nirz.app://auth-callback/`）。**Authentication → URL Configuration → Redirect URLs** に同じ文字列（末尾の `/` を含む）を追加すること。`supabase_flutter` が PKCE フローを扱うため、OAuth 開始時はコード側で `redirectTo` をこの URI に合わせる（実装は [`SupabaseAuthRepository`](../lib/infrastructure/supabase/supabase_auth_repository.dart)）。
 
 ---
 
@@ -56,7 +56,7 @@ Flutter でのリダイレクトやディープリンクは、利用する OAuth
 ## 実装後の確認チェックリスト
 
 - [ ] Email サインアップ / ログインが想定どおり動く（確認メール ON の場合はメール受信〜リンク確認まで）。
-- [ ] 有効にした OAuth がログイン〜セッション確立まで通る。
+- [ ] 有効にした OAuth がログイン〜セッション確立まで通る（Redirect URLs に `io.nirz.app://auth-callback/` が登録されていること）。
 - [ ] `.env.example` と同様に、クライアントは **anon key のみ** を使い、サービスロールキーをアプリに埋め込まない。
 
 ---

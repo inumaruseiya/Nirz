@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../config/auth_deep_link_config.dart';
 import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -123,7 +125,10 @@ final class SupabaseAuthRepository implements AuthRepository {
       AuthOAuthProvider.apple => OAuthProvider.apple,
     };
     try {
-      final launched = await _client.auth.signInWithOAuth(oauth);
+      final launched = await _client.auth.signInWithOAuth(
+        oauth,
+        redirectTo: kIsWeb ? null : AuthDeepLinkConfig.oauthRedirectUrl,
+      );
       if (!launched) {
         return const Err(AuthFailure());
       }
