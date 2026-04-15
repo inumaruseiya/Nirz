@@ -79,10 +79,6 @@ class _FeedPageState extends ConsumerState<FeedPage> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'feed_compose_fab',
         tooltip: '投稿を作成',
-        extendedPadding: const EdgeInsets.symmetric(
-          horizontal: AppTokens.spaceUnit * 2,
-          vertical: AppTokens.spaceUnit,
-        ),
         onPressed: _openComposeAndRefreshIfCreated,
         icon: const Icon(Icons.edit_outlined),
         label: const Text('投稿'),

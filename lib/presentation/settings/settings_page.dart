@@ -303,21 +303,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: AppTokens.spaceUnit * 2),
           if (!kIsWeb) ...[
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.app_settings_alt_outlined),
-              title: const Text('このアプリの位置情報設定'),
-              subtitle: const Text('通知・位置などのアプリ権限を変更します'),
-              onTap: _openAppLocationSettings,
+            Card(
+              clipBehavior: Clip.antiAlias,
+              margin: EdgeInsets.zero,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _BumpSettingsTile(
+                    icon: Icons.app_settings_alt_outlined,
+                    title: 'このアプリの位置情報設定',
+                    subtitle: '通知・位置などのアプリ権限を変更します',
+                    onTap: _openAppLocationSettings,
+                  ),
+                  Divider(
+                    height: 1,
+                    indent: AppTokens.spaceUnit * 2 + 24 + AppTokens.spaceUnit * 1.5,
+                  ),
+                  _BumpSettingsTile(
+                    icon: Icons.location_searching,
+                    title: '端末の位置サービス',
+                    subtitle: 'GPS など端末全体の位置機能のオン／オフ',
+                    onTap: _openDeviceLocationServices,
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.location_searching),
-              title: const Text('端末の位置サービス'),
-              subtitle: const Text('GPS など端末全体の位置機能のオン／オフ'),
-              onTap: _openDeviceLocationServices,
-            ),
-            const Divider(height: AppTokens.spaceUnit * 3),
+            SizedBox(height: AppTokens.spaceUnit * 2.5),
           ],
           if (signedIn) ...[
             Text('ニックネーム', style: textTheme.titleMedium),
@@ -501,7 +512,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               error: (error, stackTrace) =>
                   Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
             ),
-            const Divider(height: AppTokens.spaceUnit * 3),
+            SizedBox(height: AppTokens.spaceUnit * 2.5),
             Text('マイステータス（任意）', style: textTheme.titleMedium),
             const SizedBox(height: AppTokens.spaceUnit),
             profileAsync.when(
@@ -585,13 +596,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               error: (error, stackTrace) =>
                   Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
             ),
-            const Divider(height: AppTokens.spaceUnit * 3),
+            SizedBox(height: AppTokens.spaceUnit * 2.5),
             Semantics(
               button: true,
               label: 'ログアウト',
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.tonal(
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(
+                      AppTokens.minTapTarget,
+                      AppTokens.minTapTarget,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                    ),
+                  ),
                   onPressed: _signOutInProgress ? null : _signOut,
                   child: _signOutInProgress
                       ? const SizedBox(
@@ -604,35 +624,38 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
             ),
             const SizedBox(height: AppTokens.spaceUnit * 2),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.block),
-              title: const Text('ユーザーをブロック'),
-              subtitle: const Text('ブロックするユーザーの UUID を入力します。'),
-              enabled: !_blockSubmitting,
-              onTap: _blockSubmitting
-                  ? null
-                  : () async {
-                      await showBlockUserByIdInputDialog(
-                        context,
-                        onConfirm: (blockedUserId) async {
-                          setState(() => _blockSubmitting = true);
-                          try {
-                            final result = await ref.read(
-                              blockUserUseCaseProvider,
-                            )(blockedUserId);
-                            return switch (result) {
-                              Ok() => null,
-                              Err(:final error) => _messageForFailure(error),
-                            };
-                          } finally {
-                            if (mounted) {
-                              setState(() => _blockSubmitting = false);
+            Card(
+              clipBehavior: Clip.antiAlias,
+              margin: EdgeInsets.zero,
+              child: _BumpSettingsTile(
+                icon: Icons.block,
+                title: 'ユーザーをブロック',
+                subtitle: 'ブロックするユーザーの UUID を入力します。',
+                enabled: !_blockSubmitting,
+                onTap: _blockSubmitting
+                    ? null
+                    : () async {
+                        await showBlockUserByIdInputDialog(
+                          context,
+                          onConfirm: (blockedUserId) async {
+                            setState(() => _blockSubmitting = true);
+                            try {
+                              final result = await ref.read(
+                                blockUserUseCaseProvider,
+                              )(blockedUserId);
+                              return switch (result) {
+                                Ok() => null,
+                                Err(:final error) => _messageForFailure(error),
+                              };
+                            } finally {
+                              if (mounted) {
+                                setState(() => _blockSubmitting = false);
+                              }
                             }
-                          }
-                        },
-                      );
-                    },
+                          },
+                        );
+                      },
+              ),
             ),
           ],
         ],
@@ -648,5 +671,70 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ValidationFailure(:final message) => message,
       LocationFailure() => '位置情報を利用できません。',
     };
+  }
+}
+
+class _BumpSettingsTile extends StatelessWidget {
+  const _BumpSettingsTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+        child: Opacity(
+          opacity: enabled ? 1 : 0.45,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.spaceUnit * 2,
+              vertical: AppTokens.spaceUnit * 1.75,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(icon, size: 24, color: scheme.primary),
+                const SizedBox(width: AppTokens.spaceUnit * 1.5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: scheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
