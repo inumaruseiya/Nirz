@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:json_annotation/json_annotation.dart';
 
 part 'post_dto.g.dart';
@@ -32,11 +34,42 @@ final class GeoJsonLocation {
   };
 }
 
+/// PostgREST は `geography` を **ネストした GeoJSON** ではなく **WKT 文字列** や
+/// **JSON 文字列化した GeoJSON** で返すことがある（本番 RPC `create_post` の戻りなど）。
 GeoJsonLocation _postLocationFromJson(Object? json) {
-  if (json is! Map<String, dynamic>) {
-    throw FormatException('location must be a GeoJSON object', json);
+  if (json is Map) {
+    return GeoJsonLocation.fromJson(Map<String, dynamic>.from(json));
   }
-  return GeoJsonLocation.fromJson(json);
+  if (json is String) {
+    final trimmed = json.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map) {
+          return GeoJsonLocation.fromJson(Map<String, dynamic>.from(decoded));
+        }
+      } on FormatException {
+        throw FormatException('location JSON string is invalid', json);
+      }
+    }
+    final wktPart =
+        trimmed.contains(';') ? trimmed.split(';').last.trim() : trimmed;
+    final pointMatch = RegExp(
+      r'^POINT\s*\(\s*([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+'
+      r'([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\)$',
+      caseSensitive: false,
+    ).firstMatch(wktPart);
+    if (pointMatch != null) {
+      final lng = double.parse(pointMatch.group(1)!);
+      final lat = double.parse(pointMatch.group(2)!);
+      return GeoJsonLocation(latitude: lat, longitude: lng);
+    }
+    throw FormatException(
+      'location must be GeoJSON object, JSON string, or WKT POINT',
+      json,
+    );
+  }
+  throw FormatException('location must be a GeoJSON object', json);
 }
 
 Map<String, dynamic> _postLocationToJson(GeoJsonLocation location) =>

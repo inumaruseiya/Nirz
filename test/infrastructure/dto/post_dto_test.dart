@@ -44,6 +44,35 @@ void main() {
   });
 
   group('PostDto', () {
+    test('fromJson accepts location as WKT POINT (PostgREST geography string)', () {
+      final dto = PostDto.fromJson({
+        'id': '11111111-1111-4111-8111-111111111111',
+        'user_id': '22222222-2222-4222-8222-222222222222',
+        'content': 'hello',
+        'image_url': null,
+        'location': 'SRID=4326;POINT(139.0 35.5)',
+        'created_at': created.toIso8601String(),
+        'expires_at': expires.toIso8601String(),
+      });
+      expect(dto.locationLat, 35.5);
+      expect(dto.locationLng, 139.0);
+    });
+
+    test('fromJson accepts location as JSON string of GeoJSON', () {
+      final dto = PostDto.fromJson({
+        'id': '11111111-1111-4111-8111-111111111111',
+        'user_id': '22222222-2222-4222-8222-222222222222',
+        'content': 'hello',
+        'image_url': null,
+        'location':
+            '{"type":"Point","coordinates":[139.25,35.75]}',
+        'created_at': created.toIso8601String(),
+        'expires_at': expires.toIso8601String(),
+      });
+      expect(dto.locationLat, 35.75);
+      expect(dto.locationLng, 139.25);
+    });
+
     test('fromJson / toJson round-trip', () {
       final original = PostDto(
         id: '11111111-1111-4111-8111-111111111111',
