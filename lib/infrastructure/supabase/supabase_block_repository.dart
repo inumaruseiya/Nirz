@@ -6,6 +6,7 @@ import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/repositories/block_repository.dart';
 import '../../domain/value_objects/user_id.dart';
+import 'postgrest_failure_mapper.dart';
 
 /// [BlockRepository] の Supabase 実装（`blocks` INSERT）。
 final class SupabaseBlockRepository implements BlockRepository {
@@ -29,7 +30,16 @@ final class SupabaseBlockRepository implements BlockRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      if (e.code == '23505') {
+        return const Err(ValidationFailure('すでにブロック済みです。'));
+      }
+      if (e.code == '23514') {
+        final msg = e.message.trim();
+        return Err(
+          ValidationFailure(msg.isEmpty ? 'ブロックできません。' : msg),
+        );
+      }
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {
@@ -37,22 +47,4 @@ final class SupabaseBlockRepository implements BlockRepository {
     }
   }
 
-  static Failure _mapPostgrest(PostgrestException e) {
-    final code = e.code;
-    if (code == '23505') {
-      return const ValidationFailure('すでにブロック済みです。');
-    }
-    if (code == '23514') {
-      final msg = e.message.trim();
-      return ValidationFailure(msg.isEmpty ? 'ブロックできません。' : msg);
-    }
-    if (code == '22023' || code == 'P0001') {
-      final msg = e.message.trim();
-      return ValidationFailure(msg.isEmpty ? 'Invalid request' : msg);
-    }
-    if (code == '28000' || code == '42501') {
-      return const AuthFailure();
-    }
-    return const ServerFailure();
-  }
 }

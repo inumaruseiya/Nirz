@@ -14,6 +14,7 @@ import '../dto/rpc_feed_item_dto.dart';
 import '../dto/rpc_post_detail_dto.dart';
 import '../dto/rpc_feed_params.dart';
 import '../mappers/post_mapper.dart';
+import 'postgrest_failure_mapper.dart';
 
 /// [FeedRepository] の Supabase 実装（`get_local_feed` RPC）。
 final class SupabaseFeedRepository implements FeedRepository {
@@ -72,7 +73,7 @@ final class SupabaseFeedRepository implements FeedRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {
@@ -120,7 +121,7 @@ final class SupabaseFeedRepository implements FeedRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {
@@ -128,15 +129,4 @@ final class SupabaseFeedRepository implements FeedRepository {
     }
   }
 
-  static Failure _mapPostgrest(PostgrestException e) {
-    final code = e.code;
-    if (code == '22023' || code == 'P0001') {
-      final msg = e.message.trim();
-      return ValidationFailure(msg.isEmpty ? 'Invalid request' : msg);
-    }
-    if (code == '28000' || code == '42501') {
-      return const AuthFailure();
-    }
-    return const ServerFailure();
-  }
 }

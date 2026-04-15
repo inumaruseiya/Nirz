@@ -10,6 +10,7 @@ import '../../domain/value_objects/obfuscated_location.dart';
 import '../../domain/value_objects/post_id.dart';
 import '../dto/post_dto.dart';
 import '../mappers/post_mapper.dart';
+import 'postgrest_failure_mapper.dart';
 
 /// [PostRepository] の Supabase 実装（`create_post` RPC・`posts` DELETE）。
 final class SupabasePostRepository implements PostRepository {
@@ -45,7 +46,7 @@ final class SupabasePostRepository implements PostRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on FormatException catch (e) {
       return Err(ValidationFailure(e.message));
     } on SocketException {
@@ -66,7 +67,7 @@ final class SupabasePostRepository implements PostRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {
@@ -101,15 +102,4 @@ final class SupabasePostRepository implements PostRepository {
     return null;
   }
 
-  static Failure _mapPostgrest(PostgrestException e) {
-    final code = e.code;
-    if (code == '22023' || code == 'P0001') {
-      final msg = e.message.trim();
-      return ValidationFailure(msg.isEmpty ? 'Invalid request' : msg);
-    }
-    if (code == '28000' || code == '42501') {
-      return const AuthFailure();
-    }
-    return const ServerFailure();
-  }
 }
