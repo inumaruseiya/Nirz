@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,7 @@ import '../../config/supabase_config.dart';
 import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../router/app_route_paths.dart';
+import '../shared/platform_adaptive_dialogs.dart';
 import '../theme/app_tokens.dart';
 import 'auth_field_validators.dart';
 import 'auth_notifier.dart';
@@ -53,7 +55,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Future<void> _showPasswordResetDialog() async {
     final messenger = ScaffoldMessenger.of(context);
-    await showDialog<void>(
+    await showAppDialog<void>(
       context: context,
       builder: (dialogContext) => _PasswordResetDialog(
         initialEmail: _emailController.text.trim(),
@@ -305,7 +307,13 @@ class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
 
   Future<void> _send() async {
     setState(() => _error = null);
-    if (!(_formKey.currentState?.validate() ?? false)) {
+    if (useCupertinoDialogs) {
+      final emailErr = AuthFieldValidators.email(_emailController.text.trim());
+      if (emailErr != null) {
+        setState(() => _error = emailErr);
+        return;
+      }
+    } else if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
     setState(() => _sending = true);
@@ -329,6 +337,64 @@ class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
+    if (useCupertinoDialogs) {
+      return CupertinoAlertDialog(
+        title: const Text('パスワード再設定'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '登録したメールアドレスに、パスワード再設定用のリンクを送ります。',
+                style: CupertinoTheme.of(context).textTheme.textStyle,
+              ),
+              const SizedBox(height: AppTokens.spaceUnit * 2),
+              CupertinoTextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                enableSuggestions: true,
+                autofillHints: const [AutofillHints.email],
+                placeholder: 'example@email.com',
+                enabled: !_sending,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: AppTokens.spaceUnit * 2),
+                Semantics(
+                  liveRegion: true,
+                  label: 'エラー。$_error',
+                  excludeSemantics: true,
+                  child: Text(
+                    _error!,
+                    style: textTheme.bodySmall?.copyWith(color: scheme.error),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: _sending ? null : () => Navigator.of(context).pop(),
+            child: const Text('キャンセル'),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: _sending ? null : _send,
+            child: _sending
+                ? Semantics(
+                    label: '送信中',
+                    excludeSemantics: true,
+                    child: const CupertinoActivityIndicator(),
+                  )
+                : const Text('送信'),
+          ),
+        ],
+      );
+    }
+
     return AlertDialog(
       title: const Text('パスワード再設定'),
       content: SingleChildScrollView(
@@ -349,7 +415,6 @@ class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
                 autofillHints: const [AutofillHints.email],
                 decoration: const InputDecoration(
                   labelText: 'メールアドレス',
-                  border: OutlineInputBorder(),
                   hintText: 'example@email.com',
                 ),
                 validator: AuthFieldValidators.email,

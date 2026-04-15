@@ -19,6 +19,7 @@ import '../shared/error_retry_panel.dart';
 import '../shared/location_permission_callout.dart';
 import '../shared/reaction_picker.dart';
 import '../shared/block_user_dialog.dart';
+import '../shared/platform_adaptive_dialogs.dart';
 import '../shared/report_reason_dialog.dart';
 import '../shared/relative_time.dart';
 import '../theme/app_tokens.dart';
@@ -275,26 +276,13 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
                   return;
                 }
                 if (value != 'delete') return;
-                final confirmed = await showDialog<bool>(
+                final confirmed = await showAdaptiveConfirmDialog(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    title: const Text('投稿を削除'),
-                    content: const Text('この投稿を削除しますか？この操作は取り消せません。'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(ctx).pop(false),
-                        child: const Text('キャンセル'),
-                      ),
-                      FilledButton(
-                        onPressed: () => Navigator.of(ctx).pop(true),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: theme.colorScheme.error,
-                          foregroundColor: theme.colorScheme.onError,
-                        ),
-                        child: const Text('削除'),
-                      ),
-                    ],
-                  ),
+                  title: '投稿を削除',
+                  message: 'この投稿を削除しますか？この操作は取り消せません。',
+                  cancelLabel: 'キャンセル',
+                  confirmLabel: '削除',
+                  confirmIsDestructive: true,
                 );
                 if (confirmed != true || !context.mounted) return;
                 final err = await ref

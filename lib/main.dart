@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -37,6 +38,21 @@ class MyApp extends ConsumerWidget {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
       routerConfig: router,
+      builder: (context, child) {
+        final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
+        return CupertinoTheme(
+          data: CupertinoThemeData(
+            brightness: theme.brightness,
+            primaryColor: scheme.primary,
+            primaryContrastingColor: scheme.onPrimary,
+            barBackgroundColor: scheme.surface,
+            scaffoldBackgroundColor: scheme.surface,
+            applyThemeToAll: true,
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

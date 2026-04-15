@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../shared/platform_adaptive_dialogs.dart';
 import '../theme/app_tokens.dart';
 import 'compose_notifier.dart';
 
@@ -238,9 +239,25 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     );
   }
 
-  void _onAddImagePressed() {
+  Future<void> _onAddImagePressed() async {
     if (!mounted) return;
-    showModalBottomSheet<void>(
+    final iosChoice = await showAdaptiveImageSourceSheet(
+      context,
+      includeCamera: !kIsWeb,
+    );
+    if (!mounted) return;
+    if (iosChoice != null) {
+      await _pickImage(
+        iosChoice == ImageSourceChoice.gallery
+            ? ImageSource.gallery
+            : ImageSource.camera,
+      );
+      return;
+    }
+    if (useCupertinoDialogs) {
+      return;
+    }
+    await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) {
