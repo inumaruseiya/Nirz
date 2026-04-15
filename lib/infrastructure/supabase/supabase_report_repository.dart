@@ -42,5 +42,4 @@ final class SupabaseReportRepository implements ReportRepository {
       return const Err(ServerFailure());
     }
   }
-
 }

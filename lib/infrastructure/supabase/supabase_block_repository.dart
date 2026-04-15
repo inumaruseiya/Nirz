@@ -35,9 +35,7 @@ final class SupabaseBlockRepository implements BlockRepository {
       }
       if (e.code == '23514') {
         final msg = e.message.trim();
-        return Err(
-          ValidationFailure(msg.isEmpty ? 'ブロックできません。' : msg),
-        );
+        return Err(ValidationFailure(msg.isEmpty ? 'ブロックできません。' : msg));
       }
       return Err(mapPostgrestException(e));
     } on SocketException {
@@ -46,5 +44,4 @@ final class SupabaseBlockRepository implements BlockRepository {
       return const Err(ServerFailure());
     }
   }
-
 }

@@ -101,5 +101,4 @@ final class SupabasePostRepository implements PostRepository {
     }
     return null;
   }
-
 }

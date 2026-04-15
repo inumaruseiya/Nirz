@@ -52,8 +52,9 @@ GeoJsonLocation _postLocationFromJson(Object? json) {
         throw FormatException('location JSON string is invalid', json);
       }
     }
-    final wktPart =
-        trimmed.contains(';') ? trimmed.split(';').last.trim() : trimmed;
+    final wktPart = trimmed.contains(';')
+        ? trimmed.split(';').last.trim()
+        : trimmed;
     final pointMatch = RegExp(
       r'^POINT\s*\(\s*([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s+'
       r'([+-]?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*\)$',

@@ -128,5 +128,4 @@ final class SupabaseFeedRepository implements FeedRepository {
       return const Err(ServerFailure());
     }
   }
-
 }

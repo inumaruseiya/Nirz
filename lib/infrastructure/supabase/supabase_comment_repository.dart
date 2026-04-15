@@ -125,5 +125,4 @@ final class SupabaseCommentRepository implements CommentRepository {
       return const Err(ServerFailure());
     }
   }
-
 }

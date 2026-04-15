@@ -101,5 +101,4 @@ final class SupabaseReactionRepository implements ReactionRepository {
       return const Err(ServerFailure());
     }
   }
-
 }
