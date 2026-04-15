@@ -10,6 +10,7 @@ import '../../domain/value_objects/comment_id.dart';
 import '../../domain/value_objects/post_id.dart';
 import '../dto/comment_dto.dart';
 import '../mappers/comment_mapper.dart';
+import 'postgrest_failure_mapper.dart';
 
 /// [CommentRepository] の Supabase 実装（`comments` テーブル）。
 final class SupabaseCommentRepository implements CommentRepository {
@@ -46,7 +47,7 @@ final class SupabaseCommentRepository implements CommentRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {
@@ -79,7 +80,7 @@ final class SupabaseCommentRepository implements CommentRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on FormatException catch (e) {
       return Err(ValidationFailure(e.message));
     } on SocketException {
@@ -115,7 +116,7 @@ final class SupabaseCommentRepository implements CommentRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on FormatException catch (e) {
       return Err(ValidationFailure(e.message));
     } on SocketException {
@@ -123,17 +124,5 @@ final class SupabaseCommentRepository implements CommentRepository {
     } catch (_) {
       return const Err(ServerFailure());
     }
-  }
-
-  static Failure _mapPostgrest(PostgrestException e) {
-    final code = e.code;
-    if (code == '22023' || code == 'P0001') {
-      final msg = e.message.trim();
-      return ValidationFailure(msg.isEmpty ? 'Invalid request' : msg);
-    }
-    if (code == '28000' || code == '42501') {
-      return const AuthFailure();
-    }
-    return const ServerFailure();
   }
 }

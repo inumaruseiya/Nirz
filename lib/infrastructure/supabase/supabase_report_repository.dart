@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/repositories/report_repository.dart';
+import 'postgrest_failure_mapper.dart';
 import '../../domain/value_objects/report_target_type.dart';
 
 /// [ReportRepository] の Supabase 実装（`reports` INSERT）。
@@ -34,23 +35,11 @@ final class SupabaseReportRepository implements ReportRepository {
     } on AuthException {
       return const Err(AuthFailure());
     } on PostgrestException catch (e) {
-      return Err(_mapPostgrest(e));
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {
       return const Err(ServerFailure());
     }
-  }
-
-  static Failure _mapPostgrest(PostgrestException e) {
-    final code = e.code;
-    if (code == '22023' || code == 'P0001' || code == '23514') {
-      final msg = e.message.trim();
-      return ValidationFailure(msg.isEmpty ? 'Invalid request' : msg);
-    }
-    if (code == '28000' || code == '42501') {
-      return const AuthFailure();
-    }
-    return const ServerFailure();
   }
 }

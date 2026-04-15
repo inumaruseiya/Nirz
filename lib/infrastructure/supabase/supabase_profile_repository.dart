@@ -9,6 +9,7 @@ import '../../domain/repositories/profile_repository.dart';
 import '../../domain/value_objects/user_presence_status.dart';
 import '../dto/profile_dto.dart';
 import '../mappers/profile_mapper.dart';
+import 'postgrest_failure_mapper.dart';
 
 /// [ProfileRepository] の Supabase（`profiles` テーブル）実装。
 final class SupabaseProfileRepository implements ProfileRepository {
@@ -35,8 +36,8 @@ final class SupabaseProfileRepository implements ProfileRepository {
       return Ok(ProfileMapper.toDomain(dto));
     } on AuthException {
       return const Err(AuthFailure());
-    } on PostgrestException {
-      return const Err(ServerFailure());
+    } on PostgrestException catch (e) {
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {
@@ -96,8 +97,8 @@ final class SupabaseProfileRepository implements ProfileRepository {
       return Ok(ProfileMapper.toDomain(dto));
     } on AuthException {
       return const Err(AuthFailure());
-    } on PostgrestException {
-      return const Err(ServerFailure());
+    } on PostgrestException catch (e) {
+      return Err(mapPostgrestException(e));
     } on SocketException {
       return const Err(NetworkFailure());
     } catch (_) {

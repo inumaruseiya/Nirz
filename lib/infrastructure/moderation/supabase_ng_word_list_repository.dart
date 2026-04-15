@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../domain/core/failure.dart';
 import '../../domain/core/result.dart';
 import '../../domain/repositories/ng_word_list_repository.dart';
+import '../supabase/postgrest_failure_mapper.dart';
 
 /// Supabase `ng_words` テーブルから NG ワードを読み込む（Phase 10-1-1）。
 final class SupabaseNgWordListRepository implements NgWordListRepository {
@@ -24,8 +25,8 @@ final class SupabaseNgWordListRepository implements NgWordListRepository {
               .toList()
             ..sort();
       return Ok(List.unmodifiable(list));
-    } on PostgrestException catch (_) {
-      return const Err(ServerFailure());
+    } on PostgrestException catch (e) {
+      return Err(mapPostgrestException(e));
     } catch (_) {
       return const Err(ServerFailure());
     }
