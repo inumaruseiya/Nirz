@@ -57,7 +57,7 @@ Future<void> _pumpFeedPage(
   WidgetTester tester, {
   required FeedState feedState,
 }) async {
-  // SliverList は遅延構築のため、十分な高さを確保して複数スケルトンをビルドさせる。
+  // スケルトン列など、十分な高さを確保して複数ウィジェットをビルドさせる。
   await tester.binding.setSurfaceSize(const Size(400, 2000));
   addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -103,8 +103,7 @@ void main() {
     testWidgets('FeedLoading: スケルトンと読み込みセマンティクス', (tester) async {
       await _pumpFeedPage(tester, feedState: const FeedLoading());
 
-      // SliverAppBar.large は展開／折りたたみでタイトル用 Text が複数ビルドされる。
-      expect(find.text('近くの投稿'), findsNWidgets(2));
+      expect(find.text('近くの投稿'), findsOneWidget);
       expect(find.byType(FeedSkeletonCard), findsNWidgets(3));
       expect(find.bySemanticsLabel('近くの投稿を読み込んでいます'), findsOneWidget);
     });

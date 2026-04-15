@@ -8,16 +8,37 @@ import 'app_tokens.dart';
 abstract final class AppTheme {
   static const Color _seed = Color(0xFF15695C);
 
-  static ThemeData light() => _theme(brightness: Brightness.light);
+  static ThemeData light() => _themeFromScheme(
+        ColorScheme.fromSeed(
+          seedColor: _seed,
+          brightness: Brightness.light,
+        ),
+        Brightness.light,
+      );
 
-  static ThemeData dark() => _theme(brightness: Brightness.dark);
-
-  static ThemeData _theme({required Brightness brightness}) {
-    final colorScheme = ColorScheme.fromSeed(
+  /// BeReal 寄せの近黒サーフェス（ダークのみ調整。コントラストは WCAG AA を維持）。
+  static ThemeData dark() {
+    final base = ColorScheme.fromSeed(
       seedColor: _seed,
-      brightness: brightness,
+      brightness: Brightness.dark,
     );
+    final scheme = base.copyWith(
+      surface: const Color(0xFF000000),
+      onSurface: const Color(0xFFF2F2F2),
+      onSurfaceVariant: const Color(0xFFBDBDBD),
+      surfaceContainerLowest: const Color(0xFF000000),
+      surfaceContainerLow: const Color(0xFF161616),
+      surfaceContainer: const Color(0xFF202020),
+      surfaceContainerHigh: const Color(0xFF2A2A2A),
+      surfaceContainerHighest: const Color(0xFF343434),
+    );
+    return _themeFromScheme(scheme, Brightness.dark);
+  }
 
+  static ThemeData _themeFromScheme(
+    ColorScheme colorScheme,
+    Brightness brightness,
+  ) {
     final textTheme = _textTheme(colorScheme, brightness);
 
     final buttonShape = RoundedRectangleBorder(
@@ -27,6 +48,7 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      brightness: brightness,
       textTheme: textTheme,
       visualDensity: VisualDensity.adaptivePlatformDensity,
       scaffoldBackgroundColor: colorScheme.surface,

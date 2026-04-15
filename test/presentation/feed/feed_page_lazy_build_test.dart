@@ -14,7 +14,7 @@ import 'package:nirz/presentation/feed/feed_page.dart';
 import 'package:nirz/presentation/router/app_route_paths.dart';
 import 'package:nirz/presentation/shared/local_post_card.dart';
 
-/// Phase 12-6-4: フィード一覧は [SliverList.builder] による遅延構築（NFR-PERF-01）。
+/// Phase 12-6-4: フィード一覧は縦 [PageView.builder] による遅延構築（NFR-PERF-01）。
 class _StaticFeedNotifier extends FeedNotifier {
   _StaticFeedNotifier(this._posts);
 
@@ -108,7 +108,7 @@ void main() {
     expect(
       built,
       lessThan(totalPosts),
-      reason: 'SliverList.builder は表示域＋キャッシュのみ構築する想定（$built / $totalPosts）',
+      reason: 'PageView.builder は表示域＋キャッシュのみ構築する想定（$built / $totalPosts）',
     );
     expect(built, greaterThan(0));
   });

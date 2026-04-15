@@ -33,4 +33,10 @@ abstract final class AppTokens {
 
   /// 本文の折り返し幅の目安（約 45–75 文字相当。実フォント・スケールで変動）
   static const double bodyMaxLineWidth = 560;
+
+  /// フィード immersive 下部オーバーレイのグラデーション高さ（BeReal 風）
+  static const double feedImmersiveGradientHeight = 220;
+
+  /// immersive 本文ブロックの下パディング（セーフエリア上）
+  static const double feedImmersiveBottomPadding = 20;
 }

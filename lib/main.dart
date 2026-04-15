@@ -35,7 +35,7 @@ class MyApp extends ConsumerWidget {
       title: 'Nirz',
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       routerConfig: router,
     );
   }
