@@ -39,4 +39,13 @@ abstract final class AppTokens {
 
   /// immersive 本文ブロックの下パディング（セーフエリア上）
   static const double feedImmersiveBottomPadding = 20;
+
+  /// ピル型 CTA（Filled / Outlined 等）の水平パディング（Bump 風の横長タップ領域）
+  static const double buttonHorizontalPadding = 24;
+
+  /// ピル型 CTA の垂直パディング
+  static const double buttonVerticalPadding = 14;
+
+  /// [SegmentedButton] 外周の角丸（ピル全体にはせず、やや強い角丸のみ）
+  static const double radiusSegmentedControl = 16;
 }

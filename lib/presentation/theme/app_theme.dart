@@ -9,12 +9,9 @@ abstract final class AppTheme {
   static const Color _seed = Color(0xFF15695C);
 
   static ThemeData light() => _themeFromScheme(
-        ColorScheme.fromSeed(
-          seedColor: _seed,
-          brightness: Brightness.light,
-        ),
-        Brightness.light,
-      );
+    ColorScheme.fromSeed(seedColor: _seed, brightness: Brightness.light),
+    Brightness.light,
+  );
 
   /// BeReal 寄せの近黒サーフェス（ダークのみ調整。コントラストは WCAG AA を維持）。
   static ThemeData dark() {
@@ -41,8 +38,10 @@ abstract final class AppTheme {
   ) {
     final textTheme = _textTheme(colorScheme, brightness);
 
-    final buttonShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+    const bumpButtonShape = StadiumBorder();
+    const bumpButtonPadding = EdgeInsets.symmetric(
+      horizontal: AppTokens.buttonHorizontalPadding,
+      vertical: AppTokens.buttonVerticalPadding,
     );
 
     return ThemeData(
@@ -130,7 +129,8 @@ abstract final class AppTheme {
             AppTokens.minTapTarget,
             AppTokens.minTapTarget,
           ),
-          shape: buttonShape,
+          padding: bumpButtonPadding,
+          shape: bumpButtonShape,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -139,7 +139,8 @@ abstract final class AppTheme {
             AppTokens.minTapTarget,
             AppTokens.minTapTarget,
           ),
-          shape: buttonShape,
+          padding: bumpButtonPadding,
+          shape: bumpButtonShape,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -148,7 +149,8 @@ abstract final class AppTheme {
             AppTokens.minTapTarget,
             AppTokens.minTapTarget,
           ),
-          shape: buttonShape,
+          padding: bumpButtonPadding,
+          shape: bumpButtonShape,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -157,7 +159,31 @@ abstract final class AppTheme {
             AppTokens.minTapTarget,
             AppTokens.minTapTarget,
           ),
-          shape: buttonShape,
+          padding: bumpButtonPadding,
+          shape: bumpButtonShape,
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        shape: const CircleBorder(),
+        sizeConstraints: BoxConstraints.tightFor(
+          width: AppTokens.minTapTarget + AppTokens.spaceUnit * 1.5,
+          height: AppTokens.minTapTarget + AppTokens.spaceUnit * 1.5,
+        ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          visualDensity: VisualDensity.standard,
+          tapTargetSize: MaterialTapTargetSize.padded,
+          side: WidgetStatePropertyAll(
+            BorderSide(color: colorScheme.outlineVariant),
+          ),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(
+                AppTokens.radiusSegmentedControl,
+              ),
+            ),
+          ),
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
