@@ -38,6 +38,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.feed,
         builder: (context, state) => const FeedPage(),
       ),
+      // 全画面モーダル: iOS では [AppTheme] の Cupertino ページ遷移が適用される。
       GoRoute(
         path: AppRoutePaths.compose,
         pageBuilder: (context, state) => const MaterialPage<void>(

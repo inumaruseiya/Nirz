@@ -71,7 +71,9 @@ void showPostDetailImageViewer(BuildContext context, String imageUrl) {
                           width: 56,
                           height: 56,
                           child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator.adaptive(
+                              strokeWidth: 2,
+                            ),
                           ),
                         ),
                         errorWidget: (context, url, error) => Icon(
@@ -330,7 +332,10 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
       body: switch (detailState) {
         PostDetailInvalidId() => Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.screenHorizontalInset,
+              vertical: AppTokens.screenVerticalInset,
+            ),
             child: Text(
               '無効な投稿 ID です',
               style: theme.textTheme.bodyLarge,
@@ -338,7 +343,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
             ),
           ),
         ),
-        PostDetailLoading() => const Center(child: CircularProgressIndicator()),
+        PostDetailLoading() => const Center(
+          child: CircularProgressIndicator.adaptive(),
+        ),
         PostDetailLocationDenied() => Center(
           child: LocationPermissionCallout(
             onOpenSettings: () async {
@@ -355,7 +362,10 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
         ),
         PostDetailNotFound() => Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.screenHorizontalInset,
+              vertical: AppTokens.screenVerticalInset,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -569,7 +579,9 @@ class _PostDetailPageState extends ConsumerState<PostDetailPage> {
               onReactionSelected: (_) async {},
             ),
           ),
-        PostDetailDeleted() => const Center(child: CircularProgressIndicator()),
+        PostDetailDeleted() => const Center(
+          child: CircularProgressIndicator.adaptive(),
+        ),
       },
     );
   }
@@ -589,7 +601,7 @@ class _PostDetailBody extends StatelessWidget {
         child,
         if (blocking)
           const ModalBarrier(dismissible: false, color: Color(0x33000000)),
-        if (blocking) const Center(child: CircularProgressIndicator()),
+        if (blocking) const Center(child: CircularProgressIndicator.adaptive()),
       ],
     );
   }
@@ -656,7 +668,10 @@ class _PostDetailContent extends StatelessWidget {
     final imageSummary = post.imageUrl != null ? '画像あり。' : '';
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTokens.screenHorizontalInset,
+        vertical: AppTokens.screenVerticalInset,
+      ),
       child: Semantics(
         label:
             '$name、$relative${distanceText != null ? '、$distanceText' : ''}。${post.content}。$imageSummary$reactionLabel',
@@ -723,7 +738,7 @@ class _PostDetailContent extends StatelessWidget {
                                   child: SizedBox(
                                     width: 28,
                                     height: 28,
-                                    child: CircularProgressIndicator(
+                                    child: CircularProgressIndicator.adaptive(
                                       strokeWidth: 2,
                                     ),
                                   ),
@@ -765,7 +780,7 @@ class _PostDetailContent extends StatelessWidget {
                   child: SizedBox(
                     width: 28,
                     height: 28,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator.adaptive(strokeWidth: 2),
                   ),
                 ),
               )

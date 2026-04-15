@@ -28,9 +28,70 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       textTheme: textTheme,
+      visualDensity: VisualDensity.adaptivePlatformDensity,
+      scaffoldBackgroundColor: colorScheme.surface,
       splashFactory: InkSparkle.splashFactory,
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0.5,
+        surfaceTintColor: Colors.transparent,
+        backgroundColor: colorScheme.surface,
+        foregroundColor: colorScheme.onSurface,
+        titleTextStyle: textTheme.titleLarge,
+      ),
+      dividerTheme: DividerThemeData(
+        color: colorScheme.outlineVariant,
+        thickness: 0.5,
+        space: 1,
+      ),
+      listTileTheme: ListTileThemeData(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppTokens.listContentPaddingHorizontal,
+          vertical: 6,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+        ),
+        iconColor: colorScheme.onSurfaceVariant,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+          borderSide: BorderSide(color: colorScheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+          borderSide: BorderSide(
+            color: colorScheme.outline.withValues(alpha: 0.55),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppTokens.listContentPaddingHorizontal,
+          vertical: AppTokens.spaceUnit * 1.5,
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+        ),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: AppTokens.screenHorizontalInset,
+          vertical: AppTokens.spaceUnit,
+        ),
+      ),
       cardTheme: CardThemeData(
         elevation: 0,
+        color: colorScheme.surfaceContainerLow,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusCard),
         ),
@@ -86,6 +147,7 @@ abstract final class AppTheme {
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
+      // iOS / macOS: [CupertinoPageTransitionsBuilder] で HIG に近い横スワイプ戻り。
       pageTransitionsTheme: PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ReduceMotionAwarePageTransitionsBuilder(

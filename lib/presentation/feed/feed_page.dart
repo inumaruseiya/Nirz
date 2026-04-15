@@ -80,7 +80,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
         heroTag: 'feed_compose_fab',
         tooltip: '投稿を作成',
         extendedPadding: const EdgeInsets.symmetric(
-          horizontal: AppTokens.spaceUnit * 2,
+          horizontal: AppTokens.screenHorizontalInset,
           vertical: AppTokens.spaceUnit,
         ),
         onPressed: _openComposeAndRefreshIfCreated,
@@ -101,7 +101,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            SliverAppBar(
+            SliverAppBar.large(
               pinned: true,
               title: const Text('近くの投稿'),
               actions: [
@@ -234,7 +234,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                 child: SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
                 ),
               ),
             );

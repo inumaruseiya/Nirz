@@ -79,6 +79,7 @@ class _ComposePageState extends ConsumerState<ComposePage> {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: _inputsLocked(composeState)
@@ -94,11 +95,9 @@ class _ComposePageState extends ConsumerState<ComposePage> {
           children: [
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppTokens.spaceUnit * 2,
-                  AppTokens.spaceUnit,
-                  AppTokens.spaceUnit * 2,
-                  AppTokens.spaceUnit,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppTokens.screenHorizontalInset,
+                  vertical: AppTokens.screenVerticalInset,
                 ),
                 child: Align(
                   alignment: Alignment.topCenter,
@@ -216,9 +215,11 @@ class _ComposePageState extends ConsumerState<ComposePage> {
                               ? SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(
+                                  child: CircularProgressIndicator.adaptive(
                                     strokeWidth: 2,
-                                    color: theme.colorScheme.onPrimary,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      theme.colorScheme.onPrimary,
+                                    ),
                                   ),
                                 )
                               : const Icon(Icons.send_outlined),
@@ -376,7 +377,7 @@ class _ComposeStatusStrip extends StatelessWidget {
       ) =>
         Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppTokens.spaceUnit * 2,
+            horizontal: AppTokens.screenHorizontalInset,
             vertical: AppTokens.spaceUnit,
           ),
           child: Align(
@@ -413,7 +414,7 @@ class _ComposeStatusStrip extends StatelessWidget {
         color: colorScheme.surfaceContainerHighest,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppTokens.spaceUnit * 2,
+            horizontal: AppTokens.screenHorizontalInset,
             vertical: AppTokens.spaceUnit * 1.5,
           ),
           child: Row(
@@ -421,9 +422,11 @@ class _ComposeStatusStrip extends StatelessWidget {
               SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(
+                child: CircularProgressIndicator.adaptive(
                   strokeWidth: 2,
-                  color: colorScheme.primary,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colorScheme.primary,
+                  ),
                 ),
               ),
               const SizedBox(width: AppTokens.spaceUnit * 2),
@@ -439,7 +442,7 @@ class _ComposeStatusStrip extends StatelessWidget {
         color: colorScheme.primaryContainer,
         child: Padding(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppTokens.spaceUnit * 2,
+            horizontal: AppTokens.screenHorizontalInset,
             vertical: AppTokens.spaceUnit * 1.5,
           ),
           child: Row(
@@ -461,11 +464,9 @@ class _ComposeStatusStrip extends StatelessWidget {
       ComposeFailure(:final message, :final settingsShortcut) => Material(
         color: colorScheme.errorContainer,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppTokens.spaceUnit * 2,
-            AppTokens.spaceUnit * 1.5,
-            AppTokens.spaceUnit * 2,
-            AppTokens.spaceUnit * 1.5,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.screenHorizontalInset,
+            vertical: AppTokens.spaceUnit * 1.5,
           ),
           child: _LocationIssueCard(
             errorMessage: message,

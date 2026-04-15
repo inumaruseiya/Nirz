@@ -25,7 +25,10 @@ class ErrorRetryPanel extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: AppTokens.bodyMaxLineWidth),
         child: Padding(
-          padding: const EdgeInsets.all(AppTokens.spaceUnit * 3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.screenHorizontalInset,
+            vertical: AppTokens.screenVerticalInset,
+          ),
           child: Semantics(
             container: true,
             label: '$title。$message',

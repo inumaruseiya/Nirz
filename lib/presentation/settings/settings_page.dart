@@ -283,358 +283,406 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final textTheme = theme.textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('設定')),
-      body: ListView(
-        padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
-        children: [
-          Text('位置情報とプライバシー', style: textTheme.titleMedium),
-          const SizedBox(height: AppTokens.spaceUnit),
-          Text(
-            'このアプリは、近くの投稿を探すために端末の位置を使います。'
-            'サーバーに送るのはぼかし後の位置だけで、正確な現在地は保存しません。',
-            style: textTheme.bodyLarge,
-          ),
-          const SizedBox(height: AppTokens.spaceUnit * 1.5),
-          Text(
-            '位置の許可をオフにすると、フィードで近くの投稿を表示できなくなることがあります。',
-            style: textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+      body: CustomScrollView(
+        slivers: [
+          const SliverAppBar.large(pinned: true, title: Text('設定')),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppTokens.screenHorizontalInset,
+              vertical: AppTokens.screenVerticalInset,
             ),
-          ),
-          const SizedBox(height: AppTokens.spaceUnit * 2),
-          if (!kIsWeb) ...[
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.app_settings_alt_outlined),
-              title: const Text('このアプリの位置情報設定'),
-              subtitle: const Text('通知・位置などのアプリ権限を変更します'),
-              onTap: _openAppLocationSettings,
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.location_searching),
-              title: const Text('端末の位置サービス'),
-              subtitle: const Text('GPS など端末全体の位置機能のオン／オフ'),
-              onTap: _openDeviceLocationServices,
-            ),
-            const Divider(height: AppTokens.spaceUnit * 3),
-          ],
-          if (signedIn) ...[
-            Text('ニックネーム', style: textTheme.titleMedium),
-            const SizedBox(height: AppTokens.spaceUnit),
-            profileAsync.when(
-              data: (Profile? profile) {
-                if (profile == null) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
-                      const SizedBox(height: AppTokens.spaceUnit),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: _displayNameSaving
-                              ? null
-                              : () =>
-                                    ref.invalidate(currentUserProfileProvider),
-                          child: const Text('再試行'),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-                final avatarUrl = profile.avatarUrl?.trim();
-                final hasAvatar = avatarUrl != null && avatarUrl.isNotEmpty;
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                Text('位置情報とプライバシー', style: textTheme.titleMedium),
+                const SizedBox(height: AppTokens.spaceUnit),
+                Text(
+                  'このアプリは、近くの投稿を探すために端末の位置を使います。'
+                  'サーバーに送るのはぼかし後の位置だけで、正確な現在地は保存しません。',
+                  style: textTheme.bodyLarge,
+                ),
+                const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                Text(
+                  '位置の許可をオフにすると、フィードで近くの投稿を表示できなくなることがあります。',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppTokens.spaceUnit * 2),
+                if (!kIsWeb) ...[
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.app_settings_alt_outlined),
+                    title: const Text('このアプリの位置情報設定'),
+                    subtitle: const Text('通知・位置などのアプリ権限を変更します'),
+                    onTap: _openAppLocationSettings,
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.location_searching),
+                    title: const Text('端末の位置サービス'),
+                    subtitle: const Text('GPS など端末全体の位置機能のオン／オフ'),
+                    onTap: _openDeviceLocationServices,
+                  ),
+                  const Divider(height: AppTokens.spaceUnit * 3),
+                ],
+                if (signedIn) ...[
+                  Text('ニックネーム', style: textTheme.titleMedium),
+                  const SizedBox(height: AppTokens.spaceUnit),
+                  profileAsync.when(
+                    data: (Profile? profile) {
+                      if (profile == null) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'プロフィールを読み込めませんでした。',
+                              style: textTheme.bodyLarge,
+                            ),
+                            const SizedBox(height: AppTokens.spaceUnit),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: _displayNameSaving
+                                    ? null
+                                    : () => ref.invalidate(
+                                        currentUserProfileProvider,
+                                      ),
+                                child: const Text('再試行'),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      final avatarUrl = profile.avatarUrl?.trim();
+                      final hasAvatar =
+                          avatarUrl != null && avatarUrl.isNotEmpty;
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Form(
-                      key: _nicknameFormKey,
-                      child: Column(
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          TextFormField(
-                            controller: _nameController,
-                            textInputAction: TextInputAction.done,
-                            autofillHints: const [AutofillHints.nickname],
-                            decoration: const InputDecoration(
-                              labelText: 'ニックネーム',
-                              hintText: '表示名（フィードなどに表示）',
+                          Form(
+                            key: _nicknameFormKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                TextFormField(
+                                  controller: _nameController,
+                                  textInputAction: TextInputAction.done,
+                                  autofillHints: const [AutofillHints.nickname],
+                                  decoration: const InputDecoration(
+                                    labelText: 'ニックネーム',
+                                    hintText: '表示名（フィードなどに表示）',
+                                  ),
+                                  maxLength:
+                                      AuthFieldValidators.nicknameMaxLength,
+                                  validator: AuthFieldValidators.nickname,
+                                  onChanged: (_) {
+                                    if (!_nicknameDirty) {
+                                      setState(() => _nicknameDirty = true);
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: AppTokens.spaceUnit),
+                                FilledButton(
+                                  onPressed: _displayNameSaving || _avatarSaving
+                                      ? null
+                                      : () => _saveDisplayName(profile),
+                                  child: _displayNameSaving
+                                      ? const SizedBox(
+                                          width: 22,
+                                          height: 22,
+                                          child:
+                                              CircularProgressIndicator.adaptive(
+                                                strokeWidth: 2,
+                                              ),
+                                        )
+                                      : const Text('ニックネームを保存'),
+                                ),
+                              ],
                             ),
-                            maxLength: AuthFieldValidators.nicknameMaxLength,
-                            validator: AuthFieldValidators.nickname,
-                            onChanged: (_) {
-                              if (!_nicknameDirty) {
-                                setState(() => _nicknameDirty = true);
-                              }
-                            },
                           ),
+                          const SizedBox(height: AppTokens.spaceUnit * 2),
+                          Text('プロフィール画像（任意）', style: textTheme.titleMedium),
                           const SizedBox(height: AppTokens.spaceUnit),
-                          FilledButton(
-                            onPressed: _displayNameSaving || _avatarSaving
-                                ? null
-                                : () => _saveDisplayName(profile),
-                            child: _displayNameSaving
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text('ニックネームを保存'),
+                          Text(
+                            '投稿画像と同じストレージに保存します（最大5MB）。',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppTokens.spaceUnit * 2),
-                    Text('プロフィール画像（任意）', style: textTheme.titleMedium),
-                    const SizedBox(height: AppTokens.spaceUnit),
-                    Text(
-                      '投稿画像と同じストレージに保存します（最大5MB）。',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: AppTokens.spaceUnit * 1.5),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        ClipOval(
-                          child: SizedBox(
-                            width: 80,
-                            height: 80,
-                            child: hasAvatar
-                                ? Semantics(
-                                    image: true,
-                                    label: '現在のプロフィール画像',
-                                    child: CachedNetworkImage(
-                                      imageUrl: avatarUrl,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          const Center(
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
+                          const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              ClipOval(
+                                child: SizedBox(
+                                  width: 80,
+                                  height: 80,
+                                  child: hasAvatar
+                                      ? Semantics(
+                                          image: true,
+                                          label: '現在のプロフィール画像',
+                                          child: CachedNetworkImage(
+                                            imageUrl: avatarUrl,
+                                            fit: BoxFit.cover,
+                                            placeholder: (context, url) =>
+                                                const Center(
+                                                  child:
+                                                      CircularProgressIndicator.adaptive(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                ),
+                                            errorWidget:
+                                                (
+                                                  context,
+                                                  url,
+                                                  error,
+                                                ) => ColoredBox(
+                                                  color: theme
+                                                      .colorScheme
+                                                      .surfaceContainerHighest,
+                                                  child: Icon(
+                                                    Icons.broken_image_outlined,
+                                                    color: theme
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                                ),
                                           ),
-                                      errorWidget: (context, url, error) =>
-                                          ColoredBox(
+                                        )
+                                      : Semantics(
+                                          label: 'プロフィール画像は未設定です',
+                                          child: ColoredBox(
                                             color: theme
                                                 .colorScheme
                                                 .surfaceContainerHighest,
                                             child: Icon(
-                                              Icons.broken_image_outlined,
+                                              Icons.person,
+                                              size: 40,
                                               color: theme
                                                   .colorScheme
                                                   .onSurfaceVariant,
                                             ),
                                           ),
-                                    ),
-                                  )
-                                : Semantics(
-                                    label: 'プロフィール画像は未設定です',
-                                    child: ColoredBox(
-                                      color: theme
-                                          .colorScheme
-                                          .surfaceContainerHighest,
-                                      child: Icon(
-                                        Icons.person,
-                                        size: 40,
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(width: AppTokens.spaceUnit * 2),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              OutlinedButton.icon(
-                                onPressed: _avatarSaving
-                                    ? null
-                                    : () =>
-                                          _pickAvatarImage(ImageSource.gallery),
-                                icon: const Icon(Icons.photo_library_outlined),
-                                label: const Text('ギャラリーから選ぶ'),
-                              ),
-                              if (!kIsWeb) ...[
-                                const SizedBox(height: AppTokens.spaceUnit),
-                                OutlinedButton.icon(
-                                  onPressed: _avatarSaving
-                                      ? null
-                                      : () => _pickAvatarImage(
-                                          ImageSource.camera,
                                         ),
-                                  icon: const Icon(Icons.photo_camera_outlined),
-                                  label: const Text('カメラで撮る'),
                                 ),
-                              ],
-                              if (hasAvatar) ...[
-                                const SizedBox(height: AppTokens.spaceUnit),
-                                TextButton(
-                                  onPressed: _avatarSaving
-                                      ? null
-                                      : () => _removeAvatar(profile),
-                                  child: const Text('画像を削除'),
+                              ),
+                              const SizedBox(width: AppTokens.spaceUnit * 2),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    OutlinedButton.icon(
+                                      onPressed: _avatarSaving
+                                          ? null
+                                          : () => _pickAvatarImage(
+                                              ImageSource.gallery,
+                                            ),
+                                      icon: const Icon(
+                                        Icons.photo_library_outlined,
+                                      ),
+                                      label: const Text('ギャラリーから選ぶ'),
+                                    ),
+                                    if (!kIsWeb) ...[
+                                      const SizedBox(
+                                        height: AppTokens.spaceUnit,
+                                      ),
+                                      OutlinedButton.icon(
+                                        onPressed: _avatarSaving
+                                            ? null
+                                            : () => _pickAvatarImage(
+                                                ImageSource.camera,
+                                              ),
+                                        icon: const Icon(
+                                          Icons.photo_camera_outlined,
+                                        ),
+                                        label: const Text('カメラで撮る'),
+                                      ),
+                                    ],
+                                    if (hasAvatar) ...[
+                                      const SizedBox(
+                                        height: AppTokens.spaceUnit,
+                                      ),
+                                      TextButton(
+                                        onPressed: _avatarSaving
+                                            ? null
+                                            : () => _removeAvatar(profile),
+                                        child: const Text('画像を削除'),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              ],
+                              ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    if (_avatarSaving) ...[
-                      const SizedBox(height: AppTokens.spaceUnit),
-                      const LinearProgressIndicator(),
-                    ],
-                  ],
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (error, stackTrace) =>
-                  Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
-            ),
-            const Divider(height: AppTokens.spaceUnit * 3),
-            Text('マイステータス（任意）', style: textTheme.titleMedium),
-            const SizedBox(height: AppTokens.spaceUnit),
-            profileAsync.when(
-              data: (Profile? profile) {
-                if (profile == null) {
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
-                      const SizedBox(height: AppTokens.spaceUnit),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton(
-                          onPressed: _presenceSaving
-                              ? null
-                              : () =>
-                                    ref.invalidate(currentUserProfileProvider),
-                          child: const Text('再試行'),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-                final current = profile.presenceStatus;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: SegmentedButton<UserPresenceStatus?>(
-                        showSelectedIcon: false,
-                        emptySelectionAllowed: true,
-                        segments: const [
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: null,
-                            label: Text('なし'),
-                          ),
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: UserPresenceStatus.free,
-                            label: Text('暇'),
-                          ),
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: UserPresenceStatus.working,
-                            label: Text('作業中'),
-                          ),
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: UserPresenceStatus.out,
-                            label: Text('外出中'),
-                          ),
+                          if (_avatarSaving) ...[
+                            const SizedBox(height: AppTokens.spaceUnit),
+                            const LinearProgressIndicator(),
+                          ],
                         ],
-                        selected: {current},
-                        onSelectionChanged:
-                            (Set<UserPresenceStatus?> selected) {
-                              if (_presenceSaving) return;
-                              final next = selected.isEmpty
-                                  ? null
-                                  : selected.first;
-                              if (next == current) return;
-                              _savePresenceStatus(next);
-                            },
-                      ),
-                    ),
-                    const SizedBox(height: AppTokens.spaceUnit * 1.5),
-                    Text(
-                      '近くの投稿の一覧（カード）には表示されません。設定やプロフィール周りでのみ使えます。',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    if (_presenceSaving) ...[
-                      const SizedBox(height: AppTokens.spaceUnit),
-                      const LinearProgressIndicator(),
-                    ],
-                  ],
-                );
-              },
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: AppTokens.spaceUnit),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (error, stackTrace) =>
-                  Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
-            ),
-            const Divider(height: AppTokens.spaceUnit * 3),
-            Semantics(
-              button: true,
-              label: 'ログアウト',
-              child: SizedBox(
-                width: double.infinity,
-                child: FilledButton.tonal(
-                  onPressed: _signOutInProgress ? null : _signOut,
-                  child: _signOutInProgress
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('ログアウト'),
-                ),
-              ),
-            ),
-            const SizedBox(height: AppTokens.spaceUnit * 2),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.block),
-              title: const Text('ユーザーをブロック'),
-              subtitle: const Text('ブロックするユーザーの UUID を入力します。'),
-              enabled: !_blockSubmitting,
-              onTap: _blockSubmitting
-                  ? null
-                  : () async {
-                      await showBlockUserByIdInputDialog(
-                        context,
-                        onConfirm: (blockedUserId) async {
-                          setState(() => _blockSubmitting = true);
-                          try {
-                            final result = await ref.read(
-                              blockUserUseCaseProvider,
-                            )(blockedUserId);
-                            return switch (result) {
-                              Ok() => null,
-                              Err(:final error) => _messageForFailure(error),
-                            };
-                          } finally {
-                            if (mounted) {
-                              setState(() => _blockSubmitting = false);
-                            }
-                          }
-                        },
                       );
                     },
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppTokens.spaceUnit,
+                      ),
+                      child: Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      ),
+                    ),
+                    error: (error, stackTrace) =>
+                        Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
+                  ),
+                  const Divider(height: AppTokens.spaceUnit * 3),
+                  Text('マイステータス（任意）', style: textTheme.titleMedium),
+                  const SizedBox(height: AppTokens.spaceUnit),
+                  profileAsync.when(
+                    data: (Profile? profile) {
+                      if (profile == null) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'プロフィールを読み込めませんでした。',
+                              style: textTheme.bodyLarge,
+                            ),
+                            const SizedBox(height: AppTokens.spaceUnit),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton(
+                                onPressed: _presenceSaving
+                                    ? null
+                                    : () => ref.invalidate(
+                                        currentUserProfileProvider,
+                                      ),
+                                child: const Text('再試行'),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      final current = profile.presenceStatus;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SegmentedButton<UserPresenceStatus?>(
+                              showSelectedIcon: false,
+                              emptySelectionAllowed: true,
+                              segments: const [
+                                ButtonSegment<UserPresenceStatus?>(
+                                  value: null,
+                                  label: Text('なし'),
+                                ),
+                                ButtonSegment<UserPresenceStatus?>(
+                                  value: UserPresenceStatus.free,
+                                  label: Text('暇'),
+                                ),
+                                ButtonSegment<UserPresenceStatus?>(
+                                  value: UserPresenceStatus.working,
+                                  label: Text('作業中'),
+                                ),
+                                ButtonSegment<UserPresenceStatus?>(
+                                  value: UserPresenceStatus.out,
+                                  label: Text('外出中'),
+                                ),
+                              ],
+                              selected: {current},
+                              onSelectionChanged:
+                                  (Set<UserPresenceStatus?> selected) {
+                                    if (_presenceSaving) return;
+                                    final next = selected.isEmpty
+                                        ? null
+                                        : selected.first;
+                                    if (next == current) return;
+                                    _savePresenceStatus(next);
+                                  },
+                            ),
+                          ),
+                          const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                          Text(
+                            '近くの投稿の一覧（カード）には表示されません。設定やプロフィール周りでのみ使えます。',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          if (_presenceSaving) ...[
+                            const SizedBox(height: AppTokens.spaceUnit),
+                            const LinearProgressIndicator(),
+                          ],
+                        ],
+                      );
+                    },
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppTokens.spaceUnit,
+                      ),
+                      child: Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      ),
+                    ),
+                    error: (error, stackTrace) =>
+                        Text('プロフィールを読み込めませんでした。', style: textTheme.bodyLarge),
+                  ),
+                  const Divider(height: AppTokens.spaceUnit * 3),
+                  Semantics(
+                    button: true,
+                    label: 'ログアウト',
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.tonal(
+                        onPressed: _signOutInProgress ? null : _signOut,
+                        child: _signOutInProgress
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator.adaptive(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('ログアウト'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppTokens.spaceUnit * 2),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.block),
+                    title: const Text('ユーザーをブロック'),
+                    subtitle: const Text('ブロックするユーザーの UUID を入力します。'),
+                    enabled: !_blockSubmitting,
+                    onTap: _blockSubmitting
+                        ? null
+                        : () async {
+                            await showBlockUserByIdInputDialog(
+                              context,
+                              onConfirm: (blockedUserId) async {
+                                setState(() => _blockSubmitting = true);
+                                try {
+                                  final result = await ref.read(
+                                    blockUserUseCaseProvider,
+                                  )(blockedUserId);
+                                  return switch (result) {
+                                    Ok() => null,
+                                    Err(:final error) => _messageForFailure(
+                                      error,
+                                    ),
+                                  };
+                                } finally {
+                                  if (mounted) {
+                                    setState(() => _blockSubmitting = false);
+                                  }
+                                }
+                              },
+                            );
+                          },
+                  ),
+                ],
+              ]),
             ),
-          ],
+          ),
         ],
       ),
     );

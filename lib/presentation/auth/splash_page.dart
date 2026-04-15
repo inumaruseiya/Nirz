@@ -116,7 +116,9 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                     child: const SizedBox(
                       width: 28,
                       height: 28,
-                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                      child: CircularProgressIndicator.adaptive(
+                        strokeWidth: 2.5,
+                      ),
                     ),
                   ),
                 ],
@@ -124,7 +126,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
             ),
             _SplashUi.errorOffline => Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.spaceUnit * 3,
+                horizontal: AppTokens.screenHorizontalInset,
               ),
               child: Semantics(
                 label: 'ネットワークに接続できません。接続を確認してから再試行してください。',

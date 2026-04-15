@@ -102,7 +102,10 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
         body: SafeArea(
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(AppTokens.spaceUnit * 3),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTokens.screenHorizontalInset,
+                vertical: AppTokens.screenVerticalInset,
+              ),
               child: Text(
                 'Supabase を --dart-define=SUPABASE_URL / SUPABASE_ANON_KEY で設定してください。.env.example を参照してください。',
                 style: textTheme.bodyLarge,
@@ -124,8 +127,8 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.spaceUnit * 3,
-                vertical: AppTokens.spaceUnit * 2,
+                horizontal: AppTokens.screenHorizontalInset,
+                vertical: AppTokens.screenVerticalInset,
               ),
               child: AutofillGroup(
                 child: Form(
@@ -284,7 +287,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
                                   child: const SizedBox(
                                     height: 22,
                                     width: 22,
-                                    child: CircularProgressIndicator(
+                                    child: CircularProgressIndicator.adaptive(
                                       strokeWidth: 2,
                                     ),
                                   ),

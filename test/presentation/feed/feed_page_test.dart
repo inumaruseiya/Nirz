@@ -103,7 +103,8 @@ void main() {
     testWidgets('FeedLoading: スケルトンと読み込みセマンティクス', (tester) async {
       await _pumpFeedPage(tester, feedState: const FeedLoading());
 
-      expect(find.text('近くの投稿'), findsOneWidget);
+      // SliverAppBar.large は展開／折りたたみでタイトル用 Text が複数ビルドされる。
+      expect(find.text('近くの投稿'), findsNWidgets(2));
       expect(find.byType(FeedSkeletonCard), findsNWidgets(3));
       expect(find.bySemanticsLabel('近くの投稿を読み込んでいます'), findsOneWidget);
     });

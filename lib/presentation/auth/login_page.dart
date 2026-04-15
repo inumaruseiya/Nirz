@@ -109,7 +109,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         body: SafeArea(
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.all(AppTokens.spaceUnit * 3),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTokens.screenHorizontalInset,
+                vertical: AppTokens.screenVerticalInset,
+              ),
               child: Text(
                 'Supabase を --dart-define=SUPABASE_URL / SUPABASE_ANON_KEY で設定してください。.env.example を参照してください。',
                 style: textTheme.bodyLarge,
@@ -131,8 +134,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppTokens.spaceUnit * 3,
-                vertical: AppTokens.spaceUnit * 2,
+                horizontal: AppTokens.screenHorizontalInset,
+                vertical: AppTokens.screenVerticalInset,
               ),
               child: AutofillGroup(
                 child: Form(
@@ -209,7 +212,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 child: const SizedBox(
                                   height: 22,
                                   width: 22,
-                                  child: CircularProgressIndicator(
+                                  child: CircularProgressIndicator.adaptive(
                                     strokeWidth: 2,
                                   ),
                                 ),
@@ -385,7 +388,7 @@ class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
                   child: const SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator.adaptive(strokeWidth: 2),
                   ),
                 )
               : const Text('送信'),

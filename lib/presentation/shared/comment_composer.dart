@@ -178,7 +178,7 @@ class _CommentComposerState extends State<CommentComposer> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator.adaptive(strokeWidth: 2),
                     )
                   : const Text('送信'),
             ),

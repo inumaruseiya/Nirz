@@ -12,7 +12,7 @@ class FeedSkeletonCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(
-        horizontal: AppTokens.spaceUnit,
+        horizontal: AppTokens.screenHorizontalInset,
         vertical: AppTokens.spaceUnit / 2,
       ),
       child: Padding(

@@ -24,7 +24,7 @@ class LocalPostCard extends StatelessWidget {
 
     final card = Card(
       margin: const EdgeInsets.symmetric(
-        horizontal: AppTokens.spaceUnit,
+        horizontal: AppTokens.screenHorizontalInset,
         vertical: AppTokens.spaceUnit / 2,
       ),
       child: InkWell(
@@ -89,7 +89,7 @@ class LocalPostCard extends StatelessWidget {
                               child: SizedBox(
                                 width: 28,
                                 height: 28,
-                                child: CircularProgressIndicator(
+                                child: CircularProgressIndicator.adaptive(
                                   strokeWidth: 2,
                                 ),
                               ),

@@ -27,7 +27,10 @@ class LocationPermissionCallout extends StatelessWidget {
       container: true,
       label: '$title。$message',
       child: Padding(
-        padding: const EdgeInsets.all(AppTokens.spaceUnit * 3),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppTokens.screenHorizontalInset,
+          vertical: AppTokens.screenVerticalInset,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
