@@ -542,37 +542,47 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   children: [
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
-                      child: SegmentedButton<UserPresenceStatus?>(
-                        showSelectedIcon: false,
-                        emptySelectionAllowed: true,
-                        segments: const [
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: null,
-                            label: Text('なし'),
+                      child: Row(
+                        children: [
+                          _PresencePill(
+                            label: 'なし',
+                            selected: current == null,
+                            onTap: () {
+                              if (_presenceSaving) return;
+                              if (current == null) return;
+                              _savePresenceStatus(null);
+                            },
                           ),
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: UserPresenceStatus.free,
-                            label: Text('暇'),
+                          _PresencePill(
+                            label: '暇',
+                            selected: current == UserPresenceStatus.free,
+                            onTap: () {
+                              if (_presenceSaving) return;
+                              if (current == UserPresenceStatus.free) return;
+                              _savePresenceStatus(UserPresenceStatus.free);
+                            },
                           ),
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: UserPresenceStatus.working,
-                            label: Text('作業中'),
+                          _PresencePill(
+                            label: '作業中',
+                            selected: current == UserPresenceStatus.working,
+                            onTap: () {
+                              if (_presenceSaving) return;
+                              if (current == UserPresenceStatus.working) {
+                                return;
+                              }
+                              _savePresenceStatus(UserPresenceStatus.working);
+                            },
                           ),
-                          ButtonSegment<UserPresenceStatus?>(
-                            value: UserPresenceStatus.out,
-                            label: Text('外出中'),
+                          _PresencePill(
+                            label: '外出中',
+                            selected: current == UserPresenceStatus.out,
+                            onTap: () {
+                              if (_presenceSaving) return;
+                              if (current == UserPresenceStatus.out) return;
+                              _savePresenceStatus(UserPresenceStatus.out);
+                            },
                           ),
                         ],
-                        selected: {current},
-                        onSelectionChanged:
-                            (Set<UserPresenceStatus?> selected) {
-                              if (_presenceSaving) return;
-                              final next = selected.isEmpty
-                                  ? null
-                                  : selected.first;
-                              if (next == current) return;
-                              _savePresenceStatus(next);
-                            },
                       ),
                     ),
                     const SizedBox(height: AppTokens.spaceUnit * 1.5),
@@ -671,6 +681,58 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ValidationFailure(:final message) => message,
       LocationFailure() => '位置情報を利用できません。',
     };
+  }
+}
+
+class _PresencePill extends StatelessWidget {
+  const _PresencePill({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: AppTokens.spaceUnit),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        child: Material(
+          color: selected
+              ? scheme.primaryContainer
+              : scheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppTokens.spaceUnit * 2,
+                vertical: AppTokens.spaceUnit * 1.25,
+              ),
+              child: Text(
+                label,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                  color: selected
+                      ? scheme.onPrimaryContainer
+                      : scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

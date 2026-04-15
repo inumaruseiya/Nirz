@@ -81,9 +81,24 @@ abstract final class AppTheme {
         margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
       ),
       dialogTheme: DialogThemeData(
+        elevation: 0,
+        backgroundColor: colorScheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusCard),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+        titleTextStyle: textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: textTheme.bodyLarge,
+        actionsPadding: const EdgeInsets.fromLTRB(
+          AppTokens.spaceUnit * 2,
+          0,
+          AppTokens.spaceUnit * 2,
+          AppTokens.spaceUnit * 2,
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -204,6 +219,11 @@ abstract final class AppTheme {
           horizontal: AppTokens.spaceUnit * 2,
           vertical: AppTokens.spaceUnit * 1.5,
         ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colorScheme.primary,
+        linearTrackColor: colorScheme.surfaceContainerHighest,
+        circularTrackColor: colorScheme.surfaceContainerHighest,
       ),
       pageTransitionsTheme: PageTransitionsTheme(
         builders: {

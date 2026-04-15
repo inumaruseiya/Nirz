@@ -18,7 +18,6 @@ Future<void> showBlockUserByIdInputDialog(
           decoration: const InputDecoration(
             labelText: 'ユーザー ID（UUID）',
             hintText: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-            border: OutlineInputBorder(),
           ),
           autocorrect: false,
           enableSuggestions: false,

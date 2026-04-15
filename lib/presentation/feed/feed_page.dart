@@ -84,6 +84,8 @@ class _FeedPageState extends ConsumerState<FeedPage> {
         label: const Text('投稿'),
       ),
       body: RefreshIndicator(
+        color: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
         onRefresh: () async {
           final ok = await ref.read(feedNotifierProvider.notifier).refresh();
           if (!context.mounted) return;

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nirz/domain/value_objects/reaction_type.dart';
 import 'package:nirz/presentation/shared/reaction_picker.dart';
 import 'package:nirz/presentation/theme/app_theme.dart';
 import 'package:nirz/presentation/theme/app_tokens.dart';
@@ -72,15 +71,17 @@ void main() {
       expectAtLeastMinTapTarget(box, label: 'TextButton');
     });
 
-    testWidgets('ReactionPicker SegmentedButton', (tester) async {
+    testWidgets('ReactionPicker emoji pill (いいね)', (tester) async {
       await pumpWithTheme(
         tester,
         ReactionPicker(selected: null, onChanged: (_) {}),
       );
-      final box = tester.renderObject<RenderBox>(
-        find.byType(SegmentedButton<ReactionType>),
+      final likeFinder = find.descendant(
+        of: find.byType(ReactionPicker),
+        matching: find.bySemanticsLabel('いいね'),
       );
-      expectAtLeastMinTapTarget(box, label: 'SegmentedButton<ReactionType>');
+      final box = tester.renderObject<RenderBox>(likeFinder);
+      expectAtLeastMinTapTarget(box, label: 'ReactionPicker / いいね');
     });
   });
 }

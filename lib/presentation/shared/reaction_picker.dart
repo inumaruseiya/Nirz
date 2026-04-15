@@ -5,10 +5,7 @@ import '../theme/app_tokens.dart';
 
 /// 3 種リアクションの選択 UI（実装計画 Phase 8-2-1、詳細設計 6・4.5）。
 ///
-/// Material 3 の `SegmentedButton` で 👍 / 👀 / 🔥 を並べ、選択中をトーンでハイライトする。
-///
-/// [selected] が null のときは未選択。[emptySelectionAllowed] により同じ種を再度タップすると
-/// 選択解除され [onChanged] に null が渡る（8-2-2 で Remove と組み合わせ可能）。
+/// `SegmentedButton` ではなくピル型のカスタム行にし、同じ選択を再度タップすると解除する。
 class ReactionPicker extends StatelessWidget {
   const ReactionPicker({
     super.key,
@@ -30,45 +27,58 @@ class ReactionPicker extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
 
-    final button = SegmentedButton<ReactionType>(
-      showSelectedIcon: false,
-      emptySelectionAllowed: true,
-      style: ButtonStyle(
-        visualDensity: VisualDensity.standard,
-        tapTargetSize: MaterialTapTargetSize.padded,
-        minimumSize: const WidgetStatePropertyAll(
-          Size(AppTokens.minTapTarget, AppTokens.minTapTarget),
+    Widget pill(ReactionType type, String emoji, String semanticsLabel) {
+      final isOn = selected == type;
+      return Expanded(
+        child: Semantics(
+          button: true,
+          selected: isOn,
+          label: semanticsLabel,
+          child: Material(
+            color: isOn ? cs.primaryContainer : cs.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+            child: InkWell(
+              onTap: enabled
+                  ? () {
+                      if (selected == type) {
+                        onChanged(null);
+                      } else {
+                        onChanged(type);
+                      }
+                    }
+                  : null,
+              borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+              child: SizedBox(
+                height: AppTokens.minTapTarget,
+                child: Center(
+                  child: ExcludeSemantics(
+                    child: Text(emoji, style: const TextStyle(fontSize: 22)),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
-        side: WidgetStateProperty.resolveWith(
-          (states) => BorderSide(color: cs.outlineVariant),
-        ),
-      ),
-      segments: [
-        ButtonSegment<ReactionType>(
-          value: ReactionType.like,
-          label: const Text('👍', semanticsLabel: 'いいね'),
-          tooltip: 'いいね',
-        ),
-        ButtonSegment<ReactionType>(
-          value: ReactionType.look,
-          label: const Text('👀', semanticsLabel: '見た'),
-          tooltip: '見た',
-        ),
-        ButtonSegment<ReactionType>(
-          value: ReactionType.fire,
-          label: const Text('🔥', semanticsLabel: 'アツい'),
-          tooltip: 'アツい',
-        ),
+      );
+    }
+
+    final row = Row(
+      children: [
+        const SizedBox(width: AppTokens.spaceUnit / 2),
+        pill(ReactionType.like, '👍', 'いいね'),
+        SizedBox(width: AppTokens.spaceUnit),
+        pill(ReactionType.look, '👀', '見た'),
+        SizedBox(width: AppTokens.spaceUnit),
+        pill(ReactionType.fire, '🔥', 'アツい'),
+        const SizedBox(width: AppTokens.spaceUnit / 2),
       ],
-      selected: selected == null ? <ReactionType>{} : <ReactionType>{selected!},
-      onSelectionChanged: enabled
-          ? (Set<ReactionType> next) {
-              onChanged(next.isEmpty ? null : next.single);
-            }
-          : null,
     );
 
-    final picker = Semantics(label: 'リアクション。いいね、見た、アツいから選べます', child: button);
+    final picker = Semantics(
+      label: 'リアクション。いいね、見た、アツいから選べます',
+      container: true,
+      child: row,
+    );
 
     if (enabled) {
       return picker;
