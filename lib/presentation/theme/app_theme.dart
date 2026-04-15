@@ -5,10 +5,10 @@ import 'app_tokens.dart';
 /// Material 3 ベースのアプリテーマ（ライト / ダーク）。
 ///
 /// 詳細設計 2.2: コントラストは WCAG 2.1 AA を目安に [ColorScheme.fromSeed] で生成し、
-/// 位置情報共有アプリ Bump を参考に暖色アクセントとニュートラル面へ調整する。
+/// 青を基調とした primary と、わずかに青みのあるニュートラル面で統一する。
 abstract final class AppTheme {
-  /// コーラル系アクセント（近距離・親しみやすいトーン）
-  static const Color _bumpSeed = Color(0xFFFF5A4D);
+  /// ブルー系アクセント（primary / リンク・主要 CTA）
+  static const Color _blueSeed = Color(0xFF2563EB);
 
   static ThemeData light() => _theme(brightness: Brightness.light);
 
@@ -16,18 +16,18 @@ abstract final class AppTheme {
 
   static ColorScheme _colorScheme(Brightness brightness) {
     var scheme = ColorScheme.fromSeed(
-      seedColor: _bumpSeed,
+      seedColor: _blueSeed,
       brightness: brightness,
     );
     if (brightness == Brightness.light) {
       scheme = scheme.copyWith(
         surfaceTint: Colors.transparent,
-        surface: const Color(0xFFFFF7F5),
-        surfaceContainerLowest: const Color(0xFFFFFAF8),
-        surfaceContainerLow: const Color(0xFFFFF3F0),
-        surfaceContainer: const Color(0xFFF5EDEA),
-        surfaceContainerHigh: const Color(0xFFEEE6E3),
-        surfaceContainerHighest: const Color(0xFFE8E0DD),
+        surface: const Color(0xFFF7F9FC),
+        surfaceContainerLowest: const Color(0xFFFFFFFF),
+        surfaceContainerLow: const Color(0xFFF0F4FA),
+        surfaceContainer: const Color(0xFFE8EEF6),
+        surfaceContainerHigh: const Color(0xFFDDE5F0),
+        surfaceContainerHighest: const Color(0xFFD0DAE8),
       );
     } else {
       scheme = scheme.copyWith(surfaceTint: Colors.transparent);
