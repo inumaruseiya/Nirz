@@ -30,6 +30,8 @@
 	<string>投稿に添付する写真を撮影するためにカメラを使用します。</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>投稿に添付する画像を選ぶためにフォトライブラリにアクセスします。</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>近くの投稿を表示し、投稿に付与する位置はぼかしたうえでサーバーに送るために、使用中のみ位置情報を利用します。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

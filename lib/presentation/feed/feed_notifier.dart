@@ -6,6 +6,7 @@ import '../../domain/core/feed_cursor.dart';
 import '../../domain/core/feed_sort.dart';
 import '../../domain/core/result.dart';
 import '../../domain/entities/feed_post.dart';
+import '../../domain/value_objects/location_permission_state.dart';
 
 /// ローカルフィード画面の状態（実装計画 Phase 6-1-2、詳細設計 5.1）。
 sealed class FeedState {
@@ -85,6 +86,13 @@ class FeedNotifier extends Notifier<FeedState> {
   /// フィードの先頭ページを取得し状態を更新する。
   Future<void> loadInitial() async {
     state = const FeedLoading();
+    final permission = await ref
+        .read(requestLocationPermissionUseCaseProvider)
+        .call();
+    if (permission != LocationPermissionState.granted) {
+      state = const FeedLocationDenied();
+      return;
+    }
     final useCase = ref.read(loadLocalFeedUseCaseProvider);
     final result = await useCase(cursor: null, sort: FeedSort.newest);
     state = _stateFromFirstPage(result);
