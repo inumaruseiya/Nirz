@@ -358,7 +358,10 @@ class _PasswordResetDialogState extends ConsumerState<_PasswordResetDialog> {
                 autofillHints: const [AutofillHints.email],
                 placeholder: 'example@email.com',
                 enabled: !_sending,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
               ),
               if (_error != null) ...[
                 const SizedBox(height: AppTokens.spaceUnit * 2),

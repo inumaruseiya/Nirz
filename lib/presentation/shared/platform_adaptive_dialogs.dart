@@ -3,7 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 /// 詳細設計 1.3: iOS は Cupertino モダリティ、それ以外は Material。
-bool get useCupertinoDialogs => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+bool get useCupertinoDialogs =>
+    !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
 /// [showCupertinoDialog]（iOS）または [showDialog]（その他）。
 Future<T?> showAppDialog<T>({
@@ -178,10 +179,7 @@ class _AdaptiveSingleLineInputDialogState
           children: [
             if (msg != null && msg.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(
-                msg,
-                style: CupertinoTheme.of(context).textTheme.textStyle,
-              ),
+              Text(msg, style: CupertinoTheme.of(context).textTheme.textStyle),
             ],
             const SizedBox(height: 12),
             CupertinoTextField(

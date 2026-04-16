@@ -317,7 +317,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   ),
                   Divider(
                     height: 1,
-                    indent: AppTokens.spaceUnit * 2 + 24 + AppTokens.spaceUnit * 1.5,
+                    indent:
+                        AppTokens.spaceUnit * 2 +
+                        24 +
+                        AppTokens.spaceUnit * 1.5,
                   ),
                   _BumpSettingsTile(
                     icon: Icons.location_searching,

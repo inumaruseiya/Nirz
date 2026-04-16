@@ -187,9 +187,7 @@ class _ReportReasonDialogState extends State<_ReportReasonDialog> {
               controller: _detailController,
               maxLines: 4,
               maxLength: _maxDetailLength,
-              decoration: const InputDecoration(
-                hintText: '詳しい状況があれば入力できます',
-              ),
+              decoration: const InputDecoration(hintText: '詳しい状況があれば入力できます'),
             ),
           ],
         ),

@@ -200,7 +200,9 @@ abstract final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppTokens.radiusSurface)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
           borderSide: BorderSide(
@@ -273,7 +275,9 @@ abstract final class AppTheme {
       bodyMedium: body(base.bodyMedium),
       bodySmall: body(base.bodySmall),
       titleLarge: title(base.titleLarge).copyWith(fontWeight: FontWeight.w700),
-      titleMedium: title(base.titleMedium).copyWith(fontWeight: FontWeight.w600),
+      titleMedium: title(
+        base.titleMedium,
+      ).copyWith(fontWeight: FontWeight.w600),
       titleSmall: title(base.titleSmall).copyWith(fontWeight: FontWeight.w600),
       labelLarge: body(base.labelLarge),
       labelMedium: body(base.labelMedium),
