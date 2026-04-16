@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../shared/platform_adaptive_dialogs.dart';
 import '../theme/app_tokens.dart';
 import 'compose_notifier.dart';
 
@@ -238,34 +239,61 @@ class _ComposePageState extends ConsumerState<ComposePage> {
     );
   }
 
-  void _onAddImagePressed() {
+  Future<void> _onAddImagePressed() async {
     if (!mounted) return;
-    showModalBottomSheet<void>(
+    final iosChoice = await showAdaptiveImageSourceSheet(
+      context,
+      includeCamera: !kIsWeb,
+    );
+    if (!mounted) return;
+    if (iosChoice != null) {
+      await _pickImage(
+        iosChoice == ImageSourceChoice.gallery
+            ? ImageSource.gallery
+            : ImageSource.camera,
+      );
+      return;
+    }
+    if (useCupertinoDialogs) {
+      return;
+    }
+    await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
       builder: (sheetContext) {
+        final dividerColor = Theme.of(sheetContext).dividerTheme.color;
         return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('フォトライブラリ'),
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  _pickImage(ImageSource.gallery);
-                },
-              ),
-              if (!kIsWeb)
-                ListTile(
-                  leading: const Icon(Icons.photo_camera_outlined),
-                  title: const Text('カメラ'),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppTokens.spaceUnit * 2,
+              0,
+              AppTokens.spaceUnit * 2,
+              AppTokens.spaceUnit * 2,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ComposeSheetImageSourceRow(
+                  icon: Icons.photo_library_outlined,
+                  title: 'フォトライブラリ',
                   onTap: () {
                     Navigator.of(sheetContext).pop();
-                    _pickImage(ImageSource.camera);
+                    _pickImage(ImageSource.gallery);
                   },
                 ),
-            ],
+                if (!kIsWeb) ...[
+                  Divider(height: 1, color: dividerColor),
+                  _ComposeSheetImageSourceRow(
+                    icon: Icons.photo_camera_outlined,
+                    title: 'カメラ',
+                    onTap: () {
+                      Navigator.of(sheetContext).pop();
+                      _pickImage(ImageSource.camera);
+                    },
+                  ),
+                ],
+              ],
+            ),
           ),
         );
       },
@@ -478,6 +506,53 @@ class _ComposeStatusStrip extends StatelessWidget {
         ),
       ),
     };
+  }
+}
+
+class _ComposeSheetImageSourceRow extends StatelessWidget {
+  const _ComposeSheetImageSourceRow({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppTokens.spaceUnit,
+            vertical: AppTokens.spaceUnit * 1.75,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 26, color: scheme.primary),
+              const SizedBox(width: AppTokens.spaceUnit * 1.5),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

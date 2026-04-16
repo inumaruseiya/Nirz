@@ -8,6 +8,9 @@ abstract final class AppTokens {
   /// 補助サーフェスの角丸
   static const double radiusSurface = 12;
 
+  /// FAB・主要 Filled ボタンなどのピルに近い角丸
+  static const double radiusPill = 22;
+
   /// タップ領域の最小（44×44 logical px）
   static const double minTapTarget = 44;
 

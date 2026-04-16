@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import 'platform_adaptive_dialogs.dart';
 import '../theme/app_tokens.dart';
 
 /// 通報ダイアログで選べるプリセット理由（実装計画 Phase 10-2-2、FR-MOD-02）。
@@ -38,7 +40,7 @@ Future<ReportReasonDraft?> showReportReasonDialog(
   BuildContext context, {
   required String title,
 }) {
-  return showDialog<ReportReasonDraft>(
+  return showAppDialog<ReportReasonDraft>(
     context: context,
     builder: (ctx) => _ReportReasonDialog(title: title),
   );
@@ -78,6 +80,72 @@ class _ReportReasonDialogState extends State<_ReportReasonDialog> {
 
   @override
   Widget build(BuildContext context) {
+    if (useCupertinoDialogs) {
+      return CupertinoAlertDialog(
+        title: Text(widget.title),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                '理由を選んでください',
+                style: CupertinoTheme.of(context).textTheme.textStyle,
+              ),
+              const SizedBox(height: AppTokens.spaceUnit),
+              ...List.generate(kReportPresetReasons.length, (i) {
+                final item = kReportPresetReasons[i];
+                final selected = _selectedIndex == i;
+                return CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => setState(() => _selectedIndex = i),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        Icon(
+                          selected
+                              ? CupertinoIcons.check_mark_circled_solid
+                              : CupertinoIcons.circle,
+                          size: 22,
+                        ),
+                        const SizedBox(width: AppTokens.spaceUnit),
+                        Expanded(child: Text(item.label)),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: AppTokens.spaceUnit),
+              Text(
+                '補足（任意）',
+                style: CupertinoTheme.of(context).textTheme.textStyle,
+              ),
+              const SizedBox(height: AppTokens.spaceUnit / 2),
+              CupertinoTextField(
+                controller: _detailController,
+                maxLines: 4,
+                maxLength: _maxDetailLength,
+                placeholder: '詳しい状況があれば入力できます',
+                padding: const EdgeInsets.all(10),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('キャンセル'),
+          ),
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            onPressed: _submit,
+            child: const Text('確定'),
+          ),
+        ],
+      );
+    }
+
     final theme = Theme.of(context);
 
     return AlertDialog(
@@ -119,10 +187,7 @@ class _ReportReasonDialogState extends State<_ReportReasonDialog> {
               controller: _detailController,
               maxLines: 4,
               maxLength: _maxDetailLength,
-              decoration: const InputDecoration(
-                hintText: '詳しい状況があれば入力できます',
-                border: OutlineInputBorder(),
-              ),
+              decoration: const InputDecoration(hintText: '詳しい状況があれば入力できます'),
             ),
           ],
         ),

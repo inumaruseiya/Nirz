@@ -1,42 +1,23 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/value_objects/user_id.dart';
+import 'platform_adaptive_dialogs.dart';
 
 /// 設定など: UUID 文字列を入力してブロック確認 → [onConfirm]。
 Future<void> showBlockUserByIdInputDialog(
   BuildContext context, {
   required Future<String?> Function(UserId blockedUserId) onConfirm,
 }) async {
-  final controller = TextEditingController();
-  final submitted = await showDialog<String?>(
+  final submitted = await showAdaptiveSingleLineInputDialog(
     context: context,
-    builder: (ctx) {
-      return AlertDialog(
-        title: const Text('ユーザーをブロック'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'ユーザー ID（UUID）',
-            hintText: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
-            border: OutlineInputBorder(),
-          ),
-          autocorrect: false,
-          enableSuggestions: false,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(null),
-            child: const Text('キャンセル'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('確認へ'),
-          ),
-        ],
-      );
-    },
+    title: 'ユーザーをブロック',
+    fieldLabel: 'ユーザー ID（UUID）',
+    hintText: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+    cancelLabel: 'キャンセル',
+    confirmLabel: '確認へ',
+    autocorrect: false,
+    enableSuggestions: false,
   );
-  controller.dispose();
 
   if (!context.mounted || submitted == null || submitted.isEmpty) return;
 
@@ -68,22 +49,15 @@ Future<void> showBlockUserConfirmDialog(
       ? 'ブロックすると、そのユーザーの投稿やコメントがあなたには表示されなくなります。'
       : '「$label」をブロックすると、そのユーザーの投稿やコメントがあなたには表示されなくなります。';
 
-  final confirmed = await showDialog<bool>(
+  final message = onConfirm == null ? '$body\n\n保存処理は次の実装で有効になります。' : body;
+
+  final confirmed = await showAdaptiveConfirmDialog(
     context: context,
-    builder: (ctx) => AlertDialog(
-      title: const Text('ユーザーをブロック'),
-      content: Text(onConfirm == null ? '$body\n\n保存処理は次の実装で有効になります。' : body),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('キャンセル'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: const Text('ブロックする'),
-        ),
-      ],
-    ),
+    title: 'ユーザーをブロック',
+    message: message,
+    cancelLabel: 'キャンセル',
+    confirmLabel: 'ブロックする',
+    confirmIsDestructive: true,
   );
 
   if (confirmed != true || !context.mounted) return;
