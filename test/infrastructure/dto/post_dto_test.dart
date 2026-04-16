@@ -75,6 +75,64 @@ void main() {
       expect(dto.locationLng, 139.25);
     });
 
+    test('fromJson accepts location as [lng, lat] list (PostgREST)', () {
+      final dto = PostDto.fromJson({
+        'id': '11111111-1111-4111-8111-111111111111',
+        'user_id': '22222222-2222-4222-8222-222222222222',
+        'content': 'hello',
+        'image_url': null,
+        'location': [139.0, 35.5],
+        'created_at': created.toIso8601String(),
+        'expires_at': expires.toIso8601String(),
+      });
+      expect(dto.locationLat, 35.5);
+      expect(dto.locationLng, 139.0);
+    });
+
+    test('fromJson accepts location as PostGIS EWKB hex (no SRID)', () {
+      final dto = PostDto.fromJson({
+        'id': '11111111-1111-4111-8111-111111111111',
+        'user_id': '22222222-2222-4222-8222-222222222222',
+        'content': 'hello',
+        'image_url': null,
+        'location':
+            '010100000000000000006061400000000000c04140', // POINT(139 35.5) LE
+        'created_at': created.toIso8601String(),
+        'expires_at': expires.toIso8601String(),
+      });
+      expect(dto.locationLat, closeTo(35.5, 1e-9));
+      expect(dto.locationLng, closeTo(139.0, 1e-9));
+    });
+
+    test('fromJson accepts location as PostGIS EWKB hex (SRID 4326)', () {
+      final dto = PostDto.fromJson({
+        'id': '11111111-1111-4111-8111-111111111111',
+        'user_id': '22222222-2222-4222-8222-222222222222',
+        'content': 'hello',
+        'image_url': null,
+        'location':
+            '0101000020e610000000000000006061400000000000c04140',
+        'created_at': created.toIso8601String(),
+        'expires_at': expires.toIso8601String(),
+      });
+      expect(dto.locationLat, closeTo(35.5, 1e-9));
+      expect(dto.locationLng, closeTo(139.0, 1e-9));
+    });
+
+    test('fromJson accepts WKT POINT with comma between coordinates', () {
+      final dto = PostDto.fromJson({
+        'id': '11111111-1111-4111-8111-111111111111',
+        'user_id': '22222222-2222-4222-8222-222222222222',
+        'content': 'hello',
+        'image_url': null,
+        'location': 'POINT(139.0, 35.5)',
+        'created_at': created.toIso8601String(),
+        'expires_at': expires.toIso8601String(),
+      });
+      expect(dto.locationLat, 35.5);
+      expect(dto.locationLng, 139.0);
+    });
+
     test('fromJson / toJson round-trip', () {
       final original = PostDto(
         id: '11111111-1111-4111-8111-111111111111',
