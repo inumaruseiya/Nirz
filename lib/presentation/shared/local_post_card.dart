@@ -6,7 +6,7 @@ import 'distance_label.dart';
 import 'relative_time.dart';
 import '../theme/app_tokens.dart';
 
-/// フィード 1 件のカード（実装計画 Phase 6-2-1、詳細設計 6・4.3）。
+/// shadcn/ui Card スタイルのフィードカード。
 class LocalPostCard extends StatelessWidget {
   const LocalPostCard({super.key, required this.post, this.onTap});
 
@@ -22,96 +22,97 @@ class LocalPostCard extends StatelessWidget {
     final distanceText = DistanceLabel.format(post.distanceKm);
     final relative = formatRelativeTimeJa(post.createdAt);
 
-    final card = Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppTokens.spaceUnit,
-        vertical: AppTokens.spaceUnit / 2,
+    final card = Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppTokens.spaceUnit * 2,
+        vertical: AppTokens.spaceUnit,
       ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTokens.radiusCard),
-        child: Padding(
-          padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: theme.textTheme.titleMedium,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: AppTokens.spaceUnit),
-                  Text(
-                    relative,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-              if (distanceText != null) ...[
-                const SizedBox(height: AppTokens.spaceUnit / 2),
-                DistanceLabel(kilometers: post.distanceKm),
-              ],
-              const SizedBox(height: AppTokens.spaceUnit),
-              Text(post.content, style: theme.textTheme.bodyLarge),
-              if (post.imageUrl != null) ...[
-                const SizedBox(height: AppTokens.spaceUnit * 1.5),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final dpr = MediaQuery.devicePixelRatioOf(context);
-                    final logicalW = constraints.maxWidth;
-                    final memW = (logicalW * dpr).round().clamp(1, 4096);
-                    final memH = ((logicalW * 9 / 16) * dpr).round().clamp(
-                      1,
-                      4096,
-                    );
-                    return ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        AppTokens.radiusSurface,
-                      ),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: CachedNetworkImage(
-                          imageUrl: post.imageUrl!.toString(),
-                          fit: BoxFit.cover,
-                          memCacheWidth: memW,
-                          memCacheHeight: memH,
-                          placeholder: (context, url) => ColoredBox(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            child: const Center(
-                              child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+      child: Card(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppTokens.radiusCard),
+          child: Padding(
+            padding: const EdgeInsets.all(AppTokens.spaceUnit * 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Header: Avatar + Name + Time ──────────────────
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _Avatar(name: name, size: 36),
+                    const SizedBox(width: AppTokens.spaceUnit * 1.5),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (distanceText != null)
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  size: 11,
+                                  color: theme.colorScheme.onSurfaceVariant,
                                 ),
-                              ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  distanceText,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          errorWidget: (context, url, error) => ColoredBox(
-                            color: theme.colorScheme.surfaceContainerHighest,
-                            child: Icon(
-                              Icons.broken_image_outlined,
-                              color: theme.colorScheme.onSurfaceVariant,
-                              size: 40,
-                            ),
-                          ),
-                        ),
+                        ],
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(width: AppTokens.spaceUnit),
+                    Text(
+                      relative,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
+
+                // ── Separator ─────────────────────────────────────
+                const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: theme.colorScheme.outlineVariant,
+                ),
+                const SizedBox(height: AppTokens.spaceUnit * 1.5),
+
+                // ── Content ───────────────────────────────────────
+                Text(
+                  post.content,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    height: 1.6,
+                  ),
+                ),
+
+                // ── Image ─────────────────────────────────────────
+                if (post.imageUrl != null) ...[
+                  const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                  _PostImage(imageUrl: post.imageUrl!.toString()),
+                ],
+
+                // ── Footer: Reactions ─────────────────────────────
+                const SizedBox(height: AppTokens.spaceUnit * 1.5),
+                _ReactionRow(count: post.reactionCount),
               ],
-              const SizedBox(height: AppTokens.spaceUnit * 1.5),
-              _ReactionSummaryRow(count: post.reactionCount),
-            ],
+            ),
           ),
         ),
       ),
@@ -119,45 +120,139 @@ class LocalPostCard extends StatelessWidget {
 
     final reactionLabel = post.reactionCount == 0
         ? 'リアクションなし'
-        : 'リアクション合計 ${post.reactionCount} 件（いいね・見た・炎の合計）';
+        : 'リアクション合計 ${post.reactionCount} 件';
     final imageSummary = post.imageUrl != null ? '画像あり。' : '';
 
     return Semantics(
       button: onTap != null,
       excludeSemantics: true,
-      label:
-          '$name、$relative${distanceText != null ? '、$distanceText' : ''}。${post.content}。$imageSummary$reactionLabel',
+      label: '$name、$relative'
+          '${distanceText != null ? '、$distanceText' : ''}。'
+          '${post.content}。$imageSummary$reactionLabel',
       child: card,
     );
   }
 }
 
-class _ReactionSummaryRow extends StatelessWidget {
-  const _ReactionSummaryRow({required this.count});
+// ── Avatar ────────────────────────────────────────────────────────────
 
-  final int count;
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.name, required this.size});
 
-  static const double _iconSize = 18;
+  final String name;
+  final double size;
+
+  String get _initial =>
+      name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : '?';
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = theme.colorScheme.onSurfaceVariant;
-    final style = theme.textTheme.labelLarge?.copyWith(color: color);
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        _initial,
+        style: TextStyle(
+          fontSize: size * 0.42,
+          fontWeight: FontWeight.w600,
+          color: scheme.primary,
+          height: 1,
+        ),
+      ),
+    );
+  }
+}
+
+// ── Post Image ────────────────────────────────────────────────────────
+
+class _PostImage extends StatelessWidget {
+  const _PostImage({required this.imageUrl});
+
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final logW = constraints.maxWidth;
+        final memW = (logW * dpr).round().clamp(1, 4096);
+        final memH = ((logW * 9 / 16) * dpr).round().clamp(1, 4096);
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: CachedNetworkImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.cover,
+              memCacheWidth: memW,
+              memCacheHeight: memH,
+              placeholder: (_, __) => ColoredBox(
+                color: scheme.surfaceContainerHigh,
+                child: const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ),
+              errorWidget: (_, __, ___) => ColoredBox(
+                color: scheme.surfaceContainerHigh,
+                child: Icon(
+                  Icons.broken_image_outlined,
+                  color: scheme.onSurfaceVariant,
+                  size: 36,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Reaction Row ──────────────────────────────────────────────────────
+
+class _ReactionRow extends StatelessWidget {
+  const _ReactionRow({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final muted = scheme.onSurfaceVariant;
+    final style = Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: muted,
+      fontWeight: FontWeight.w500,
+    );
+    const iconSize = 15.0;
 
     return Row(
       children: [
-        Icon(Icons.thumb_up_outlined, size: _iconSize, color: color),
+        Icon(Icons.thumb_up_outlined, size: iconSize, color: muted),
         const SizedBox(width: AppTokens.spaceUnit / 2),
-        Icon(Icons.visibility_outlined, size: _iconSize, color: color),
+        Icon(Icons.visibility_outlined, size: iconSize, color: muted),
         const SizedBox(width: AppTokens.spaceUnit / 2),
         Icon(
           Icons.local_fire_department_outlined,
-          size: _iconSize,
-          color: color,
+          size: iconSize,
+          color: muted,
         ),
         const SizedBox(width: AppTokens.spaceUnit),
         Text('$count', style: style),
+        const Spacer(),
+        Icon(Icons.chat_bubble_outline, size: iconSize, color: muted),
       ],
     );
   }
