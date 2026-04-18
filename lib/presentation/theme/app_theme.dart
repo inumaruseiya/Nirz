@@ -329,8 +329,9 @@ abstract final class AppTheme {
       bodyMedium: body(base.bodyMedium),
       bodySmall: body(base.bodySmall),
       titleLarge: title(base.titleLarge).copyWith(fontWeight: FontWeight.w700),
-      titleMedium:
-          title(base.titleMedium).copyWith(fontWeight: FontWeight.w600),
+      titleMedium: title(
+        base.titleMedium,
+      ).copyWith(fontWeight: FontWeight.w600),
       titleSmall: title(base.titleSmall).copyWith(fontWeight: FontWeight.w600),
       labelLarge: body(base.labelLarge).copyWith(fontWeight: FontWeight.w500),
       labelMedium: body(base.labelMedium),
