@@ -32,10 +32,10 @@ abstract final class AppTheme {
         surfaceContainer: AppTokens.slate100,
         surfaceContainerHigh: AppTokens.slate200,
         surfaceContainerHighest: AppTokens.slate300,
-        // shadcn/ui: border = slate-200, muted-foreground = slate-500
+        // shadcn/ui border = slate-200, muted-foreground: slate-600 (WCAG AA)
         outline: AppTokens.slate300,
         outlineVariant: AppTokens.slate200,
-        onSurfaceVariant: AppTokens.slate500,
+        onSurfaceVariant: AppTokens.slate600,
       );
     } else {
       // shadcn/ui dark: background = slate-950, card = slate-950
@@ -66,10 +66,7 @@ abstract final class AppTheme {
     final btnShape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppTokens.radiusCard),
     );
-    final cardBorder = BorderSide(
-      color: colorScheme.outlineVariant,
-      width: 1,
-    );
+    final cardBorder = BorderSide(color: colorScheme.outlineVariant, width: 1);
 
     return ThemeData(
       useMaterial3: true,
@@ -311,14 +308,15 @@ abstract final class AppTheme {
   // ── Text Theme ────────────────────────────────────────────────────
 
   static TextTheme _textTheme(ColorScheme scheme, Brightness brightness) {
-    final base = ThemeData(
-      useMaterial3: true,
-      colorScheme: scheme,
-      brightness: brightness,
-    ).textTheme.apply(
-      bodyColor: scheme.onSurface,
-      displayColor: scheme.onSurface,
-    );
+    final base =
+        ThemeData(
+          useMaterial3: true,
+          colorScheme: scheme,
+          brightness: brightness,
+        ).textTheme.apply(
+          bodyColor: scheme.onSurface,
+          displayColor: scheme.onSurface,
+        );
 
     TextStyle body(TextStyle? s) =>
         (s ?? const TextStyle()).copyWith(height: 1.5, letterSpacing: 0.1);
