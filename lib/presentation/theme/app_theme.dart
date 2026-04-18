@@ -11,7 +11,8 @@ abstract final class AppTheme {
   static const Color _slateSeed = Color(0xFF1E293B);
 
   static ThemeData light() => _theme(brightness: Brightness.light);
-  static ThemeData dark()  => _theme(brightness: Brightness.dark);
+
+  static ThemeData dark() => _theme(brightness: Brightness.dark);
 
   // ── Color Scheme ──────────────────────────────────────────────────
 
@@ -25,32 +26,31 @@ abstract final class AppTheme {
       scheme = scheme.copyWith(
         surfaceTint: Colors.transparent,
         // shadcn/ui: background = white, card = white
-        surface:                  const Color(0xFFFFFFFF),
-        surfaceContainerLowest:   const Color(0xFFFFFFFF),
-        surfaceContainerLow:      AppTokens.slate50,
-        surfaceContainer:         AppTokens.slate100,
-        surfaceContainerHigh:     AppTokens.slate200,
-        surfaceContainerHighest:  AppTokens.slate300,
-        // shadcn/ui: border = slate-200
-        outline:                  AppTokens.slate300,
-        outlineVariant:           AppTokens.slate200,
-        // shadcn/ui: muted-foreground = slate-500
-        onSurfaceVariant:         AppTokens.slate500,
+        surface: const Color(0xFFFFFFFF),
+        surfaceContainerLowest: const Color(0xFFFFFFFF),
+        surfaceContainerLow: AppTokens.slate50,
+        surfaceContainer: AppTokens.slate100,
+        surfaceContainerHigh: AppTokens.slate200,
+        surfaceContainerHighest: AppTokens.slate300,
+        // shadcn/ui: border = slate-200, muted-foreground = slate-500
+        outline: AppTokens.slate300,
+        outlineVariant: AppTokens.slate200,
+        onSurfaceVariant: AppTokens.slate500,
       );
     } else {
       // shadcn/ui dark: background = slate-950, card = slate-950
       scheme = scheme.copyWith(
         surfaceTint: Colors.transparent,
-        surface:                  AppTokens.slate950,
-        surfaceContainerLowest:   AppTokens.slate950,
-        surfaceContainerLow:      AppTokens.slate900,
-        surfaceContainer:         AppTokens.slate800,
-        surfaceContainerHigh:     AppTokens.slate700,
-        surfaceContainerHighest:  AppTokens.slate600,
+        surface: AppTokens.slate950,
+        surfaceContainerLowest: AppTokens.slate950,
+        surfaceContainerLow: AppTokens.slate900,
+        surfaceContainer: AppTokens.slate800,
+        surfaceContainerHigh: AppTokens.slate700,
+        surfaceContainerHighest: AppTokens.slate600,
         // shadcn/ui dark border = slate-800
-        outline:                  AppTokens.slate700,
-        outlineVariant:           AppTokens.slate800,
-        onSurfaceVariant:         AppTokens.slate400,
+        outline: AppTokens.slate700,
+        outlineVariant: AppTokens.slate800,
+        onSurfaceVariant: AppTokens.slate400,
       );
     }
     return scheme;
@@ -60,7 +60,7 @@ abstract final class AppTheme {
 
   static ThemeData _theme({required Brightness brightness}) {
     final colorScheme = _colorScheme(brightness);
-    final textTheme   = _textTheme(colorScheme, brightness);
+    final textTheme = _textTheme(colorScheme, brightness);
 
     // shadcn/ui: all buttons/inputs use --radius (8px), not pill
     final btnShape = RoundedRectangleBorder(
@@ -77,10 +77,10 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: colorScheme.surface,
       textTheme: textTheme,
       splashFactory: InkRipple.splashFactory,
-      splashColor:    colorScheme.primary.withValues(alpha: 0.08),
+      splashColor: colorScheme.primary.withValues(alpha: 0.08),
       highlightColor: colorScheme.primary.withValues(alpha: 0.04),
 
-      // ── AppBar ──────────────────────────────────────────────────
+      // ── AppBar ────────────────────────────────────────────────────
       appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
@@ -94,7 +94,7 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Card ────────────────────────────────────────────────────
+      // ── Card ──────────────────────────────────────────────────────
       // shadcn/ui: flat white card, 1px border, no shadow
       cardTheme: CardThemeData(
         elevation: 0,
@@ -109,7 +109,7 @@ abstract final class AppTheme {
         margin: EdgeInsets.zero,
       ),
 
-      // ── Dialog ──────────────────────────────────────────────────
+      // ── Dialog ────────────────────────────────────────────────────
       dialogTheme: DialogThemeData(
         elevation: 0,
         backgroundColor: colorScheme.surfaceContainerLowest,
@@ -123,19 +123,21 @@ abstract final class AppTheme {
         ),
         contentTextStyle: textTheme.bodyLarge,
         actionsPadding: const EdgeInsets.fromLTRB(
-          AppTokens.spaceUnit * 2, 0,
-          AppTokens.spaceUnit * 2, AppTokens.spaceUnit * 2,
+          AppTokens.spaceUnit * 2,
+          0,
+          AppTokens.spaceUnit * 2,
+          AppTokens.spaceUnit * 2,
         ),
       ),
 
-      // ── Divider ─────────────────────────────────────────────────
+      // ── Divider ───────────────────────────────────────────────────
       dividerTheme: DividerThemeData(
         color: colorScheme.outlineVariant,
         space: 1,
         thickness: 1,
       ),
 
-      // ── SnackBar ────────────────────────────────────────────────
+      // ── SnackBar ──────────────────────────────────────────────────
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         elevation: 2,
@@ -144,11 +146,11 @@ abstract final class AppTheme {
         ),
         insetPadding: const EdgeInsets.symmetric(
           horizontal: AppTokens.spaceUnit * 2,
-          vertical:   AppTokens.spaceUnit * 1.5,
+          vertical: AppTokens.spaceUnit * 1.5,
         ),
       ),
 
-      // ── BottomSheet ─────────────────────────────────────────────
+      // ── BottomSheet ───────────────────────────────────────────────
       bottomSheetTheme: BottomSheetThemeData(
         surfaceTintColor: Colors.transparent,
         backgroundColor: colorScheme.surfaceContainerLow,
@@ -160,19 +162,19 @@ abstract final class AppTheme {
         dragHandleColor: colorScheme.onSurfaceVariant,
       ),
 
-      // ── ListTile ────────────────────────────────────────────────
+      // ── ListTile ──────────────────────────────────────────────────
       listTileTheme: ListTileThemeData(
         iconColor: colorScheme.primary,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppTokens.spaceUnit * 2,
-          vertical:   AppTokens.spaceUnit,
+          vertical: AppTokens.spaceUnit,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusCard),
         ),
       ),
 
-      // ── FAB ─────────────────────────────────────────────────────
+      // ── FAB ───────────────────────────────────────────────────────
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         elevation: 0,
         focusElevation: 1,
@@ -182,50 +184,67 @@ abstract final class AppTheme {
         foregroundColor: colorScheme.onPrimary,
         extendedPadding: const EdgeInsets.symmetric(
           horizontal: AppTokens.spaceUnit * 2,
-          vertical:   AppTokens.spaceUnit,
+          vertical: AppTokens.spaceUnit,
         ),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppTokens.radiusPill),
         ),
       ),
 
-      // ── Buttons ─────────────────────────────────────────────────
+      // ── Buttons ───────────────────────────────────────────────────
       // shadcn/ui: all buttons use --radius (8px)
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          minimumSize: const Size(AppTokens.minTapTarget, AppTokens.minTapTarget),
+          minimumSize: const Size(
+            AppTokens.minTapTarget,
+            AppTokens.minTapTarget,
+          ),
           shape: btnShape,
-          textStyle: textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w500),
+          textStyle: textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          minimumSize: const Size(AppTokens.minTapTarget, AppTokens.minTapTarget),
+          minimumSize: const Size(
+            AppTokens.minTapTarget,
+            AppTokens.minTapTarget,
+          ),
           shape: btnShape,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          minimumSize: const Size(AppTokens.minTapTarget, AppTokens.minTapTarget),
+          minimumSize: const Size(
+            AppTokens.minTapTarget,
+            AppTokens.minTapTarget,
+          ),
           shape: btnShape,
           side: cardBorder,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          minimumSize: const Size(AppTokens.minTapTarget, AppTokens.minTapTarget),
+          minimumSize: const Size(
+            AppTokens.minTapTarget,
+            AppTokens.minTapTarget,
+          ),
           shape: btnShape,
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
-          minimumSize: const Size(AppTokens.minTapTarget, AppTokens.minTapTarget),
+          minimumSize: const Size(
+            AppTokens.minTapTarget,
+            AppTokens.minTapTarget,
+          ),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
 
-      // ── Input ───────────────────────────────────────────────────
-      // shadcn/ui: border input style, bg = transparent, border = slate-200
+      // ── Input ─────────────────────────────────────────────────────
+      // shadcn/ui: border input style, bg = surface, border = slate-200
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colorScheme.surface,
@@ -251,7 +270,7 @@ abstract final class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppTokens.spaceUnit * 1.5,
-          vertical:   AppTokens.spaceUnit * 1.5,
+          vertical: AppTokens.spaceUnit * 1.5,
         ),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         hintStyle: TextStyle(
@@ -259,14 +278,14 @@ abstract final class AppTheme {
         ),
       ),
 
-      // ── Progress ────────────────────────────────────────────────
+      // ── Progress ──────────────────────────────────────────────────
       progressIndicatorTheme: ProgressIndicatorThemeData(
         color: colorScheme.primary,
-        linearTrackColor:   colorScheme.surfaceContainerHigh,
+        linearTrackColor: colorScheme.surfaceContainerHigh,
         circularTrackColor: colorScheme.surfaceContainerHigh,
       ),
 
-      // ── Page Transitions ────────────────────────────────────────
+      // ── Page Transitions ──────────────────────────────────────────
       pageTransitionsTheme: PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ReduceMotionAwarePageTransitionsBuilder(
@@ -297,7 +316,7 @@ abstract final class AppTheme {
       colorScheme: scheme,
       brightness: brightness,
     ).textTheme.apply(
-      bodyColor:    scheme.onSurface,
+      bodyColor: scheme.onSurface,
       displayColor: scheme.onSurface,
     );
 
@@ -308,15 +327,16 @@ abstract final class AppTheme {
         (s ?? const TextStyle()).copyWith(height: 1.3, letterSpacing: 0);
 
     return base.copyWith(
-      bodyLarge:   body(base.bodyLarge),
-      bodyMedium:  body(base.bodyMedium),
-      bodySmall:   body(base.bodySmall),
-      titleLarge:  title(base.titleLarge).copyWith(fontWeight: FontWeight.w700),
-      titleMedium: title(base.titleMedium).copyWith(fontWeight: FontWeight.w600),
-      titleSmall:  title(base.titleSmall).copyWith(fontWeight: FontWeight.w600),
-      labelLarge:  body(base.labelLarge).copyWith(fontWeight: FontWeight.w500),
+      bodyLarge: body(base.bodyLarge),
+      bodyMedium: body(base.bodyMedium),
+      bodySmall: body(base.bodySmall),
+      titleLarge: title(base.titleLarge).copyWith(fontWeight: FontWeight.w700),
+      titleMedium:
+          title(base.titleMedium).copyWith(fontWeight: FontWeight.w600),
+      titleSmall: title(base.titleSmall).copyWith(fontWeight: FontWeight.w600),
+      labelLarge: body(base.labelLarge).copyWith(fontWeight: FontWeight.w500),
       labelMedium: body(base.labelMedium),
-      labelSmall:  body(base.labelSmall),
+      labelSmall: body(base.labelSmall),
     );
   }
 }
@@ -338,7 +358,11 @@ final class ReduceMotionAwarePageTransitionsBuilder
   ) {
     if (MediaQuery.disableAnimationsOf(context)) return child;
     return _delegate.buildTransitions(
-      route, context, animation, secondaryAnimation, child,
+      route,
+      context,
+      animation,
+      secondaryAnimation,
+      child,
     );
   }
 }

@@ -24,9 +24,8 @@ abstract final class AppTokens {
   /// 本文の折り返し幅の目安
   static const double bodyMaxLineWidth = 560;
 
-  // ── shadcn/ui カラーパレット (Slate) ────────────────────────────
-  /// Light: background / card
-  static const Color slate50  = Color(0xFFF8FAFC);
+  // ── shadcn/ui カラーパレット (Slate) ──────────────────────────────
+  static const Color slate50 = Color(0xFFF8FAFC);
   static const Color slate100 = Color(0xFFF1F5F9);
   static const Color slate200 = Color(0xFFE2E8F0);
   static const Color slate300 = Color(0xFFCBD5E1);

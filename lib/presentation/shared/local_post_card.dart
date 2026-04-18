@@ -20,12 +20,12 @@ class LocalPostCard extends StatelessWidget {
         ? post.authorName!.trim()
         : '近くのユーザー';
     final distanceText = DistanceLabel.format(post.distanceKm);
-    final relative     = formatRelativeTimeJa(post.createdAt);
+    final relative = formatRelativeTimeJa(post.createdAt);
 
     final card = Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppTokens.spaceUnit * 2,
-        vertical:   AppTokens.spaceUnit,
+        vertical: AppTokens.spaceUnit,
       ),
       child: Card(
         child: InkWell(
@@ -126,8 +126,7 @@ class LocalPostCard extends StatelessWidget {
     return Semantics(
       button: onTap != null,
       excludeSemantics: true,
-      label:
-          '$name、$relative'
+      label: '$name、$relative'
           '${distanceText != null ? '、$distanceText' : ''}。'
           '${post.content}。$imageSummary$reactionLabel',
       child: card,
@@ -150,21 +149,21 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Container(
-      width:  size,
+      width: size,
       height: size,
       decoration: BoxDecoration(
-        color:  scheme.primary.withValues(alpha: 0.12),
-        shape:  BoxShape.circle,
+        color: scheme.primary.withValues(alpha: 0.12),
+        shape: BoxShape.circle,
         border: Border.all(color: scheme.outlineVariant),
       ),
       alignment: Alignment.center,
       child: Text(
         _initial,
         style: TextStyle(
-          fontSize:   size * 0.42,
+          fontSize: size * 0.42,
           fontWeight: FontWeight.w600,
-          color:      scheme.primary,
-          height:     1,
+          color: scheme.primary,
+          height: 1,
         ),
       ),
     );
@@ -183,24 +182,25 @@ class _PostImage extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final dpr    = MediaQuery.devicePixelRatioOf(context);
-        final logW   = constraints.maxWidth;
-        final memW   = (logW * dpr).round().clamp(1, 4096);
-        final memH   = ((logW * 9 / 16) * dpr).round().clamp(1, 4096);
+        final dpr = MediaQuery.devicePixelRatioOf(context);
+        final logW = constraints.maxWidth;
+        final memW = (logW * dpr).round().clamp(1, 4096);
+        final memH = ((logW * 9 / 16) * dpr).round().clamp(1, 4096);
         return ClipRRect(
           borderRadius: BorderRadius.circular(AppTokens.radiusSurface),
           child: AspectRatio(
             aspectRatio: 16 / 9,
             child: CachedNetworkImage(
               imageUrl: imageUrl,
-              fit:      BoxFit.cover,
-              memCacheWidth:  memW,
+              fit: BoxFit.cover,
+              memCacheWidth: memW,
               memCacheHeight: memH,
               placeholder: (_, __) => ColoredBox(
                 color: scheme.surfaceContainerHigh,
                 child: const Center(
                   child: SizedBox(
-                    width: 24, height: 24,
+                    width: 24,
+                    height: 24,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
@@ -221,7 +221,7 @@ class _PostImage extends StatelessWidget {
   }
 }
 
-// ── Reaction Row ─────────────────────────────────────────────────────
+// ── Reaction Row ──────────────────────────────────────────────────────
 
 class _ReactionRow extends StatelessWidget {
   const _ReactionRow({required this.count});
@@ -231,8 +231,8 @@ class _ReactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final muted  = scheme.onSurfaceVariant;
-    final style  = Theme.of(context).textTheme.labelSmall?.copyWith(
+    final muted = scheme.onSurfaceVariant;
+    final style = Theme.of(context).textTheme.labelSmall?.copyWith(
       color: muted,
       fontWeight: FontWeight.w500,
     );
@@ -240,11 +240,15 @@ class _ReactionRow extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(Icons.thumb_up_outlined,            size: iconSize, color: muted),
+        Icon(Icons.thumb_up_outlined, size: iconSize, color: muted),
         const SizedBox(width: AppTokens.spaceUnit / 2),
-        Icon(Icons.visibility_outlined,          size: iconSize, color: muted),
+        Icon(Icons.visibility_outlined, size: iconSize, color: muted),
         const SizedBox(width: AppTokens.spaceUnit / 2),
-        Icon(Icons.local_fire_department_outlined, size: iconSize, color: muted),
+        Icon(
+          Icons.local_fire_department_outlined,
+          size: iconSize,
+          color: muted,
+        ),
         const SizedBox(width: AppTokens.spaceUnit),
         Text('$count', style: style),
         const Spacer(),
